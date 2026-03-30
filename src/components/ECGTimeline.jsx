@@ -8,7 +8,15 @@ const STEPS = [
     desc: "Sign up with your company code in under 2 minutes",
     accent: "#0C8B7A",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
         <circle cx="12" cy="7" r="4" />
       </svg>
@@ -20,7 +28,15 @@ const STEPS = [
     desc: "Browse 500+ verified specialists by condition or language",
     accent: "#1A56DB",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -32,7 +48,15 @@ const STEPS = [
     desc: "Instant same-day or next-day appointments",
     accent: "#0C8B7A",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path d="M16 2v4M8 2v4M3 10h18" />
       </svg>
@@ -44,7 +68,15 @@ const STEPS = [
     desc: "Video, phone, or chat — encrypted and private",
     accent: "#C97B1A",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.311a1 1 0 0 1-1.447.893L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" />
       </svg>
     ),
@@ -55,7 +87,15 @@ const STEPS = [
     desc: "E-prescriptions sent to your pharmacy in minutes",
     accent: "#0C8B7A",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
       </svg>
     ),
@@ -66,7 +106,15 @@ const STEPS = [
     desc: "Fit-to-work cert issued. HR dashboard updated.",
     accent: "#0C8B7A",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      >
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
@@ -121,7 +169,10 @@ export default function ECGTimeline() {
         segs.push({ x: nx + spacing * 0.25, y: cy });
       }
       segs.push({ x: W - padding + 30, y: cy });
-      return "M " + segs.map((p) => p.x.toFixed(1) + "," + p.y.toFixed(1)).join(" L ");
+      return (
+        "M " +
+        segs.map((p) => p.x.toFixed(1) + "," + p.y.toFixed(1)).join(" L ")
+      );
     }
 
     const pathD = buildPath();
@@ -232,13 +283,24 @@ export default function ECGTimeline() {
       const card = document.createElement("div");
       card.className = "hc-step-card";
       card.innerHTML =
-        '<div class="hc-step-card-bar" style="background:' + s.accent + '"></div>' +
-        '<div class="hc-step-num">' + s.num + "</div>" +
-        '<div class="hc-step-icon" style="background:rgba(255,255,255,0.05);color:' + s.accent + '">' +
-        card.appendChild(document.createElement("span")) && "" +
-        "</div>" +
-        '<div class="hc-step-name">' + s.name + "</div>" +
-        '<div class="hc-step-desc">' + s.desc + "</div>";
+        '<div class="hc-step-card-bar" style="background:' +
+          s.accent +
+          '"></div>' +
+          '<div class="hc-step-num">' +
+          s.num +
+          "</div>" +
+          '<div class="hc-step-icon" style="background:rgba(255,255,255,0.05);color:' +
+          s.accent +
+          '">' +
+          card.appendChild(document.createElement("span")) &&
+        "" +
+          "</div>" +
+          '<div class="hc-step-name">' +
+          s.name +
+          "</div>" +
+          '<div class="hc-step-desc">' +
+          s.desc +
+          "</div>";
 
       // Re-build properly to inject SVG icon
       card.innerHTML = "";
@@ -283,14 +345,16 @@ export default function ECGTimeline() {
         const idx = i;
         if (activeStepRef.current === idx) {
           activeStepRef.current = -1;
-          document.querySelectorAll(".hc-step-card").forEach((c) => c.classList.remove("active"));
+          document
+            .querySelectorAll(".hc-step-card")
+            .forEach((c) => c.classList.remove("active"));
           resetNodes();
           return;
         }
         activeStepRef.current = idx;
-        document.querySelectorAll(".hc-step-card").forEach((c, j) =>
-          c.classList.toggle("active", j === idx)
-        );
+        document
+          .querySelectorAll(".hc-step-card")
+          .forEach((c, j) => c.classList.toggle("active", j === idx));
         highlightNode(idx);
       });
 
@@ -327,7 +391,9 @@ export default function ECGTimeline() {
           const glow = (1 - dist / 40) * 0.55;
           halo.setAttribute("opacity", glow.toFixed(3));
           halo.setAttribute("stroke", STEPS[j].accent);
-          document.getElementById("node" + j).setAttribute("fill", STEPS[j].accent);
+          document
+            .getElementById("node" + j)
+            .setAttribute("fill", STEPS[j].accent);
         } else if (dist < 80) {
           halo.setAttribute("opacity", "0");
           if (activeStepRef.current !== j)
@@ -336,11 +402,17 @@ export default function ECGTimeline() {
       }
 
       lightEl.style.strokeDasharray = HEAD_LEN + " " + (totalLen + 100);
-      lightEl.style.strokeDashoffset = (totalLen - headPos + HEAD_LEN).toFixed(1);
+      lightEl.style.strokeDashoffset = (totalLen - headPos + HEAD_LEN).toFixed(
+        1,
+      );
       lightEl.setAttribute("stroke", lightColor);
 
       trailEl.style.strokeDasharray = TRAIL_LEN + " " + (totalLen + 100);
-      trailEl.style.strokeDashoffset = (totalLen - headPos + TRAIL_LEN * 0.7).toFixed(1);
+      trailEl.style.strokeDashoffset = (
+        totalLen -
+        headPos +
+        TRAIL_LEN * 0.7
+      ).toFixed(1);
       trailEl.setAttribute("stroke", lightColor);
       trailEl.setAttribute("opacity", "0.12");
 
@@ -368,70 +440,22 @@ export default function ECGTimeline() {
   }, []);
 
   return (
-    <div
-      style={{
-        background: "#0a1628",
-        borderRadius: "16px",
-        overflow: "hidden",
-        padding: "48px 32px 0",
-      }}
-    >
+    <div className="hc-ecg-container">
       {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "36px" }}>
-        <p
-          style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "2.5px",
-            textTransform: "uppercase",
-            color: "#0C8B7A",
-            margin: "0 0 10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-          }}
-        >
-          <span
-            style={{
-              display: "block",
-              width: "24px",
-              height: "1.5px",
-              background: "#0C8B7A",
-              opacity: 0.5,
-            }}
-          />
+      <div className="hc-header">
+        <p className="hc-header-eyebrow">
+          <span className="hc-header-line" />
           How It Works
-          <span
-            style={{
-              display: "block",
-              width: "24px",
-              height: "1.5px",
-              background: "#0C8B7A",
-              opacity: 0.5,
-            }}
-          />
+          <span className="hc-header-line" />
         </p>
-        <h2
-          style={{
-            fontFamily: "'Satoshi', sans-serif",
-            fontSize: "clamp(26px, 4vw, 40px)",
-            fontWeight: 700,
-            letterSpacing: "-1px",
-            color: "#fff",
-            margin: "0 0 10px",
-            lineHeight: 1.1,
-          }}
-        >
-          From signup to care in minutes
-        </h2>
-        <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.42)", margin: 0 }}>
+        <h2 className="hc-header-title">From signup to care in minutes</h2>
+        <p className="hc-header-desc">
           A seamless digital experience designed around your employees
         </p>
       </div>
 
       {/* SVG ECG */}
-      <div style={{ width: "100%", overflow: "hidden" }}>
+      <div className="hc-svg-wrapper">
         <svg
           id="ecgSvg"
           viewBox="0 0 1100 220"
@@ -446,7 +470,13 @@ export default function ECGTimeline() {
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <filter id="hcGlowSoft" x="-20%" y="-20%" width="140%" height="140%">
+            <filter
+              id="hcGlowSoft"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
               <feGaussianBlur stdDeviation="6" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -492,18 +522,7 @@ export default function ECGTimeline() {
       </div>
 
       {/* Step cards */}
-      <div
-        id="stepCards"
-        ref={stepCardsRef}
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
-          gap: "1px",
-          background: "rgba(255,255,255,0.06)",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
-          marginTop: 0,
-        }}
-      />
+      <div id="stepCards" ref={stepCardsRef} />
     </div>
   );
 }
