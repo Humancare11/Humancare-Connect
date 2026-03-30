@@ -14,6 +14,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import './Corporates.css';
 import ECGTimeline from '../components/ECGTimeline';
 import Netaji from '../components/Netaji';
+import Demo from '../components/Demo';
 
 /* ================================================================
    SERVICES DATA
@@ -442,6 +443,7 @@ export default function CorporateHub() {
   return (
 
     <>
+    <Demo />
     <section className="hc-hub">
  <section>
    <div className="corp-hero">

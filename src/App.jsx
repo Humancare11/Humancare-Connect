@@ -8,7 +8,7 @@ import About from "./pages/About";
 import Findadoctor from "./pages/Findadoctor";
 import AskDoctor from "./pages/AskDoctor";
 import Services from "./pages/Services";
-import Blogs from "./pages/Blogs";
+import Blogs from "./pages/Blogs/Blogs";
 import Corporates from "./pages/Corporates";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
