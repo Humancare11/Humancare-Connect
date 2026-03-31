@@ -10,10 +10,11 @@
 
 // export default Corporates
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import './Corporates.css';
-import ECGTimeline from '../components/ECGTimeline';
-import Netaji from '../components/Netaji';
+import { useState, useEffect, useRef, useCallback } from "react";
+import "./Corporates.css";
+import ECGTimeline from "../components/ECGTimeline";
+import Netaji from "../components/Netaji";
+import Demo from "../components/Demo";
 
 /* ================================================================
    SERVICES DATA
@@ -607,28 +608,30 @@ export default function CorporateHub() {
 
   return (
     <>
-    <section className="hc-hub">
- <section>
-   <div className="corp-hero">
-     <div className="corp-hero-inner">
-       <h1>Corporate Solutions & Insights</h1>
-       <p>
-         Empowering businesses with innovative strategies, expert consulting,
-         and scalable solutions to drive sustainable growth and success.
-       </p>
-     </div>
-   </div>
-
- </section>
-  <ECGTimeline />
-      {/* Header */}
-      <div className="hc-hub-head">
-        <p className="hc-hub-eyebrow">Corporate Solutions</p>
-        <h2 className="hc-hub-title">Everything your organisation needs</h2>
-        <p className="hc-hub-sub">
-          Click any service to bring it to focus. Built for enterprises that take employee health seriously.
-        </p>
-      </div>
+      <section className="hc-hub">
+        <section>
+          <div className="corp-hero">
+            <div className="corp-hero-inner">
+              <h1>Corporate Solutions & Insights</h1>
+              <p>
+                Empowering businesses with innovative strategies, expert
+                consulting, and scalable solutions to drive sustainable growth
+                and success.
+              </p>
+            </div>
+          </div>
+        </section>
+        <Demo />
+        <ECGTimeline />
+        {/* Header */}
+        <div className="hc-hub-head">
+          <p className="hc-hub-eyebrow">Corporate Solutions</p>
+          <h2 className="hc-hub-title">Everything your organisation needs</h2>
+          <p className="hc-hub-sub">
+            Click any service to bring it to focus. Built for enterprises that
+            take employee health seriously.
+          </p>
+        </div>
 
         {/* Stage */}
         <div
