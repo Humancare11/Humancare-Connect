@@ -1,14 +1,4 @@
-// import React from 'react'
-// import './Corporates.css'
-// function Corporates() {
-//   return (
 
-// <>
-//
-//     </>  )
-// }
-
-// export default Corporates
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import "./Corporates.css";

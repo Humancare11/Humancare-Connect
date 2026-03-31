@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import BookAppointment from "./pages/BookAppointment";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/admin" element={<AdminDashboard />} /> 
       </Routes>
 
       <Footer />

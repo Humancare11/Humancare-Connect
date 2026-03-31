@@ -2,52 +2,73 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// REGISTER
-exports.registerUser = async (req, res) => {
+// ================= REGISTER =================
+exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, mobile, country, dob, gender, password } = req.body;
 
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: "User already exists" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    user = new User({
+    const user = new User({
       name,
       email,
+      mobile,
+      country,
+      dob,
+      gender,
       password: hashedPassword,
+      role: "user", // ✅ FIXED
     });
 
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.json({ token, user });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(201).json({ msg: "User registered successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server Error" });
   }
 };
 
-// LOGIN
-exports.loginUser = async (req, res) => {
+// ================= LOGIN =================
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role, // ✅ IMPORTANT
+      },
     });
-
-    res.json({ token, user });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server Error" });
   }
 };

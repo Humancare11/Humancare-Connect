@@ -28,13 +28,17 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // ✅ IMPORTANT: trigger header update
+      // ✅ Trigger header update
       window.dispatchEvent(new Event("storage"));
 
       alert("Login Success ✅");
 
-      // ✅ Redirect to Home
-      navigate("/");
+      // ✅ 🔥 UPDATED LOGIC (IMPORTANT)
+      if (res.data.user.role === "admin") {
+        navigate("/admin");   // admin dashboard
+      } else {
+        navigate("/");        // normal user home
+      }
 
     } catch (err) {
       alert(err.response?.data?.msg || "Login Failed ❌");

@@ -10,10 +10,27 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  mobile: {
+    type: String,
+  },
+  country: {
+    type: String,
+  },
+  dob: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
   password: {
     type: String,
     required: true,
   },
-}, { timestamps: true });
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
+});
 
 module.exports = mongoose.model("User", userSchema);
