@@ -1,22 +1,75 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import socket from "../../socket";
 import "./admindashboard.css";
 
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
+  const [activeUsers, setActiveUsers] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
+
+    if (!storedUser) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const statsRes = await axios.get("http://localhost:5000/api/admin/stats");
+        setTotalUsers(statsRes.data.totalUsers || 0);
+
+        const activeRes = await axios.get("http://localhost:5000/api/admin/active-users");
+        setActiveUsers(activeRes.data.activeUsers || 0);
+      } catch (err) {
+        console.log("Admin stats fetch error:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const handleActiveUsers = (count) => {
+      setActiveUsers(count);
+    };
+
+    socket.on("active-users-count", handleActiveUsers);
+
+    return () => {
+      socket.off("active-users-count", handleActiveUsers);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login";
+
+    if (socket.connected) {
+      socket.disconnect();
+    }
+
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/login");
   };
 
   if (!user) {
-    return <h2 style={{ textAlign: "center", marginTop: "150px" }}>Please login first</h2>;
+    return (
+      <h2 style={{ textAlign: "center", marginTop: "150px" }}>
+        Please login first
+      </h2>
+    );
   }
 
   return (
@@ -39,7 +92,9 @@ export default function AdminDashboard() {
           <li>Medical Questions</li>
           <li>Blogs</li>
           <li>Settings</li>
-          <li onClick={handleLogout}>Logout</li>
+          <li onClick={handleLogout} style={{ cursor: "pointer", color: "red" }}>
+            Logout
+          </li>
         </ul>
       </div>
 
@@ -49,7 +104,12 @@ export default function AdminDashboard() {
         <div className="admin-cards">
           <div className="admin-card">
             <h4>Total Users</h4>
-            <h1>0</h1>
+            <h1>{totalUsers}</h1>
+          </div>
+
+          <div className="admin-card">
+            <h4>Active Users (Live)</h4>
+            <h1>{activeUsers}</h1>
           </div>
 
           <div className="admin-card">
@@ -59,11 +119,6 @@ export default function AdminDashboard() {
 
           <div className="admin-card">
             <h4>Total Appointments</h4>
-            <h1>0</h1>
-          </div>
-
-          <div className="admin-card">
-            <h4>Pending Queries</h4>
             <h1>0</h1>
           </div>
         </div>
