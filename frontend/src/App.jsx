@@ -25,6 +25,9 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import QnAPage from "./pages/admin/QnAPage";
 import { QnAProvider } from "./pages/admin/QnAContext";
 import socket from "./socket";
+import DoctorRegister from "./pages/doctors/DoctorRegister";
+import DoctorLogin from "./pages/doctors/DoctorLogin";
+import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 
 function AppLayout() {
   const location = useLocation();
@@ -66,6 +69,14 @@ function AppLayout() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/doctor-registration" element={<DoctorRegister />} />
+<Route path="/doctor-login" element={<DoctorLogin />} />
+{/* <Route path="/doctor-dashboard" element={
+  <ProtectedRoute role="doctor">
+    <DoctorDashboard />
+  </ProtectedRoute>
+} /> */}
+<Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
         {/* Admin-only routes */}
         <Route
