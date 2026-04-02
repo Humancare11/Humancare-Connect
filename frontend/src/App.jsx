@@ -12,12 +12,13 @@ import Blogs from "./pages/Blogs/Blogs";
 import Corporates from "./pages/Corporates";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";  
+import Terms from "./pages/Terms";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import BookAppointment from "./pages/BookAppointment";
 
+import DoctorEnrollments from "./components/DoctorEnrollments";
 
 function App() {
   return (
@@ -27,18 +28,20 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/find-a-doctor" element={<Findadoctor/>} />
-        <Route path="/ask-a-question" element={<AskDoctor/>} /> 
-        <Route path="/medical-services" element={<Services/>} />
-        <Route path="/blogs" element={<Blogs/>} />
-        <Route path="/corporates" element={<Corporates/>} />
+        <Route path="/find-a-doctor" element={<Findadoctor />} />
+        <Route path="/ask-a-question" element={<AskDoctor />} />
+        <Route path="/medical-services" element={<Services />} />
+        <Route path="/blogs" element={<Blogs />} />
+        <Route path="/corporates" element={<Corporates />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} /> 
+        <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+
+        <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
       </Routes>
 
       <Footer />

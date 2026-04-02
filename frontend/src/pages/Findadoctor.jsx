@@ -2,76 +2,303 @@ import { useState, useMemo } from "react";
 import "./Findadoctor.css";
 import { useNavigate } from "react-router-dom";
 
-
-
-
 const specialities = [
-  "Adolescent Medicine", "Adult Reconstructive Orthopaedics",
-  "Andrologist", "Anesthesiologist", "Audiologist", "Cardiologist",
-  "Dermatologist", "ENT Specialist", "Gastroenterologist", "General Physician",
-  "Ophthalmologist", "Dental Surgeon", "Dentist", "Maxillofacial Surgeon / Oral Surgeon",
-  "Psychology/Psychotherapist", "Neurologist", "Orthopedic Surgeon",
+  "Adolescent Medicine",
+  "Adult Reconstructive Orthopaedics",
+  "Andrologist",
+  "Anesthesiologist",
+  "Audiologist",
+  "Cardiologist",
+  "Dermatologist",
+  "ENT Specialist",
+  "Gastroenterologist",
+  "General Physician",
+  "Ophthalmologist",
+  "Dental Surgeon",
+  "Dentist",
+  "Maxillofacial Surgeon / Oral Surgeon",
+  "Psychology/Psychotherapist",
+  "Neurologist",
+  "Orthopedic Surgeon",
 ];
 
 const languages = [
-  "Arabic", "Armenian", "Assamese", "Bengali", "Bhojpuri", "Chinese",
-  "English", "Gujarati", "Hindi", "Kannada", "Malayalam", "Marathi",
+  "Arabic",
+  "Armenian",
+  "Assamese",
+  "Bengali",
+  "Bhojpuri",
+  "Chinese",
+  "English",
+  "Gujarati",
+  "Hindi",
+  "Kannada",
+  "Malayalam",
+  "Marathi",
 ];
 
 const allDoctors = [
-  { id: 1, name: "Dr. Shilpa N Desai", degree: "Ph.D, Health Psychologist", rating: 4.5, experience: "25+", specialty: "Psychology/Psychotherapist", languages: ["English", "Hindi", "Gujarati", "Marathi"], location: "Mumbai, Maharashtra", price: 3000, gender: "Female", initials: "SD", color: "#4A90D9" },
-  { id: 2, name: "Dr. Bhaktee Thipase", degree: "MS Ophthalmology", rating: 4.5, experience: "5+", specialty: "Ophthalmologist", languages: ["English", "Hindi", "Marathi", "Gujarati"], location: "Mumbai, Maharashtra", price: 500, gender: "Female", initials: "BT", color: "#E8A87C" },
-  { id: 3, name: "Dr. Kiran Tokekar", degree: "MDS", rating: 4.5, experience: "12+", specialty: "Dental Surgeon", languages: ["Hindi", "English", "Marathi", "Gujarati"], location: "Kalyan, Maharashtra", price: 800, gender: "Male", initials: "KT", color: "#5BA4CF" },
-  { id: 4, name: "Dr. Vishakha Deshmukh", degree: "BDS", rating: 4.5, experience: "3+", specialty: "Dentist", languages: ["English", "Hindi", "Marathi"], location: "Parli, Maharashtra", price: 500, gender: "Female", initials: "VD", color: "#E88C8C" },
-  { id: 5, name: "Dr. Swamini Wath", degree: "MDS", rating: 4.5, experience: "2+", specialty: "Maxillofacial Surgeon / Oral Surgeon", languages: ["English", "Marathi", "Hindi"], location: "Amravati, Maharashtra", price: 1000, gender: "Female", initials: "SW", color: "#8B7EC8" },
-  { id: 6, name: "Dr. Rajesh Mehta", degree: "MBBS, MD Cardiology", rating: 4.8, experience: "18+", specialty: "Cardiologist", languages: ["Hindi", "English", "Gujarati"], location: "Mumbai, Maharashtra", price: 2500, gender: "Male", initials: "RM", color: "#E84393" },
-  { id: 7, name: "Dr. Ananya Krishnan", degree: "MBBS, MS ENT", rating: 4.6, experience: "10+", specialty: "ENT Specialist", languages: ["English", "Malayalam", "Hindi", "Kannada"], location: "Pune, Maharashtra", price: 700, gender: "Female", initials: "AK", color: "#43A896" },
-  { id: 8, name: "Dr. Sameer Joshi", degree: "MBBS, MD Dermatology", rating: 4.7, experience: "8+", specialty: "Dermatologist", languages: ["Marathi", "Hindi", "English"], location: "Nagpur, Maharashtra", price: 1200, gender: "Male", initials: "SJ", color: "#F5A623" },
-  { id: 9, name: "Dr. Priya Nair", degree: "MBBS, MD General Medicine", rating: 4.9, experience: "14+", specialty: "General Physician", languages: ["Malayalam", "English", "Hindi"], location: "Pune, Maharashtra", price: 600, gender: "Female", initials: "PN", color: "#0C8B7A" },
-  { id: 10, name: "Dr. Aditya Sharma", degree: "MBBS, MS Orthopaedics", rating: 4.6, experience: "9+", specialty: "Orthopedic Surgeon", languages: ["Hindi", "English"], location: "Mumbai, Maharashtra", price: 1500, gender: "Male", initials: "AS", color: "#223A5E" },
-  { id: 11, name: "Dr. Meena Kulkarni", degree: "MBBS, DGO", rating: 4.4, experience: "20+", specialty: "General Physician", languages: ["Marathi", "Hindi", "English"], location: "Nashik, Maharashtra", price: 400, gender: "Female", initials: "MK", color: "#C97B1A" },
+  {
+    id: 1,
+    name: "Dr. Shilpa N Desai",
+    degree: "Ph.D, Health Psychologist",
+    rating: 4.5,
+    experience: "25+",
+    specialty: "Psychology/Psychotherapist",
+    languages: ["English", "Hindi", "Gujarati", "Marathi"],
+    location: "Mumbai, Maharashtra",
+    price: 3000,
+    gender: "Female",
+    initials: "SD",
+    color: "#4A90D9",
+  },
+  {
+    id: 2,
+    name: "Dr. Bhaktee Thipase",
+    degree: "MS Ophthalmology",
+    rating: 4.5,
+    experience: "5+",
+    specialty: "Ophthalmologist",
+    languages: ["English", "Hindi", "Marathi", "Gujarati"],
+    location: "Mumbai, Maharashtra",
+    price: 500,
+    gender: "Female",
+    initials: "BT",
+    color: "#E8A87C",
+  },
+  {
+    id: 3,
+    name: "Dr. Kiran Tokekar",
+    degree: "MDS",
+    rating: 4.5,
+    experience: "12+",
+    specialty: "Dental Surgeon",
+    languages: ["Hindi", "English", "Marathi", "Gujarati"],
+    location: "Kalyan, Maharashtra",
+    price: 800,
+    gender: "Male",
+    initials: "KT",
+    color: "#5BA4CF",
+  },
+  {
+    id: 4,
+    name: "Dr. Vishakha Deshmukh",
+    degree: "BDS",
+    rating: 4.5,
+    experience: "3+",
+    specialty: "Dentist",
+    languages: ["English", "Hindi", "Marathi"],
+    location: "Parli, Maharashtra",
+    price: 500,
+    gender: "Female",
+    initials: "VD",
+    color: "#E88C8C",
+  },
+  {
+    id: 5,
+    name: "Dr. Swamini Wath",
+    degree: "MDS",
+    rating: 4.5,
+    experience: "2+",
+    specialty: "Maxillofacial Surgeon / Oral Surgeon",
+    languages: ["English", "Marathi", "Hindi"],
+    location: "Amravati, Maharashtra",
+    price: 1000,
+    gender: "Female",
+    initials: "SW",
+    color: "#8B7EC8",
+  },
+  {
+    id: 6,
+    name: "Dr. Rajesh Mehta",
+    degree: "MBBS, MD Cardiology",
+    rating: 4.8,
+    experience: "18+",
+    specialty: "Cardiologist",
+    languages: ["Hindi", "English", "Gujarati"],
+    location: "Mumbai, Maharashtra",
+    price: 2500,
+    gender: "Male",
+    initials: "RM",
+    color: "#E84393",
+  },
+  {
+    id: 7,
+    name: "Dr. Ananya Krishnan",
+    degree: "MBBS, MS ENT",
+    rating: 4.6,
+    experience: "10+",
+    specialty: "ENT Specialist",
+    languages: ["English", "Malayalam", "Hindi", "Kannada"],
+    location: "Pune, Maharashtra",
+    price: 700,
+    gender: "Female",
+    initials: "AK",
+    color: "#43A896",
+  },
+  {
+    id: 8,
+    name: "Dr. Sameer Joshi",
+    degree: "MBBS, MD Dermatology",
+    rating: 4.7,
+    experience: "8+",
+    specialty: "Dermatologist",
+    languages: ["Marathi", "Hindi", "English"],
+    location: "Nagpur, Maharashtra",
+    price: 1200,
+    gender: "Male",
+    initials: "SJ",
+    color: "#F5A623",
+  },
+  {
+    id: 9,
+    name: "Dr. Priya Nair",
+    degree: "MBBS, MD General Medicine",
+    rating: 4.9,
+    experience: "14+",
+    specialty: "General Physician",
+    languages: ["Malayalam", "English", "Hindi"],
+    location: "Pune, Maharashtra",
+    price: 600,
+    gender: "Female",
+    initials: "PN",
+    color: "#0C8B7A",
+  },
+  {
+    id: 10,
+    name: "Dr. Aditya Sharma",
+    degree: "MBBS, MS Orthopaedics",
+    rating: 4.6,
+    experience: "9+",
+    specialty: "Orthopedic Surgeon",
+    languages: ["Hindi", "English"],
+    location: "Mumbai, Maharashtra",
+    price: 1500,
+    gender: "Male",
+    initials: "AS",
+    color: "#223A5E",
+  },
+  {
+    id: 11,
+    name: "Dr. Meena Kulkarni",
+    degree: "MBBS, DGO",
+    rating: 4.4,
+    experience: "20+",
+    specialty: "General Physician",
+    languages: ["Marathi", "Hindi", "English"],
+    location: "Nashik, Maharashtra",
+    price: 400,
+    gender: "Female",
+    initials: "MK",
+    color: "#C97B1A",
+  },
 ];
 
 const DOCTORS_PER_PAGE = 10;
 
 const StarIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="#F5A623"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="#F5A623">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
 );
 const VerifiedIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#0C8B7A"/><path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+  <svg width="15" height="15" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" fill="#0C8B7A" />
+    <path
+      d="M9 12l2 2 4-4"
+      stroke="white"
+      strokeWidth="2.5"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
 );
 const LocationIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#6B7280"/><circle cx="12" cy="9" r="2.5" fill="white"/></svg>
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+      fill="#6B7280"
+    />
+    <circle cx="12" cy="9" r="2.5" fill="white" />
+  </svg>
 );
 const HeartIcon = ({ filled }) => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill={filled ? "#e53935" : "none"} stroke="#e53935" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill={filled ? "#e53935" : "none"}
+    stroke="#e53935"
+    strokeWidth="2"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
 );
 const SearchIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#9CA3AF"
+    strokeWidth="2"
+  >
+    <circle cx="11" cy="11" r="8" />
+    <path d="M21 21l-4.35-4.35" />
+  </svg>
 );
 const FilterIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+  >
+    <line x1="4" y1="6" x2="20" y2="6" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+    <line x1="10" y1="18" x2="14" y2="18" />
+  </svg>
 );
 const ChevronLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" strokeLinecap="round"/></svg>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+  >
+    <path d="M15 18l-6-6 6-6" strokeLinecap="round" />
+  </svg>
 );
 const ChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round"/></svg>
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+  >
+    <path d="M9 18l6-6-6-6" strokeLinecap="round" />
+  </svg>
 );
 
 export default function DoctorFinder() {
+  const navigate = useNavigate();
 
-const navigate = useNavigate();
+  const handleBook = (doc) => {
+    const token = localStorage.getItem("token");
 
-const handleBook = (doc) => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/login");
-  } else {
-    navigate("/book-appointment", { state: { doctor: doc } });
-  }
-};
+    if (!token) {
+      navigate("/login");
+    } else {
+      navigate("/book-appointment", { state: { doctor: doc } });
+    }
+  };
 
   const [searchSpecialty, setSearchSpecialty] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
@@ -89,14 +316,27 @@ const handleBook = (doc) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const toggleFavorite = (id) => setFavorites((p) => ({ ...p, [id]: !p[id] }));
-  const toggleSpeciality = (s) => setPendingSpecialities((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s]);
-  const toggleLanguage = (l) => setPendingLanguages((p) => p.includes(l) ? p.filter((x) => x !== l) : [...p, l]);
+  const toggleSpeciality = (s) =>
+    setPendingSpecialities((p) =>
+      p.includes(s) ? p.filter((x) => x !== s) : [...p, s],
+    );
+  const toggleLanguage = (l) =>
+    setPendingLanguages((p) =>
+      p.includes(l) ? p.filter((x) => x !== l) : [...p, l],
+    );
 
   const clearAll = () => {
-    setPendingSpecialities([]); setPendingGender("Any"); setPendingLanguages([]);
-    setAppliedSpecialities([]); setAppliedGender("Any"); setAppliedLanguages([]);
-    setAppliedSearchSpecialty(""); setAppliedSearchLocation("");
-    setSearchSpecialty(""); setSearchLocation(""); setCurrentPage(1);
+    setPendingSpecialities([]);
+    setPendingGender("Any");
+    setPendingLanguages([]);
+    setAppliedSpecialities([]);
+    setAppliedGender("Any");
+    setAppliedLanguages([]);
+    setAppliedSearchSpecialty("");
+    setAppliedSearchLocation("");
+    setSearchSpecialty("");
+    setSearchLocation("");
+    setCurrentPage(1);
   };
 
   const applyFilters = () => {
@@ -114,27 +354,66 @@ const handleBook = (doc) => {
     setCurrentPage(1);
   };
 
-  const filteredSpecialities = specialities.filter((s) => s.toLowerCase().includes(specialitySearch.toLowerCase()));
-  const filteredLanguages = languages.filter((l) => l.toLowerCase().includes(languageSearch.toLowerCase()));
+  const filteredSpecialities = specialities.filter((s) =>
+    s.toLowerCase().includes(specialitySearch.toLowerCase()),
+  );
+  const filteredLanguages = languages.filter((l) =>
+    l.toLowerCase().includes(languageSearch.toLowerCase()),
+  );
 
   const filteredDoctors = useMemo(() => {
     return allDoctors.filter((doc) => {
       if (appliedSearchSpecialty) {
         const q = appliedSearchSpecialty.toLowerCase();
-        if (!doc.specialty.toLowerCase().includes(q) && !doc.name.toLowerCase().includes(q) && !doc.degree.toLowerCase().includes(q)) return false;
+        if (
+          !doc.specialty.toLowerCase().includes(q) &&
+          !doc.name.toLowerCase().includes(q) &&
+          !doc.degree.toLowerCase().includes(q)
+        )
+          return false;
       }
-      if (appliedSearchLocation && !doc.location.toLowerCase().includes(appliedSearchLocation.toLowerCase())) return false;
-      if (appliedSpecialities.length > 0 && !appliedSpecialities.includes(doc.specialty)) return false;
+      if (
+        appliedSearchLocation &&
+        !doc.location
+          .toLowerCase()
+          .includes(appliedSearchLocation.toLowerCase())
+      )
+        return false;
+      if (
+        appliedSpecialities.length > 0 &&
+        !appliedSpecialities.includes(doc.specialty)
+      )
+        return false;
       if (appliedGender !== "Any" && doc.gender !== appliedGender) return false;
-      if (appliedLanguages.length > 0 && !appliedLanguages.some((l) => doc.languages.includes(l))) return false;
+      if (
+        appliedLanguages.length > 0 &&
+        !appliedLanguages.some((l) => doc.languages.includes(l))
+      )
+        return false;
       return true;
     });
-  }, [appliedSearchSpecialty, appliedSearchLocation, appliedSpecialities, appliedGender, appliedLanguages]);
+  }, [
+    appliedSearchSpecialty,
+    appliedSearchLocation,
+    appliedSpecialities,
+    appliedGender,
+    appliedLanguages,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredDoctors.length / DOCTORS_PER_PAGE));
-  const paginatedDoctors = filteredDoctors.slice((currentPage - 1) * DOCTORS_PER_PAGE, currentPage * DOCTORS_PER_PAGE);
-  const activeFilterCount = appliedSpecialities.length + (appliedGender !== "Any" ? 1 : 0) + appliedLanguages.length;
-  const hasAnyFilter = activeFilterCount > 0 || appliedSearchSpecialty || appliedSearchLocation;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredDoctors.length / DOCTORS_PER_PAGE),
+  );
+  const paginatedDoctors = filteredDoctors.slice(
+    (currentPage - 1) * DOCTORS_PER_PAGE,
+    currentPage * DOCTORS_PER_PAGE,
+  );
+  const activeFilterCount =
+    appliedSpecialities.length +
+    (appliedGender !== "Any" ? 1 : 0) +
+    appliedLanguages.length;
+  const hasAnyFilter =
+    activeFilterCount > 0 || appliedSearchSpecialty || appliedSearchLocation;
 
   const goToPage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -149,7 +428,12 @@ const handleBook = (doc) => {
     } else {
       pages.push(1);
       if (currentPage > 3) pages.push("…");
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+      for (
+        let i = Math.max(2, currentPage - 1);
+        i <= Math.min(totalPages - 1, currentPage + 1);
+        i++
+      )
+        pages.push(i);
       if (currentPage < totalPages - 2) pages.push("…");
       pages.push(totalPages);
     }
@@ -163,27 +447,62 @@ const handleBook = (doc) => {
           <div className="fd-hero-text">
             {/* <span className="fd-hero-badge">4,800+ Verified Doctors</span> */}
             <h1>Find the right doctor for you</h1>
-            <p>Book in minutes with top-rated specialists across Maharashtra. No referral needed.</p>
+            <p>
+              Book in minutes with top-rated specialists across Maharashtra. No
+              referral needed.
+            </p>
           </div>
           <div className="fd-search-bar">
             <div className="fd-search-field">
               <label>Condition or Specialty</label>
-              <input value={searchSpecialty} onChange={(e) => setSearchSpecialty(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} placeholder="e.g. Cardiologist, back pain…" />
+              <input
+                value={searchSpecialty}
+                onChange={(e) => setSearchSpecialty(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="e.g. Cardiologist, back pain…"
+              />
             </div>
             <div className="fd-search-divider" />
             <div className="fd-search-field">
               <label>Location</label>
-              <input value={searchLocation} onChange={(e) => setSearchLocation(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} placeholder="City or area…" />
+              <input
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="City or area…"
+              />
             </div>
-            <button className="fd-search-btn" onClick={handleSearch}>Search</button>
+            <button className="fd-search-btn" onClick={handleSearch}>
+              Search
+            </button>
           </div>
           {(appliedSearchSpecialty || appliedSearchLocation) && (
             <div className="fd-active-tags">
               {appliedSearchSpecialty && (
-                <span className="fd-tag fd-tag-blue">🔍 "{appliedSearchSpecialty}" <button onClick={() => { setSearchSpecialty(""); setAppliedSearchSpecialty(""); }}>×</button></span>
+                <span className="fd-tag fd-tag-blue">
+                  🔍 "{appliedSearchSpecialty}"{" "}
+                  <button
+                    onClick={() => {
+                      setSearchSpecialty("");
+                      setAppliedSearchSpecialty("");
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
               )}
               {appliedSearchLocation && (
-                <span className="fd-tag fd-tag-red">📍 "{appliedSearchLocation}" <button onClick={() => { setSearchLocation(""); setAppliedSearchLocation(""); }}>×</button></span>
+                <span className="fd-tag fd-tag-red">
+                  📍 "{appliedSearchLocation}"{" "}
+                  <button
+                    onClick={() => {
+                      setSearchLocation("");
+                      setAppliedSearchLocation("");
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
               )}
             </div>
           )}
@@ -193,22 +512,45 @@ const handleBook = (doc) => {
       <div className="fd-main">
         <aside className="fd-sidebar">
           <div className="fd-sidebar-head">
-            <span className="fd-sidebar-title"><FilterIcon /> Filters {activeFilterCount > 0 && <span className="fd-badge">{activeFilterCount}</span>}</span>
-            <button className="fd-clear-btn" onClick={clearAll}>Clear all</button>
+            <span className="fd-sidebar-title">
+              <FilterIcon /> Filters{" "}
+              {activeFilterCount > 0 && (
+                <span className="fd-badge">{activeFilterCount}</span>
+              )}
+            </span>
+            <button className="fd-clear-btn" onClick={clearAll}>
+              Clear all
+            </button>
           </div>
 
           <div className="fd-filter-group">
             <div className="fd-filter-label">Speciality</div>
-            <div className="fd-filter-search"><SearchIcon /><input value={specialitySearch} onChange={(e) => setSpecialitySearch(e.target.value)} placeholder="Search…" /></div>
+            <div className="fd-filter-search">
+              <SearchIcon />
+              <input
+                value={specialitySearch}
+                onChange={(e) => setSpecialitySearch(e.target.value)}
+                placeholder="Search…"
+              />
+            </div>
             <div className="fd-check-list">
               {filteredSpecialities.map((s) => (
-                <label key={s} className={`fd-check-item${pendingSpecialities.includes(s) ? " checked" : ""}`}>
-                  <input type="checkbox" checked={pendingSpecialities.includes(s)} onChange={() => toggleSpeciality(s)} />
+                <label
+                  key={s}
+                  className={`fd-check-item${pendingSpecialities.includes(s) ? " checked" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={pendingSpecialities.includes(s)}
+                    onChange={() => toggleSpeciality(s)}
+                  />
                   <span className="fd-checkmark" />
                   {s}
                 </label>
               ))}
-              {filteredSpecialities.length === 0 && <div className="fd-empty-filter">No results</div>}
+              {filteredSpecialities.length === 0 && (
+                <div className="fd-empty-filter">No results</div>
+              )}
             </div>
           </div>
 
@@ -216,8 +558,17 @@ const handleBook = (doc) => {
             <div className="fd-filter-label">Gender</div>
             <div className="fd-radio-group">
               {["Any", "Male", "Female"].map((g) => (
-                <label key={g} className={`fd-radio-item${pendingGender === g ? " selected" : ""}`}>
-                  <input type="radio" name="gender" value={g} checked={pendingGender === g} onChange={() => setPendingGender(g)} />
+                <label
+                  key={g}
+                  className={`fd-radio-item${pendingGender === g ? " selected" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name="gender"
+                    value={g}
+                    checked={pendingGender === g}
+                    onChange={() => setPendingGender(g)}
+                  />
                   {g}
                 </label>
               ))}
@@ -226,28 +577,59 @@ const handleBook = (doc) => {
 
           <div className="fd-filter-group">
             <div className="fd-filter-label">Language</div>
-            <div className="fd-filter-search"><SearchIcon /><input value={languageSearch} onChange={(e) => setLanguageSearch(e.target.value)} placeholder="Search…" /></div>
+            <div className="fd-filter-search">
+              <SearchIcon />
+              <input
+                value={languageSearch}
+                onChange={(e) => setLanguageSearch(e.target.value)}
+                placeholder="Search…"
+              />
+            </div>
             <div className="fd-check-list">
               {filteredLanguages.map((l) => (
-                <label key={l} className={`fd-check-item${pendingLanguages.includes(l) ? " checked" : ""}`}>
-                  <input type="checkbox" checked={pendingLanguages.includes(l)} onChange={() => toggleLanguage(l)} />
+                <label
+                  key={l}
+                  className={`fd-check-item${pendingLanguages.includes(l) ? " checked" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={pendingLanguages.includes(l)}
+                    onChange={() => toggleLanguage(l)}
+                  />
                   <span className="fd-checkmark" />
                   {l}
                 </label>
               ))}
-              {filteredLanguages.length === 0 && <div className="fd-empty-filter">No results</div>}
+              {filteredLanguages.length === 0 && (
+                <div className="fd-empty-filter">No results</div>
+              )}
             </div>
           </div>
 
-          <button className="fd-apply-btn" onClick={applyFilters}>Apply Filters</button>
+          <button className="fd-apply-btn" onClick={applyFilters}>
+            Apply Filters
+          </button>
         </aside>
 
         <div className="fd-listings">
           <div className="fd-listings-head">
             <div className="fd-results-label">
-              {hasAnyFilter ? <><strong>{filteredDoctors.length}</strong> result{filteredDoctors.length !== 1 ? "s" : ""} found</> : <><strong>1,407,546</strong> doctors available</>}
+              {hasAnyFilter ? (
+                <>
+                  <strong>{filteredDoctors.length}</strong> result
+                  {filteredDoctors.length !== 1 ? "s" : ""} found
+                </>
+              ) : (
+                <>
+                  <strong>1,407,546</strong> doctors available
+                </>
+              )}
             </div>
-            {hasAnyFilter && <button className="fd-clear-link" onClick={clearAll}>Clear all filters</button>}
+            {hasAnyFilter && (
+              <button className="fd-clear-link" onClick={clearAll}>
+                Clear all filters
+              </button>
+            )}
           </div>
 
           {paginatedDoctors.length === 0 ? (
@@ -255,16 +637,33 @@ const handleBook = (doc) => {
               <div className="fd-empty-emoji">🔍</div>
               <h3>No doctors found</h3>
               <p>Try adjusting your filters or search terms</p>
-              <button className="fd-reset-btn" onClick={clearAll}>Reset Filters</button>
+              <button className="fd-reset-btn" onClick={clearAll}>
+                Reset Filters
+              </button>
             </div>
           ) : (
             <div className="fd-card-list">
               {paginatedDoctors.map((doc, i) => (
-                <div className="fd-card" key={doc.id} style={{ animationDelay: `${i * 60}ms` }}>
-                  <div className="fd-avatar" style={{ background: `${doc.color}18`, color: doc.color, borderColor: `${doc.color}30` }}>
-                    {doc.initials}
+                <div
+                  className="fd-card"
+                  key={doc.id}
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  {/* Avatar Section */}
+                  <div className="fd-avatar-section">
+                    <div
+                      className="fd-avatar"
+                      style={{
+                        background: `${doc.color}18`,
+                        color: doc.color,
+                        borderColor: `${doc.color}30`,
+                      }}
+                    >
+                      {doc.initials}
+                    </div>
                   </div>
 
+                  {/* Info Section */}
                   <div className="fd-card-info">
                     <div className="fd-name-row">
                       <span className="fd-name">{doc.name}</span>
@@ -272,27 +671,51 @@ const handleBook = (doc) => {
                     </div>
                     <div className="fd-degree">{doc.degree}</div>
                     <div className="fd-meta">
-                      <span className="fd-rating"><StarIcon /> {doc.rating}</span>
+                      <span className="fd-rating">
+                        <StarIcon /> {doc.rating}
+                      </span>
                       <span className="fd-dot">·</span>
                       <span className="fd-exp">{doc.experience} yrs exp</span>
                     </div>
                   </div>
 
+                  {/* Center Details */}
                   <div className="fd-card-center">
                     <div className="fd-spec-tag">{doc.specialty}</div>
-                    <div className="fd-langs">{doc.languages.slice(0, 3).join(" · ")}{doc.languages.length > 3 ? ` +${doc.languages.length - 3}` : ""}</div>
-                    <div className="fd-loc"><LocationIcon /> {doc.location}</div>
+                    <div className="fd-langs">
+                      {doc.languages.slice(0, 3).join(" · ")}
+                      {doc.languages.length > 3
+                        ? ` +${doc.languages.length - 3}`
+                        : ""}
+                    </div>
+                    <div className="fd-loc">
+                      <LocationIcon /> {doc.location}
+                    </div>
                   </div>
 
-                  <div className="fd-card-actions">
+                  {/* Price Section */}
+                  <div className="fd-price-section">
                     <div className="fd-price-row">
-                      <span className="fd-price">₹{doc.price.toLocaleString()}</span>
-                      <button className="fd-heart" onClick={() => toggleFavorite(doc.id)}><HeartIcon filled={favorites[doc.id]} /></button>
+                      <span className="fd-price">
+                        ₹{doc.price.toLocaleString()}
+                      </span>
+                      <button
+                        className="fd-heart"
+                        onClick={() => toggleFavorite(doc.id)}
+                      >
+                        <HeartIcon filled={favorites[doc.id]} />
+                      </button>
                     </div>
-                    {/* <button className="fd-book-btn">Book Appointment</button> */}
-                    <button className="fd-book-btn" onClick={() => handleBook(doc)}>
-  Book Appointment
-</button>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="fd-card-actions">
+                    <button
+                      className="fd-book-btn"
+                      onClick={() => handleBook(doc)}
+                    >
+                      Book Appointment
+                    </button>
                     <button className="fd-profile-link">View Profile →</button>
                   </div>
                 </div>
@@ -302,13 +725,35 @@ const handleBook = (doc) => {
 
           {totalPages > 1 && (
             <div className="fd-pagination">
-              <button className="fd-page-btn fd-nav-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}><ChevronLeft /> Prev</button>
+              <button
+                className="fd-page-btn fd-nav-btn"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft /> Prev
+              </button>
               {pageNumbers().map((p, i) =>
-                p === "…" ? <span key={`ellipsis-${i}`} className="fd-ellipsis">…</span> : (
-                  <button key={p} className={`fd-page-btn${currentPage === p ? " active" : ""}`} onClick={() => goToPage(p)}>{p}</button>
-                )
+                p === "…" ? (
+                  <span key={`ellipsis-${i}`} className="fd-ellipsis">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`fd-page-btn${currentPage === p ? " active" : ""}`}
+                    onClick={() => goToPage(p)}
+                  >
+                    {p}
+                  </button>
+                ),
               )}
-              <button className="fd-page-btn fd-nav-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>Next <ChevronRight /></button>
+              <button
+                className="fd-page-btn fd-nav-btn"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next <ChevronRight />
+              </button>
             </div>
           )}
         </div>
