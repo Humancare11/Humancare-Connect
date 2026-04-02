@@ -1,8 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+// src/App.jsx
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import "./App.css";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Findadoctor from "./pages/Findadoctor";
@@ -17,15 +21,44 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import BookAppointment from "./pages/BookAppointment";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import QnAPage from "./pages/admin/QnAPage";
+import { QnAProvider } from "./pages/admin/QnAContext";
+import socket from "./socket";
+import DoctorRegister from "./pages/doctors/DoctorRegister";
+import DoctorLogin from "./pages/doctors/DoctorLogin";
+import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 
+<<<<<<< HEAD
 import DoctorEnrollments from "./components/DoctorEnrollments";
+=======
+function AppLayout() {
+  const location = useLocation();
 
-function App() {
+  const hideLayout =
+    location.pathname === "/admin" || location.pathname === "/qnapage";
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (storedUser?._id) {
+      if (!socket.connected) {
+        socket.connect();
+      }
+      socket.emit("user-online", {
+        userId: storedUser._id,
+        role: storedUser.role,
+      });
+    }
+  }, []);
+>>>>>>> 9ad5595bbef5040c6379426f6afc18548af8f3a8
+
   return (
-    <BrowserRouter>
-      <Header />
+    <QnAProvider>
+      {!hideLayout && <Header />}
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/find-a-doctor" element={<Findadoctor />} />
@@ -40,11 +73,48 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+<<<<<<< HEAD
 
         <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
+=======
+        <Route path="/doctor-registration" element={<DoctorRegister />} />
+<Route path="/doctor-login" element={<DoctorLogin />} />
+{/* <Route path="/doctor-dashboard" element={
+  <ProtectedRoute role="doctor">
+    <DoctorDashboard />
+  </ProtectedRoute>
+} /> */}
+<Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+
+        {/* Admin-only routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/qnapage"
+          element={
+            <ProtectedRoute role="admin">
+              <QnAPage />
+            </ProtectedRoute>
+          }
+        />
+>>>>>>> 9ad5595bbef5040c6379426f6afc18548af8f3a8
       </Routes>
 
-      <Footer />
+      {!hideLayout && <Footer />}
+    </QnAProvider>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
     </BrowserRouter>
   );
 }

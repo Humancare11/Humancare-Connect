@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import socket from "../socket";
 import "./Login.css";
 
 export default function Login() {
@@ -24,17 +25,27 @@ export default function Login() {
         form
       );
 
-      // ✅ Save token + user
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // ✅ IMPORTANT: trigger header update
-      window.dispatchEvent(new Event("storage"));
+      if (!socket.connected) {
+        socket.connect();
+      }
+
+      socket.emit("user-online", {
+        userId: res.data.user._id,
+        role: res.data.user.role,
+      });
+
+      window.dispatchEvent(new Event("authChange"));
 
       alert("Login Success ✅");
 
-      // ✅ Redirect to Home
-      navigate("/");
+      if (res.data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
 
     } catch (err) {
       alert(err.response?.data?.msg || "Login Failed ❌");
@@ -50,6 +61,7 @@ export default function Login() {
           type="email"
           name="email"
           placeholder="Email"
+          value={form.email}
           onChange={handleChange}
           required
         />
@@ -58,6 +70,7 @@ export default function Login() {
           type="password"
           name="password"
           placeholder="Password"
+          value={form.password}
           onChange={handleChange}
           required
         />
