@@ -1,10 +1,8 @@
+// src/pages/admin/QnAPage.jsx
 import { useState } from "react";
-import { useQnA } from "./QnAContext";
+import { useQnA } from "./QnAContext"; // ✅ same file — both pages now share state
 import "./QnAPage.css";
 
-// ─────────────────────────────────────────────
-//  Constants
-// ─────────────────────────────────────────────
 const CATEGORY_META = {
   General: { bg: "#EEF2FF", text: "#4338CA" },
   Heart:   { bg: "#FEF2F2", text: "#DC2626" },
@@ -20,35 +18,27 @@ const CATEGORY_META = {
 
 const FILTERS = ["All", "Pending", "Answered"];
 
-// ─────────────────────────────────────────────
-//  Helpers
-// ─────────────────────────────────────────────
 const formatDate = (d) =>
   new Date(d).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
 
-// ─────────────────────────────────────────────
-//  Icons
-// ─────────────────────────────────────────────
+/* ── icons ── */
 const IconCal = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="4" width="18" height="18" rx="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8"  y1="2" x2="8"  y2="6" />
-    <line x1="3"  y1="10" x2="21" y2="10" />
+    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
   </svg>
 );
 const IconUser = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
   </svg>
 );
 const IconSearch = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 const IconCheck = () => (
@@ -64,9 +54,7 @@ const IconEdit = () => (
 );
 const Spinner = () => <span className="qna-spinner" />;
 
-// ─────────────────────────────────────────────
-//  AnswerForm sub-component
-// ─────────────────────────────────────────────
+/* ── AnswerForm ── */
 function AnswerForm({ question, onSubmit, onCancel }) {
   const [answerText, setAnswerText] = useState(question.answer || "");
   const [doctorName, setDoctorName] = useState(question.doctor?.name || "");
@@ -75,8 +63,7 @@ function AnswerForm({ question, onSubmit, onCancel }) {
   const [err,        setErr]        = useState("");
 
   const handleAIDraft = async () => {
-    setLoading(true);
-    setErr("");
+    setLoading(true); setErr("");
     try {
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -85,23 +72,18 @@ function AnswerForm({ question, onSubmit, onCancel }) {
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
           system:
-            "You are a helpful medical assistant drafting answers for doctors to review and edit. " +
-            "Write a clear, empathetic, and medically accurate response in 3–5 sentences. " +
+            "You are a helpful medical assistant drafting answers for doctors to review. " +
+            "Write a clear, empathetic response in 3–5 sentences. " +
             "End with a recommendation to consult a doctor in person. " +
             "Do not provide a definitive diagnosis.",
-          messages: [
-            {
-              role: "user",
-              content: `Category: ${question.category}\nPatient question: ${question.question}`,
-            },
-          ],
+          messages: [{
+            role: "user",
+            content: `Category: ${question.category}\nPatient question: ${question.question}`,
+          }],
         }),
       });
       const data = await resp.json();
-      const text = (data.content || [])
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("");
+      const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
       if (text) setAnswerText(text);
       else setErr("Could not generate draft. Please type manually.");
     } catch {
@@ -117,51 +99,26 @@ function AnswerForm({ question, onSubmit, onCancel }) {
 
   return (
     <div className="qna-answer-form">
-      <div className="qna-answer-form-title">
-        <IconEdit /> Write Answer
-      </div>
-
+      <div className="qna-answer-form-title"><IconEdit /> Write Answer</div>
       <div className="qna-doctor-inputs">
         <div className="qna-input-group">
           <label>Doctor Name</label>
-          <input
-            type="text"
-            value={doctorName}
-            onChange={(e) => setDoctorName(e.target.value)}
-            placeholder="e.g. Dr. Priya Mehta"
-          />
+          <input type="text" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder="e.g. Dr. Priya Mehta" />
         </div>
         <div className="qna-input-group">
           <label>Specialization</label>
-          <input
-            type="text"
-            value={doctorSpec}
-            onChange={(e) => setDoctorSpec(e.target.value)}
-            placeholder="e.g. Cardiologist"
-          />
+          <input type="text" value={doctorSpec} onChange={(e) => setDoctorSpec(e.target.value)} placeholder="e.g. Cardiologist" />
         </div>
       </div>
-
       <textarea
-        className="qna-answer-textarea"
-        rows={5}
-        value={answerText}
+        className="qna-answer-textarea" rows={5} value={answerText}
         onChange={(e) => { setAnswerText(e.target.value); setErr(""); }}
         placeholder="Type the medical answer here, or click 'AI Draft' to generate a starting point…"
       />
-
-      {loading && (
-        <div className="qna-ai-loading">
-          <Spinner /> Generating AI-assisted draft…
-        </div>
-      )}
-
+      {loading && <div className="qna-ai-loading"><Spinner /> Generating AI-assisted draft…</div>}
       {err && <div className="qna-form-err">{err}</div>}
-
       <div className="qna-form-actions">
-        <button className="qna-submit-ans-btn" onClick={handleSubmit}>
-          <IconCheck /> Submit Answer
-        </button>
+        <button className="qna-submit-ans-btn" onClick={handleSubmit}><IconCheck /> Submit Answer</button>
         <button className="qna-ai-btn" onClick={handleAIDraft} disabled={loading}>
           {loading ? <><Spinner /> Generating…</> : "✦ AI Draft"}
         </button>
@@ -171,11 +128,8 @@ function AnswerForm({ question, onSubmit, onCancel }) {
   );
 }
 
-// ─────────────────────────────────────────────
-//  Main QnAPage
-// ─────────────────────────────────────────────
+/* ══ Main QnAPage ══ */
 export default function QnAPage() {
-  // ← reads the SAME questions array that AskDoctor writes to
   const { questions, submitAnswer } = useQnA();
 
   const [filter,      setFilter]      = useState("All");
@@ -200,7 +154,7 @@ export default function QnAPage() {
   });
 
   const handleSubmitAnswer = (id, answerText, doctorName, doctorSpec) => {
-    submitAnswer(id, answerText, doctorName, doctorSpec);
+    submitAnswer(id, answerText, doctorName, doctorSpec); // ✅ writes to localStorage → AskDoctor page reads it
     setAnsweringId(null);
     setSuccessId(id);
     setTimeout(() => setSuccessId(null), 4000);
@@ -208,7 +162,6 @@ export default function QnAPage() {
 
   return (
     <div className="qna-page">
-
       {/* header */}
       <div className="qna-page-header">
         <div className="qna-header-inner">
@@ -237,24 +190,13 @@ export default function QnAPage() {
       <div className="qna-controls">
         <div className="qna-search-wrap">
           <IconSearch />
-          <input
-            type="text"
-            placeholder="Search questions or categories…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <input type="text" placeholder="Search questions or categories…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="qna-filters">
           {FILTERS.map((f) => (
-            <button
-              key={f}
-              className={`qna-filter-pill${filter === f ? " active" : ""}`}
-              onClick={() => setFilter(f)}
-            >
+            <button key={f} className={`qna-filter-pill${filter === f ? " active" : ""}`} onClick={() => setFilter(f)}>
               {f}
-              {f === "Pending" && pendingCount > 0 && (
-                <span className="qna-filter-count">{pendingCount}</span>
-              )}
+              {f === "Pending" && pendingCount > 0 && <span className="qna-filter-count">{pendingCount}</span>}
             </button>
           ))}
         </div>
@@ -262,7 +204,6 @@ export default function QnAPage() {
 
       {/* list */}
       <div className="qna-list">
-
         {filtered.length === 0 && (
           <div className="qna-empty">
             <div className="qna-empty-icon">📭</div>
@@ -285,9 +226,7 @@ export default function QnAPage() {
               {/* top row */}
               <div className="qna-card-top">
                 <div className="qna-card-left">
-                  <span className="qna-cat-badge" style={{ background: col.bg, color: col.text }}>
-                    {q.category}
-                  </span>
+                  <span className="qna-cat-badge" style={{ background: col.bg, color: col.text }}>{q.category}</span>
                   <span className={`qna-status-badge ${q.answered ? "answered" : "pending"}`}>
                     {q.answered ? "✓ Answered" : "⏳ Pending"}
                   </span>
@@ -299,17 +238,10 @@ export default function QnAPage() {
               </div>
 
               {/* question text */}
-              <div
-                className="qna-q-text"
-                onClick={() => setExpandedId(isExpanded ? null : q.id)}
-              >
-                {isExpanded
-                  ? q.question
-                  : q.question.slice(0, 180) + (q.question.length > 180 ? "…" : "")}
+              <div className="qna-q-text" onClick={() => setExpandedId(isExpanded ? null : q.id)}>
+                {isExpanded ? q.question : q.question.slice(0, 180) + (q.question.length > 180 ? "…" : "")}
                 {q.question.length > 180 && (
-                  <span className="qna-toggle-text">
-                    {isExpanded ? " Show less" : " Read more"}
-                  </span>
+                  <span className="qna-toggle-text">{isExpanded ? " Show less" : " Read more"}</span>
                 )}
               </div>
 
@@ -318,10 +250,7 @@ export default function QnAPage() {
                 <div className="qna-existing-answer">
                   {q.doctor && (
                     <div className="qna-answered-by">
-                      <div
-                        className="qna-doc-avatar"
-                        style={{ background: col.bg, color: col.text }}
-                      >
+                      <div className="qna-doc-avatar" style={{ background: col.bg, color: col.text }}>
                         {q.doctor.name.split(" ").pop()[0]}
                       </div>
                       <div>
@@ -337,10 +266,10 @@ export default function QnAPage() {
                 </div>
               )}
 
-              {/* success flash */}
+              {/* ✅ success flash — confirms answer synced back to patient view */}
               {showSuccess && (
                 <div className="qna-success-flash">
-                  <IconCheck /> Answer submitted and synced to the patient view!
+                  <IconCheck /> Answer submitted! It is now visible on the patient page.
                 </div>
               )}
 

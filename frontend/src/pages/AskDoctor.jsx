@@ -1,10 +1,8 @@
+// src/pages/AskDoctor.jsx
 import { useState, useRef } from "react";
-import { useQnA } from "./admin/QnAContext";
+import { useQnA } from "./admin/QnAContext"; // ✅ correct path — admin folder
 import "./AskDoctor.css";
 
-// ─────────────────────────────────────────────
-//  Constants
-// ─────────────────────────────────────────────
 const CATEGORIES = [
   "General", "Heart", "Skin", "Neuro", "Ortho",
   "Dental", "Eyes", "Dizzy", "Mental", "Gut",
@@ -23,24 +21,18 @@ const CATEGORY_META = {
   Gut:     { bg: "#F0FDF4", text: "#15803D" },
 };
 
-const PER_PAGE = 4;
-const MAX_CHARS = 2000;
+const PER_PAGE   = 4;
+const MAX_CHARS  = 2000;
 
-// ─────────────────────────────────────────────
-//  Helpers
-// ─────────────────────────────────────────────
 const formatDate = (d) =>
   new Date(d).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
 
-// ─────────────────────────────────────────────
-//  Icons
-// ─────────────────────────────────────────────
+/* ── icons ── */
 const IconClock = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 6v6l4 2" strokeLinecap="round" />
+    <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" strokeLinecap="round" />
   </svg>
 );
 const IconCheckWhite = () => (
@@ -50,23 +42,20 @@ const IconCheckWhite = () => (
 );
 const IconDoc = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
   </svg>
 );
 const IconCal = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="4" width="18" height="18" rx="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
     <line x1="3" y1="10" x2="21" y2="10" />
   </svg>
 );
 const IconUpload = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
+    <polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
   </svg>
 );
 const IconChevLeft = () => (
@@ -80,48 +69,37 @@ const IconChevRight = () => (
   </svg>
 );
 
-// ─────────────────────────────────────────────
-//  Component
-// ─────────────────────────────────────────────
 export default function AskDoctor() {
-  // ← pulls from the shared QnAContext
   const { questions, addQuestion } = useQnA();
 
-  const [text, setText]           = useState("");
-  const [file, setFile]           = useState(null);
-  const [agreed, setAgreed]       = useState(false);
-  const [errors, setErrors]       = useState({});
-  const [category, setCategory]   = useState("General");
-  const [submitted, setSubmitted] = useState(false);
+  const [text,        setText]        = useState("");
+  const [file,        setFile]        = useState(null);
+  const [agreed,      setAgreed]      = useState(false);
+  const [errors,      setErrors]      = useState({});
+  const [category,    setCategory]    = useState("General");
+  const [submitted,   setSubmitted]   = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [expandedId, setExpandedId]   = useState(null);
+  const [expandedId,  setExpandedId]  = useState(null);
   const fileRef = useRef();
 
-  // ── validation ─────────────────────────────
+  /* validation */
   const validate = () => {
     const e = {};
-    if (!text.trim()) {
-      e.text = "Please enter your question.";
-    } else if (text.length > MAX_CHARS) {
-      e.text = `Maximum ${MAX_CHARS} characters allowed.`;
-    }
-    if (file && text.trim().split(/\s+/).filter(Boolean).length < 20) {
+    if (!text.trim())            e.text = "Please enter your question.";
+    else if (text.length > MAX_CHARS) e.text = `Maximum ${MAX_CHARS} characters allowed.`;
+    if (file && text.trim().split(/\s+/).filter(Boolean).length < 20)
       e.file = "Please describe your problem in at least 20 words before uploading a file.";
-    }
-    if (!agreed) {
-      e.agreed = "Please agree to the Terms and Conditions.";
-    }
+    if (!agreed) e.agreed = "Please agree to the Terms and Conditions.";
     return e;
   };
 
-  // ── submit ─────────────────────────────────
+  /* submit */
   const handleSubmit = (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    // ✅ adds question to the shared context → QnAPage sees it immediately
-    addQuestion(text, category);
+    addQuestion(text, category); // ✅ writes to localStorage → QnAPage reads it
 
     setText(""); setFile(null); setAgreed(false);
     setErrors({}); setCategory("General"); setCurrentPage(1);
@@ -129,28 +107,22 @@ export default function AskDoctor() {
     setTimeout(() => setSubmitted(false), 6000);
   };
 
-  // ── pagination ─────────────────────────────
+  /* pagination */
   const totalPages = Math.max(1, Math.ceil(questions.length / PER_PAGE));
   const visible    = questions.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-
-  const goPage = (p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); };
-
+  const goPage     = (p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); };
   const pageNumbers = () => {
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const arr = [1];
     if (currentPage > 3) arr.push("…");
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
-      arr.push(i);
-    }
+    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) arr.push(i);
     if (currentPage < totalPages - 2) arr.push("…");
     arr.push(totalPages);
     return arr;
   };
 
-  // ── render ─────────────────────────────────
   return (
     <div className="ad-page">
-
       {/* hero */}
       <div className="ad-hero">
         <div className="ad-hero-inner">
@@ -160,8 +132,7 @@ export default function AskDoctor() {
       </div>
 
       <div className="ad-layout">
-
-        {/* ══ LEFT — form ══ */}
+        {/* ══ LEFT ══ */}
         <div className="ad-left">
           <div className="ad-form-card">
             <div className="ad-form-header">
@@ -169,7 +140,7 @@ export default function AskDoctor() {
               <p>Describe your problem clearly for the best medical advice</p>
             </div>
 
-            {/* ✅ success notification */}
+            {/* success banner */}
             {submitted && (
               <div className="ad-success-banner">
                 <div className="ad-success-icon"><IconCheckWhite /></div>
@@ -184,20 +155,16 @@ export default function AskDoctor() {
             )}
 
             <form onSubmit={handleSubmit} noValidate>
-
               {/* category */}
               <div className="ad-field">
                 <label>Category</label>
                 <div className="ad-cat-grid">
                   {CATEGORIES.map((c) => (
                     <button
-                      type="button"
-                      key={c}
+                      type="button" key={c}
                       className={`ad-cat-chip${category === c ? " active" : ""}`}
                       onClick={() => setCategory(c)}
-                    >
-                      {c}
-                    </button>
+                    >{c}</button>
                   ))}
                 </div>
               </div>
@@ -226,9 +193,7 @@ export default function AskDoctor() {
 
               {/* file upload */}
               <div className="ad-field">
-                <label>
-                  Upload Medical Reports <span className="ad-opt">(optional)</span>
-                </label>
+                <label>Upload Medical Reports <span className="ad-opt">(optional)</span></label>
                 <div
                   className={`ad-upload-box${errors.file ? " err" : ""}${file ? " has-file" : ""}`}
                   onClick={() => fileRef.current.click()}
@@ -240,9 +205,7 @@ export default function AskDoctor() {
                   }}
                 >
                   <input
-                    ref={fileRef}
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.pdf"
+                    ref={fileRef} type="file" accept=".jpg,.jpeg,.png,.pdf"
                     style={{ display: "none" }}
                     onChange={(e) => {
                       if (e.target.files[0]) {
@@ -258,13 +221,8 @@ export default function AskDoctor() {
                         <polyline points="14 2 14 8 20 8" />
                       </svg>
                       <span>{file.name}</span>
-                      <button
-                        type="button"
-                        className="ad-file-remove"
-                        onClick={(ev) => { ev.stopPropagation(); setFile(null); }}
-                      >
-                        ×
-                      </button>
+                      <button type="button" className="ad-file-remove"
+                        onClick={(ev) => { ev.stopPropagation(); setFile(null); }}>×</button>
                     </div>
                   ) : (
                     <>
@@ -280,39 +238,27 @@ export default function AskDoctor() {
               {/* checkbox */}
               <div className={`ad-checkbox-wrap${errors.agreed ? " err" : ""}`}>
                 <label className="ad-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => {
-                      setAgreed(e.target.checked);
-                      setErrors((p) => ({ ...p, agreed: undefined }));
-                    }}
-                  />
+                  <input type="checkbox" checked={agreed}
+                    onChange={(e) => { setAgreed(e.target.checked); setErrors((p) => ({ ...p, agreed: undefined })); }} />
                   <span className="ad-checkmark" />
                   I agree to the <a href="#">Terms and Conditions</a>
                 </label>
                 {errors.agreed && <span className="ad-err-msg">{errors.agreed}</span>}
               </div>
 
-              <button type="submit" className="ad-submit-btn">
-                Ask Doctor Now →
-              </button>
+              <button type="submit" className="ad-submit-btn">Ask Doctor Now →</button>
             </form>
           </div>
 
           {/* trust bar */}
           <div className="ad-trust">
-            {[["🔒", "100% Confidential"], ["✅", "Verified Doctors"], ["⚡", "Fast Response"]].map(
-              ([icon, label]) => (
-                <div className="ad-trust-item" key={label}>
-                  <span>{icon}</span>{label}
-                </div>
-              )
-            )}
+            {[["🔒","100% Confidential"],["✅","Verified Doctors"],["⚡","Fast Response"]].map(([icon, label]) => (
+              <div className="ad-trust-item" key={label}><span>{icon}</span>{label}</div>
+            ))}
           </div>
         </div>
 
-        {/* ══ RIGHT — question list ══ */}
+        {/* ══ RIGHT — questions list ══ */}
         <div className="ad-right">
           <div className="ad-right-header">
             <h2>Recent Questions</h2>
@@ -327,32 +273,21 @@ export default function AskDoctor() {
             {visible.map((q, i) => {
               const col      = CATEGORY_META[q.category] || CATEGORY_META.General;
               const expanded = expandedId === q.id;
-
               return (
-                <div
-                  className="ad-qcard"
-                  key={q.id}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  {/* top row */}
+                <div className="ad-qcard" key={q.id} style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="ad-qcard-top">
-                    <span className="ad-cat-badge" style={{ background: col.bg, color: col.text }}>
-                      {q.category}
-                    </span>
+                    <span className="ad-cat-badge" style={{ background: col.bg, color: col.text }}>{q.category}</span>
                     <span className={`ad-status-badge ${q.answered ? "answered" : "pending"}`}>
                       {q.answered ? "Answered" : "Pending"}
                     </span>
                     <span className="ad-qdate"><IconCal /> {formatDate(q.date)}</span>
                   </div>
 
-                  {/* question text */}
                   <p className="ad-qtext">
-                    {expanded
-                      ? q.question
-                      : q.question.slice(0, 130) + (q.question.length > 130 ? "…" : "")}
+                    {expanded ? q.question : q.question.slice(0, 130) + (q.question.length > 130 ? "…" : "")}
                   </p>
 
-                  {/* doctor info */}
+                  {/* doctor info — shown once answered */}
                   {q.answered && q.doctor && (
                     <div className="ad-doctor-row">
                       <div className="ad-doctor-avatar" style={{ background: col.bg, color: col.text }}>
@@ -365,29 +300,20 @@ export default function AskDoctor() {
                     </div>
                   )}
 
-                  {/* answer or pending notice */}
+                  {/* answer or pending */}
                   {q.answered && q.answer ? (
                     <div className="ad-answer">
                       <div className="ad-answer-label">Doctor's Answer</div>
-                      <p>
-                        {expanded
-                          ? q.answer
-                          : q.answer.slice(0, 100) + (q.answer.length > 100 ? "…" : "")}
-                      </p>
+                      <p>{expanded ? q.answer : q.answer.slice(0, 100) + (q.answer.length > 100 ? "…" : "")}</p>
                     </div>
                   ) : (
                     <div className="ad-pending">
-                      <IconClock />
-                      Our experts will respond within 2 hours
+                      <IconClock /> Our experts will respond within 2 hours
                     </div>
                   )}
 
-                  {/* actions */}
                   <div className="ad-qcard-actions">
-                    <button
-                      className="ad-read-btn"
-                      onClick={() => setExpandedId(expanded ? null : q.id)}
-                    >
+                    <button className="ad-read-btn" onClick={() => setExpandedId(expanded ? null : q.id)}>
                       {expanded ? "Show Less" : "Read More"}
                     </button>
                     <button className="ad-consult-btn">Consult Now</button>
@@ -400,33 +326,15 @@ export default function AskDoctor() {
           {/* pagination */}
           {totalPages > 1 && (
             <div className="ad-pagination">
-              <button
-                className="ad-pg-btn ad-pg-nav"
-                onClick={() => goPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
+              <button className="ad-pg-btn ad-pg-nav" onClick={() => goPage(currentPage - 1)} disabled={currentPage === 1}>
                 <IconChevLeft /> Prev
               </button>
-
               {pageNumbers().map((p, i) =>
-                p === "…" ? (
-                  <span key={`e${i}`} className="ad-pg-ellipsis">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    className={`ad-pg-btn${currentPage === p ? " active" : ""}`}
-                    onClick={() => goPage(p)}
-                  >
-                    {p}
-                  </button>
-                )
+                p === "…"
+                  ? <span key={`e${i}`} className="ad-pg-ellipsis">…</span>
+                  : <button key={p} className={`ad-pg-btn${currentPage === p ? " active" : ""}`} onClick={() => goPage(p)}>{p}</button>
               )}
-
-              <button
-                className="ad-pg-btn ad-pg-nav"
-                onClick={() => goPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
+              <button className="ad-pg-btn ad-pg-nav" onClick={() => goPage(currentPage + 1)} disabled={currentPage === totalPages}>
                 Next <IconChevRight />
               </button>
             </div>
