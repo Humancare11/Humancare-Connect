@@ -29,9 +29,8 @@ import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 
-<<<<<<< HEAD
 import DoctorEnrollments from "./components/DoctorEnrollments";
-=======
+
 function AppLayout() {
   const location = useLocation();
 
@@ -51,7 +50,6 @@ function AppLayout() {
       });
     }
   }, []);
->>>>>>> 9ad5595bbef5040c6379426f6afc18548af8f3a8
 
   return (
     <QnAProvider>
@@ -73,18 +71,16 @@ function AppLayout() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
-<<<<<<< HEAD
 
         <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
-=======
         <Route path="/doctor-registration" element={<DoctorRegister />} />
-<Route path="/doctor-login" element={<DoctorLogin />} />
-{/* <Route path="/doctor-dashboard" element={
+        <Route path="/doctor-login" element={<DoctorLogin />} />
+        {/* <Route path="/doctor-dashboard" element={
   <ProtectedRoute role="doctor">
     <DoctorDashboard />
   </ProtectedRoute>
 } /> */}
-<Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
         {/* Admin-only routes */}
         <Route
@@ -103,7 +99,6 @@ function AppLayout() {
             </ProtectedRoute>
           }
         />
->>>>>>> 9ad5595bbef5040c6379426f6afc18548af8f3a8
       </Routes>
 
       {!hideLayout && <Footer />}
