@@ -29,7 +29,7 @@ import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 
-import DoctorEnrollments from "./components/DoctorEnrollments";
+import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 
 function AppLayout() {
   const location = useLocation();
@@ -80,7 +80,7 @@ function AppLayout() {
     <DoctorDashboard />
   </ProtectedRoute>
 } /> */}
-        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
         {/* Admin-only routes */}
         <Route
