@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import "./Findadoctor.css";
 import { useNavigate } from "react-router-dom";
 
@@ -289,7 +289,14 @@ const ChevronRight = () => (
 
 export default function DoctorFinder() {
   const navigate = useNavigate();
+const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
+useEffect(() => {
+  const enrolledDoctors =
+    JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
+
+  setDynamicDoctors([...enrolledDoctors, ...allDoctors]);
+}, []);
   const handleBook = (doc) => {
     const token = localStorage.getItem("token");
 
@@ -362,8 +369,7 @@ export default function DoctorFinder() {
   );
 
   const filteredDoctors = useMemo(() => {
-    return allDoctors.filter((doc) => {
-      if (appliedSearchSpecialty) {
+return dynamicDoctors.filter((doc) => {      if (appliedSearchSpecialty) {
         const q = appliedSearchSpecialty.toLowerCase();
         if (
           !doc.specialty.toLowerCase().includes(q) &&
@@ -393,11 +399,12 @@ export default function DoctorFinder() {
       return true;
     });
   }, [
-    appliedSearchSpecialty,
-    appliedSearchLocation,
-    appliedSpecialities,
-    appliedGender,
-    appliedLanguages,
+    dynamicDoctors,
+  appliedSearchSpecialty,
+  appliedSearchLocation,
+  appliedSpecialities,
+  appliedGender,
+  appliedLanguages,
   ]);
 
   const totalPages = Math.max(
@@ -667,8 +674,7 @@ export default function DoctorFinder() {
                   <div className="fd-card-info">
                     <div className="fd-name-row">
                       <span className="fd-name">{doc.name}</span>
-                      <VerifiedIcon />
-                    </div>
+{doc.source !== "enrollment" && <VerifiedIcon />}                    </div>
                     <div className="fd-degree">{doc.degree}</div>
                     <div className="fd-meta">
                       <span className="fd-rating">
