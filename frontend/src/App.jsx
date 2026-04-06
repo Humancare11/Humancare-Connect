@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import QnAPage from "./pages/admin/QnAPage";
 import { QnAProvider } from "./pages/admin/QnAContext";
 import socket from "./socket";
+
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
@@ -34,7 +35,9 @@ function AppLayout() {
   const location = useLocation();
 
   const hideLayout =
-    location.pathname === "/admin" || location.pathname === "/qnapage";
+    location.pathname === "/admin" ||
+    location.pathname === "/qnapage" ||
+    location.pathname.startsWith("/doctor-dashboard");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -43,6 +46,7 @@ function AppLayout() {
       if (!socket.connected) {
         socket.connect();
       }
+
       socket.emit("user-online", {
         userId: storedUser._id,
         role: storedUser.role,
@@ -55,6 +59,7 @@ function AppLayout() {
       {!hideLayout && <Header />}
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/find-a-doctor" element={<Findadoctor />} />
@@ -70,11 +75,13 @@ function AppLayout() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
 
+        {/* Doctor routes */}
         <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
         <Route path="/doctor-register" element={<DoctorRegister />} />
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
+        {/* Admin routes */}
         <Route
           path="/admin"
           element={
