@@ -3,7 +3,71 @@ import "./home.css";
 import Sa from "../components/Sa";
 import Aa from "../components/Aa";
 
+// Swiper imports
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination, Autoplay } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+
 export default function HomePage() {
+  // Testimonials data
+  const testimonials = [
+    {
+      id: 1,
+      stars: "★★★★★",
+      quote:
+        "Saw a doctor within 4 minutes of signing up. Had my prescription at the pharmacy an hour later. This completely changed how I think about healthcare.",
+      initials: "AM",
+      name: "Alex M.",
+      location: "Austin, TX",
+    },
+    {
+      id: 2,
+      stars: "★★★★★",
+      quote:
+        "As someone without insurance, the flat $49 fee was a revelation. Dr. Nair took 45 full minutes with me. I felt truly heard for the first time in years.",
+      initials: "JS",
+      name: "Jordan S.",
+      location: "Chicago, IL",
+    },
+    {
+      id: 3,
+      stars: "★★★★★",
+      quote:
+        "My daughter had a fever at 2am. We got a same-night video call with a pediatrician who was calm, thorough, and reassuring. Absolute lifesaver.",
+      initials: "RP",
+      name: "Rachel P.",
+      location: "Seattle, WA",
+    },
+    {
+      id: 4,
+      stars: "★★★★★",
+      quote:
+        "Managing my chronic condition used to mean multiple in-office visits a month. Now I check in via video and my health has genuinely improved — costs way down too.",
+      initials: "DT",
+      name: "David T.",
+      location: "Miami, FL",
+    },
+    {
+      id: 5,
+      stars: "★★★★★",
+      quote:
+        "My therapist on Humancare remembers every detail, follows up proactively, and has been a genuine partner in my recovery. Exceptional mental health care.",
+      initials: "LK",
+      name: "Laura K.",
+      location: "Denver, CO",
+    },
+    {
+      id: 6,
+      stars: "★★★★★",
+      quote:
+        "My therapist on Humancare remembers every detail, follows up proactively, and has been a genuine partner in my recovery. Exceptional mental health care.",
+      initials: "LK",
+      name: "Laura K.",
+      location: "Denver, CO",
+    },
+  ];
+
   useEffect(() => {
     // Scroll reveal
     const ro = new IntersectionObserver(
@@ -12,7 +76,7 @@ export default function HomePage() {
           if (e.isIntersecting) e.target.classList.add("in");
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     document.querySelectorAll(".reveal").forEach((el) => ro.observe(el));
 
@@ -56,25 +120,53 @@ export default function HomePage() {
 
           <div className="trust">
             <span className="trust-chip">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               HIPAA Compliant
             </span>
             <span className="trust-chip">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               GDPR Ready
             </span>
             <span className="trust-chip">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               500+ Verified Doctors
             </span>
             <span className="trust-chip">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
@@ -87,7 +179,8 @@ export default function HomePage() {
           {/* Floating top tag */}
           <div className="float-tag ft-top">
             <span style={{ fontSize: "16px" }}>⚡</span>
-            Next slot: <strong style={{ color: "var(--teal)" }}>Available Now</strong>
+            Next slot:{" "}
+            <strong style={{ color: "var(--teal)" }}>Available Now</strong>
           </div>
 
           {/* Doctor profile card */}
@@ -96,7 +189,9 @@ export default function HomePage() {
               <div className="doc-avi">👩‍⚕️</div>
               <div className="doc-name-wrap">
                 <div className="dname">Dr. Sarah Mitchell</div>
-                <div className="dspec">Internal Medicine · 12 yrs experience</div>
+                <div className="dspec">
+                  Internal Medicine · 12 yrs experience
+                </div>
               </div>
             </div>
             <div className="doc-chips">
@@ -112,7 +207,14 @@ export default function HomePage() {
           {/* Upcoming appointment card */}
           <div className="h-card appt-card">
             <div className="appt-icon-wrap">
-              <svg width="20" height="20" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
@@ -131,7 +233,10 @@ export default function HomePage() {
           <div className="h-card rx-card">
             <div className="rx-head">Active Prescriptions</div>
             <div className="rx-row">
-              <div className="rx-dot" style={{ background: "var(--primary)" }}></div>
+              <div
+                className="rx-dot"
+                style={{ background: "var(--primary)" }}
+              ></div>
               <span className="rx-label">Lisinopril</span>
               <span className="rx-dose">10mg · daily</span>
               <div className="rx-bar">
@@ -139,26 +244,51 @@ export default function HomePage() {
               </div>
             </div>
             <div className="rx-row">
-              <div className="rx-dot" style={{ background: "var(--teal)" }}></div>
+              <div
+                className="rx-dot"
+                style={{ background: "var(--teal)" }}
+              ></div>
               <span className="rx-label">Metformin</span>
               <span className="rx-dose">500mg · 2×</span>
               <div className="rx-bar">
-                <div className="rx-fill" style={{ width: "45%", background: "linear-gradient(90deg,var(--teal),#0a6b5e)" }}></div>
+                <div
+                  className="rx-fill"
+                  style={{
+                    width: "45%",
+                    background: "linear-gradient(90deg,var(--teal),#0a6b5e)",
+                  }}
+                ></div>
               </div>
             </div>
             <div className="rx-row" style={{ marginBottom: "0" }}>
-              <div className="rx-dot" style={{ background: "var(--gold)" }}></div>
+              <div
+                className="rx-dot"
+                style={{ background: "var(--gold)" }}
+              ></div>
               <span className="rx-label">Atorvastatin</span>
               <span className="rx-dose">20mg · nightly</span>
               <div className="rx-bar">
-                <div className="rx-fill" style={{ width: "88%", background: "linear-gradient(90deg,var(--gold),#a06010)" }}></div>
+                <div
+                  className="rx-fill"
+                  style={{
+                    width: "88%",
+                    background: "linear-gradient(90deg,var(--gold),#a06010)",
+                  }}
+                ></div>
               </div>
             </div>
           </div>
 
           {/* Floating bottom tag */}
           <div className="float-tag ft-bot">
-            <svg width="13" height="13" fill="none" stroke="var(--teal)" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg
+              width="13"
+              height="13"
+              fill="none"
+              stroke="var(--teal)"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             HIPAA Certified Platform
@@ -167,7 +297,6 @@ export default function HomePage() {
       </section>
 
       <Sa />
-
 
       {/* ══════════════════════════════════════════════
           HOW IT WORKS
@@ -222,9 +351,8 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           SPECIALTIES
       ══════════════════════════════════════════════ */}
- 
 
-<Aa />
+      <Aa />
       {/* ══════════════════════════════════════════════
           WHY HUMANCARE
       ══════════════════════════════════════════════ */}
@@ -250,20 +378,33 @@ export default function HomePage() {
                 <strong>99.7%</strong>
               </div>
               <div className="sc-prog">
-                <div className="sc-fill" style={{ width: "99.7%", background: "linear-gradient(90deg,var(--teal),var(--gold))" }}></div>
+                <div
+                  className="sc-fill"
+                  style={{
+                    width: "99.7%",
+                    background:
+                      "linear-gradient(90deg,var(--teal),var(--gold))",
+                  }}
+                ></div>
               </div>
             </div>
             <div className="stat-float sf1">
               <div className="sf-label">Patients served</div>
-              <div className="sf-val" style={{ color: "var(--primary)" }}>2.4M+</div>
+              <div className="sf-val" style={{ color: "var(--primary)" }}>
+                2.4M+
+              </div>
             </div>
             <div className="stat-float sf2">
               <div className="sf-label">Avg. response</div>
-              <div className="sf-val" style={{ color: "var(--teal)" }}>&lt;4 min</div>
+              <div className="sf-val" style={{ color: "var(--teal)" }}>
+                &lt;4 min
+              </div>
             </div>
             <div className="stat-float sf3">
               <div className="sf-label">Rating</div>
-              <div className="sf-val" style={{ color: "var(--gold)" }}>4.9 ★</div>
+              <div className="sf-val" style={{ color: "var(--gold)" }}>
+                4.9 ★
+              </div>
             </div>
           </div>
 
@@ -278,30 +419,39 @@ export default function HomePage() {
               <div className="why-item reveal">
                 <div className="why-icon">🔒</div>
                 <div>
-                  <div className="why-item-title">HIPAA &amp; SOC 2 Certified</div>
+                  <div className="why-item-title">
+                    HIPAA &amp; SOC 2 Certified
+                  </div>
                   <div className="why-item-desc">
                     End-to-end encryption on every visit, message, and record.
-                    Your health data never leaves our secure, audited infrastructure.
+                    Your health data never leaves our secure, audited
+                    infrastructure.
                   </div>
                 </div>
               </div>
               <div className="why-item reveal">
                 <div className="why-icon">✅</div>
                 <div>
-                  <div className="why-item-title">Board-Certified Physicians Only</div>
+                  <div className="why-item-title">
+                    Board-Certified Physicians Only
+                  </div>
                   <div className="why-item-desc">
-                    Every doctor clears a rigorous 9-step credentialing process —
-                    state licensure, malpractice history, peer reviews, and ongoing audits.
+                    Every doctor clears a rigorous 9-step credentialing process
+                    — state licensure, malpractice history, peer reviews, and
+                    ongoing audits.
                   </div>
                 </div>
               </div>
               <div className="why-item reveal">
                 <div className="why-icon">💳</div>
                 <div>
-                  <div className="why-item-title">Transparent, Flat-Fee Pricing</div>
+                  <div className="why-item-title">
+                    Transparent, Flat-Fee Pricing
+                  </div>
                   <div className="why-item-desc">
-                    No surprise bills. See the exact cost before booking. Most major
-                    insurance plans accepted, or a flat $49 uninsured rate.
+                    No surprise bills. See the exact cost before booking. Most
+                    major insurance plans accepted, or a flat $49 uninsured
+                    rate.
                   </div>
                 </div>
               </div>
@@ -310,8 +460,9 @@ export default function HomePage() {
                 <div>
                   <div className="why-item-title">24 / 7 Human Support</div>
                   <div className="why-item-desc">
-                    Real people — by chat, phone, or video — available around the
-                    clock for urgent questions, escalations, and care coordination.
+                    Real people — by chat, phone, or video — available around
+                    the clock for urgent questions, escalations, and care
+                    coordination.
                   </div>
                 </div>
               </div>
@@ -323,12 +474,10 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           DOCTORS
       ══════════════════════════════════════════════ */}
-<section className="pcp-section-wrapper">
+      <section className="pcp-section-wrapper">
         <div className="pcp-container">
-
           {/* LEFT */}
           <div className="pcp-left">
-
             <span className="pcp-eyebrow">— NO PCP? NO PROBLEM.</span>
 
             <h2 className="pcp-heading">
@@ -340,9 +489,9 @@ export default function HomePage() {
             </h2>
 
             <p className="pcp-desc">
-              Millions of Americans lack access to a regular physician.
-              MediLink bridges that gap — giving you instant access to
-              licensed providers who can serve as your primary care team.
+              Millions of Americans lack access to a regular physician. MediLink
+              bridges that gap — giving you instant access to licensed providers
+              who can serve as your primary care team.
             </p>
 
             <div className="pcp-features">
@@ -351,8 +500,8 @@ export default function HomePage() {
                 <div>
                   <h4>Acts as Your PCP</h4>
                   <p>
-                    Our providers manage ongoing health, maintain your
-                    records, and coordinate specialist referrals.
+                    Our providers manage ongoing health, maintain your records,
+                    and coordinate specialist referrals.
                   </p>
                 </div>
               </div>
@@ -387,19 +536,31 @@ export default function HomePage() {
 
           {/* RIGHT */}
           <div className="pcp-right">
-            <h3 className="pcp-right-title">
-              Your first visit, step by step
-            </h3>
+            <h3 className="pcp-right-title">Your first visit, step by step</h3>
 
             <div className="pcp-steps">
-
               {[1, 2, 3, 4, 5].map((step, i) => {
                 const data = [
-                  ["Create your free account", "Under 2 minutes. No credit card required."],
-                  ["Complete a health intake", "Share your medical history and current medications."],
-                  ["Match with a provider", "We surface the best-fit doctor for your needs and state."],
-                  ["Start your video visit", "Meet face-to-face from anywhere, on any device."],
-                  ["Receive care instantly", "Prescription sent to your pharmacy within minutes."]
+                  [
+                    "Create your free account",
+                    "Under 2 minutes. No credit card required.",
+                  ],
+                  [
+                    "Complete a health intake",
+                    "Share your medical history and current medications.",
+                  ],
+                  [
+                    "Match with a provider",
+                    "We surface the best-fit doctor for your needs and state.",
+                  ],
+                  [
+                    "Start your video visit",
+                    "Meet face-to-face from anywhere, on any device.",
+                  ],
+                  [
+                    "Receive care instantly",
+                    "Prescription sent to your pharmacy within minutes.",
+                  ],
                 ];
 
                 return (
@@ -412,10 +573,8 @@ export default function HomePage() {
                   </div>
                 );
               })}
-
             </div>
           </div>
-
         </div>
       </section>
 
@@ -429,83 +588,46 @@ export default function HomePage() {
           <br />
           real outcomes.
         </h2>
-        <div className="testi-track">
-          <div className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-q">
-              "Saw a doctor within 4 minutes of signing up. Had my prescription
-              at the pharmacy an hour later. This completely changed how I think
-              about healthcare."
-            </p>
-            <div className="testi-au">
-              <div className="testi-avi">AM</div>
-              <div>
-                <div className="testi-aname">Alex M.</div>
-                <div className="testi-aloc">Austin, TX</div>
+        <Swiper
+          modules={[Pagination, Autoplay]}
+          spaceBetween={20}
+          loop={true}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: false,
+          }}
+          pagination={{
+            clickable: true,
+          }}
+          breakpoints={{
+            0: {
+              slidesPerView: 1,
+            },
+            768: {
+              slidesPerView: 2,
+            },
+            1024: {
+              slidesPerView: 5,
+            },
+          }}
+          className="testi-track"
+        >
+          {testimonials.map((testimonial) => (
+            <SwiperSlide key={testimonial.id}>
+              <div className="testi-card">
+                <div className="testi-stars">{testimonial.stars}</div>
+                <p className="testi-q">"{testimonial.quote}"</p>
+                <div className="testi-au">
+                  <div className="testi-avi">{testimonial.initials}</div>
+                  <div>
+                    <div className="testi-aname">{testimonial.name}</div>
+                    <div className="testi-aloc">{testimonial.location}</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-q">
-              "As someone without insurance, the flat $49 fee was a revelation.
-              Dr. Nair took 45 full minutes with me. I felt truly heard for the
-              first time in years."
-            </p>
-            <div className="testi-au">
-              <div className="testi-avi">JS</div>
-              <div>
-                <div className="testi-aname">Jordan S.</div>
-                <div className="testi-aloc">Chicago, IL</div>
-              </div>
-            </div>
-          </div>
-          <div className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-q">
-              "My daughter had a fever at 2am. We got a same-night video call
-              with a pediatrician who was calm, thorough, and reassuring.
-              Absolute lifesaver."
-            </p>
-            <div className="testi-au">
-              <div className="testi-avi">RP</div>
-              <div>
-                <div className="testi-aname">Rachel P.</div>
-                <div className="testi-aloc">Seattle, WA</div>
-              </div>
-            </div>
-          </div>
-          <div className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-q">
-              "Managing my chronic condition used to mean multiple in-office
-              visits a month. Now I check in via video and my health has
-              genuinely improved — costs way down too."
-            </p>
-            <div className="testi-au">
-              <div className="testi-avi">DT</div>
-              <div>
-                <div className="testi-aname">David T.</div>
-                <div className="testi-aloc">Miami, FL</div>
-              </div>
-            </div>
-          </div>
-          <div className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-q">
-              "My therapist on Humancare remembers every detail, follows up
-              proactively, and has been a genuine partner in my recovery.
-              Exceptional mental health care."
-            </p>
-            <div className="testi-au">
-              <div className="testi-avi">LK</div>
-              <div>
-                <div className="testi-aname">Laura K.</div>
-                <div className="testi-aloc">Denver, CO</div>
-              </div>
-            </div>
-          </div>
-        </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </section>
 
       {/* ══════════════════════════════════════════════
@@ -528,26 +650,54 @@ export default function HomePage() {
           </div>
           <div className="cta-pills">
             <span className="cta-pill">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               HIPAA Compliant
             </span>
             <span className="cta-pill">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Board-Certified Doctors
             </span>
             <span className="cta-pill">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               24/7 Available
             </span>
             <span className="cta-pill">
-              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
@@ -560,7 +710,6 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════════ */}
-      
     </>
   );
 }

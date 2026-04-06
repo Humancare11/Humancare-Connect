@@ -54,7 +54,7 @@ h4 {
    SECTION SHARED
 ══════════════════════════════════════════════ */
 .section {
-  padding: 90px 80px;
+  padding: 30px 80px;
 }
 
 .section-eyebrow {
@@ -868,7 +868,7 @@ h4 {
 /* LEFT */
 .pcp-eyebrow {
   font-size: 12px;
-  color: var(--teal);
+  color: white;
   letter-spacing: 0.12em;
   margin-bottom: 16px;
   display: block;
@@ -881,7 +881,7 @@ h4 {
 }
 
 .pcp-heading span {
-  color: var(--teal);
+  color: white;
   font-style: italic;
 }
 
@@ -1061,22 +1061,9 @@ h4 {
 /* ══════════════════════════════════════════════
    TESTIMONIALS
 ══════════════════════════════════════════════ */
-.testi-track {
-  display: flex;
-  gap: 18px;
-  margin-top: 44px;
-  overflow-x: auto;
-  padding-bottom: 12px;
-  scrollbar-width: none;
-}
-
-.testi-track::-webkit-scrollbar {
-  display: none;
-}
-
 .testi-card {
   min-width: 300px;
-  max-width: 300px;
+  max-width: 325px;
   background: white;
   border-radius: var(--radius);
   padding: 28px;
@@ -1133,6 +1120,43 @@ h4 {
   font-size: 11px;
   color: var(--muted);
   margin-top: 2px;
+}
+
+/* Swiper Container */
+.testi-track {
+  margin-top: 44px;
+  padding-bottom: 60px;
+}
+
+.testi-track .swiper-slide {
+  height: auto;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 50px;
+}
+
+/* Swiper Pagination */
+.testi-track .swiper-pagination {
+  bottom: 10px !important;
+}
+
+.testi-track .swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background: var(--border);
+  opacity: 1;
+  transition: all 0.3s var(--ease);
+}
+
+.testi-track .swiper-pagination-bullet:hover {
+  background: var(--muted);
+  transform: scale(1.2);
+}
+
+.testi-track .swiper-pagination-bullet-active {
+  background: var(--primary);
+  width: 28px;
+  border-radius: 5px;
 }
 
 /* ══════════════════════════════════════════════

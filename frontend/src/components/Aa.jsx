@@ -33,24 +33,23 @@ export default function SpecialtiesSection() {
       <div className="spec-header">
         <div>
           <div className="section-eyebrow">Specialties</div>
-          <h2 className="section-title">
+          <h2 className="specialties-section-title">
             Care for every <br /> part of you.
           </h2>
-        </div>
-
-        <div className="tabs">
-          <button
-            className={activeTab === "specialties" ? "tab active" : "tab"}
-            onClick={() => setActiveTab("specialties")}
-          >
-            Specialties
-          </button>
-          <button
-            className={activeTab === "symptoms" ? "tab active" : "tab"}
-            onClick={() => setActiveTab("symptoms")}
-          >
-            Symptoms
-          </button>
+          <div className="tabs">
+            <button
+              className={activeTab === "specialties" ? "tab active" : "tab"}
+              onClick={() => setActiveTab("specialties")}
+            >
+              Specialties
+            </button>
+            <button
+              className={activeTab === "symptoms" ? "tab active" : "tab"}
+              onClick={() => setActiveTab("symptoms")}
+            >
+              Symptoms
+            </button>
+          </div>
         </div>
       </div>
 
