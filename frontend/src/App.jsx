@@ -28,7 +28,6 @@ import socket from "./socket";
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
-
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 
 function AppLayout() {
@@ -56,7 +55,6 @@ function AppLayout() {
       {!hideLayout && <Header />}
 
       <Routes>
-        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/find-a-doctor" element={<Findadoctor />} />
@@ -73,16 +71,10 @@ function AppLayout() {
         <Route path="/book-appointment" element={<BookAppointment />} />
 
         <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
-        <Route path="/doctor-registration" element={<DoctorRegister />} />
+        <Route path="/doctor-register" element={<DoctorRegister />} />
         <Route path="/doctor-login" element={<DoctorLogin />} />
-        {/* <Route path="/doctor-dashboard" element={
-  <ProtectedRoute role="doctor">
-    <DoctorDashboard />
-  </ProtectedRoute>
-} /> */}
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-        {/* Admin-only routes */}
         <Route
           path="/admin"
           element={

@@ -1,14 +1,17 @@
-// src/pages/DoctorRegister.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Doctor.css";
 
 const STEPS = ["Account"];
 
+// ── Change this to your deployed backend URL in production ──
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function DoctorRegister() {
   const navigate = useNavigate();
   const [step] = useState(0);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     email: "",
@@ -17,33 +20,68 @@ export default function DoctorRegister() {
   });
 
   const set = (field) => (e) => {
-    setForm((p) => ({ ...p, [field]: e.target.value }));
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
     setError("");
   };
 
   const validate = () => {
-    if (!form.email) return "Email is required.";
+    if (!form.email.trim()) return "Email is required.";
     if (!/\S+@\S+\.\S+/.test(form.email)) return "Enter a valid email.";
     if (!form.password) return "Password is required.";
     if (form.password.length < 6) return "Password must be at least 6 characters.";
+    if (!form.confirmPassword) return "Confirm password is required.";
     if (form.password !== form.confirmPassword) return "Passwords do not match.";
     return "";
   };
 
-  const next = (e) => {
+  const next = async (e) => {
     e.preventDefault();
+
     const err = validate();
     if (err) {
       setError(err);
       return;
     }
 
-    navigate("/doctor-enrollments");
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/doctor/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+          confirmPassword: form.confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Registration failed. Please try again.");
+        return;
+      }
+
+      // Store JWT token — NOT the password
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem(
+        "currentDoctor",
+        JSON.stringify({ id: data.doctor.id, email: data.doctor.email, isLoggedIn: true })
+      );
+
+      navigate("/doctor-dashboard");
+    } catch (err) {
+      console.error("Register error:", err);
+      setError("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="dr-page">
-      {/* left panel */}
       <div className="dr-panel dr-panel--left">
         <div className="dr-panel-inner">
           <Link to="/" className="dr-brand">
@@ -80,13 +118,11 @@ export default function DoctorRegister() {
         </div>
       </div>
 
-      {/* right panel — form */}
       <div className="dr-panel dr-panel--right">
         <div className="dr-form-wrap">
-          {/* stepper */}
           <div className="dr-stepper">
             {STEPS.map((s, i) => (
-              <div key={s} className={`dr-step active`}>
+              <div key={s} className={`dr-step ${i === step ? "active" : ""}`}>
                 <div className="dr-step-circle">
                   <span>{i + 1}</span>
                 </div>
@@ -102,14 +138,7 @@ export default function DoctorRegister() {
 
           {error && (
             <div className="dr-error">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -130,6 +159,7 @@ export default function DoctorRegister() {
                   onChange={set("email")}
                   placeholder="doctor@example.com"
                   autoFocus
+                  disabled={loading}
                 />
               </div>
 
@@ -142,6 +172,7 @@ export default function DoctorRegister() {
                   value={form.password}
                   onChange={set("password")}
                   placeholder="Minimum 6 characters"
+                  disabled={loading}
                 />
               </div>
 
@@ -154,13 +185,14 @@ export default function DoctorRegister() {
                   value={form.confirmPassword}
                   onChange={set("confirmPassword")}
                   placeholder="Re-enter your password"
+                  disabled={loading}
                 />
               </div>
             </div>
 
             <div className="dr-btn-row dr-btn-row--single">
-              <button type="submit" className="dr-btn-primary">
-                Continue →
+              <button type="submit" className="dr-btn-primary" disabled={loading}>
+                {loading ? "Registering…" : "Continue →"}
               </button>
             </div>
           </form>
@@ -168,7 +200,6 @@ export default function DoctorRegister() {
           <p className="dr-switch">
             Already registered? <Link to="/doctor-login">Login here</Link>
           </p>
-
           <p className="dr-switch" style={{ marginTop: 8 }}>
             Not a doctor? <Link to="/register">Patient registration</Link>
           </p>

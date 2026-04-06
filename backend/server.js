@@ -18,6 +18,7 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/qna", require("./routes/qna"));
+app.use("/api/doctor", require("./routes/doctorAuth")); // ← Naya add hua
 
 app.get("/", (req, res) => {
   res.send("API Running...");
