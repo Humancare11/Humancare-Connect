@@ -11,6 +11,7 @@ const DoctorEnrollments = () => {
   const [countries, setCountries] = useState([]);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
   const [formData, setFormData] = useState({
     // Section 1 - Personal Details
     email: "",
@@ -29,33 +30,22 @@ const DoctorEnrollments = () => {
     state: "",
     city: "",
     zip: "",
-    // NEW FIELDS - Section 1
     profilePhoto: null,
     experience: "",
     aboutDoctor: "",
     consultationMode: "",
-
-    // Section 2 - Clinic Details
-    availability: [],
-    is24x7Available: false,
     languagesKnown: [],
-    // NEW FIELDS - Section 2
     clinicName: "",
     clinicAddress: "",
-    consultationType: [],
-    slotDuration: "",
 
-    // Section 3 - Verification
+    // Section 2 - Verification + Payout
     medicalRegistrationNumber: "",
     medicalLicense: "",
     medicalCertification: null,
     idProof: "",
-    // NEW FIELDS - Section 3
     medicalCouncilName: "",
     registrationYear: "",
     idProofType: "",
-
-    // Section 4 - Payout Details (Restructured)
     payoutEmail: "",
     accountHolderName: "",
     bankName: "",
@@ -65,14 +55,12 @@ const DoctorEnrollments = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Load and sort countries on component mount
   useEffect(() => {
     const countryNames = getNames();
     const sortedCountries = countryNames.sort((a, b) => a.localeCompare(b));
     setCountries(sortedCountries);
   }, []);
 
-  // ------------------------ Validation Functions ----------------------------------
   const validators = {
     email: (value) => {
       if (!value) return "Email is required";
@@ -105,11 +93,9 @@ const DoctorEnrollments = () => {
 
     dob: (value) => {
       if (!value) return "Date of birth is required";
-
       const age = Math.floor((new Date() - new Date(value)) / 31557600000);
       if (age < 23) return "Doctor must be at least 23 years old";
       if (age > 80) return "Please enter a valid date of birth";
-
       return "";
     },
 
@@ -158,8 +144,9 @@ const DoctorEnrollments = () => {
     },
 
     languagesKnown: (value) => {
-      if (!value || value.length === 0)
+      if (!value || value.length === 0) {
         return "Please select at least one language";
+      }
       return "";
     },
 
@@ -183,7 +170,6 @@ const DoctorEnrollments = () => {
       return "";
     },
 
-    // NEW VALIDATORS - Section 1
     experience: (value) => {
       if (!value) return "Experience is required";
       if (value < 1) return "Experience must be at least 1 year";
@@ -203,7 +189,6 @@ const DoctorEnrollments = () => {
       return "";
     },
 
-    // NEW VALIDATORS - Section 2
     clinicName: (value) => {
       if (!value) return "Clinic name is required";
       if (value.length < 3) return "Clinic name must be at least 3 characters";
@@ -216,18 +201,6 @@ const DoctorEnrollments = () => {
       return "";
     },
 
-    consultationType: (value) => {
-      if (!value || value.length === 0)
-        return "Please select at least one consultation type";
-      return "";
-    },
-
-    slotDuration: (value) => {
-      if (!value) return "Please select slot duration";
-      return "";
-    },
-
-    // NEW VALIDATORS - Section 3
     medicalCouncilName: (value) => {
       if (!value) return "Medical council name is required";
       return "";
@@ -246,7 +219,6 @@ const DoctorEnrollments = () => {
       return "";
     },
 
-    // NEW VALIDATORS - Section 4 (Payout)
     accountHolderName: (value) => {
       if (!value) return "Account holder name is required";
       if (value.length < 3) return "Please enter a valid name";
@@ -260,37 +232,36 @@ const DoctorEnrollments = () => {
 
     accountNumber: (value) => {
       if (!value) return "Account number is required";
-      if (!/^\d{9,18}$/.test(value))
+      if (!/^\d{9,18}$/.test(value)) {
         return "Please enter a valid account number (9-18 digits)";
+      }
       return "";
     },
 
     ifscCode: (value) => {
       if (!value) return "IFSC code is required";
-      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value.toUpperCase()))
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value.toUpperCase())) {
         return "Please enter a valid IFSC code";
+      }
       return "";
     },
   };
 
-  // Reusable validation function using validators object
   const validateField = (name, value) => {
     const validator = validators[name];
     return validator ? validator(value) : "";
   };
 
-  // File validation helper functions
   const validateFileSize = (file, maxSizeMB = 2) => {
     if (!file) return "File is required";
-    const maxSize = maxSizeMB * 1024 * 1024; // Convert to bytes
-    if (file.size > maxSize)
-      return `File size must be less than ${maxSizeMB}MB`;
+    const maxSize = maxSizeMB * 1024 * 1024;
+    if (file.size > maxSize) return `File size must be less than ${maxSizeMB}MB`;
     return "";
   };
 
   const validateFileType = (
     file,
-    allowedTypes = ["pdf", "jpg", "jpeg", "png"],
+    allowedTypes = ["pdf", "jpg", "jpeg", "png"]
   ) => {
     if (!file) return "File is required";
     const fileExtension = file.name.split(".").pop().toLowerCase();
@@ -324,13 +295,14 @@ const DoctorEnrollments = () => {
         "consultationMode",
         "clinicName",
         "clinicAddress",
+        "languagesKnown",
       ];
+
       fields.forEach((field) => {
         const error = validateField(field, formData[field]);
         if (error) newErrors[field] = error;
       });
 
-      // Validate profile photo
       if (formData.profilePhoto) {
         const sizeError = validateFileSize(formData.profilePhoto);
         const typeError = validateFileType(formData.profilePhoto, [
@@ -342,14 +314,6 @@ const DoctorEnrollments = () => {
         else if (typeError) newErrors.profilePhoto = typeError;
       }
     } else if (step === 2) {
-      // Step 2: Clinic Availability - Availability and languages
-      const fields = ["languagesKnown"];
-      fields.forEach((field) => {
-        const error = validateField(field, formData[field]);
-        if (error) newErrors[field] = error;
-      });
-    } else if (step === 3) {
-      // Step 3: Verification and Payout
       const fields = [
         "medicalRegistrationNumber",
         "medicalLicense",
@@ -362,15 +326,14 @@ const DoctorEnrollments = () => {
         "accountNumber",
         "ifscCode",
       ];
+
       fields.forEach((field) => {
         const error = validateField(field, formData[field]);
         if (error) newErrors[field] = error;
       });
 
-      // Validate medical certification file
       if (!formData.medicalCertification) {
-        newErrors.medicalCertification =
-          "Medical certification file is required";
+        newErrors.medicalCertification = "Medical certification file is required";
       } else {
         const sizeError = validateFileSize(formData.medicalCertification);
         const typeError = validateFileType(formData.medicalCertification);
@@ -395,16 +358,13 @@ const DoctorEnrollments = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: newValue,
-      // Reset sub-specialization when specialization changes
       ...(name === "specialization" && { subSpecialization: "" }),
     }));
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
 
-    // Validate field on blur
     if (value) {
       const error = validateField(name, newValue);
       if (error) {
@@ -429,7 +389,6 @@ const DoctorEnrollments = () => {
       [name]: file,
     }));
 
-    // Handle profile photo preview
     if (name === "profilePhoto" && file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -437,7 +396,6 @@ const DoctorEnrollments = () => {
       };
       reader.readAsDataURL(file);
 
-      // Validate file
       const sizeError = validateFileSize(file);
       const typeError = validateFileType(file, ["jpg", "jpeg", "png"]);
       if (sizeError || typeError) {
@@ -450,21 +408,6 @@ const DoctorEnrollments = () => {
     }
   };
 
-  const handleAvailabilityChange = (day, field, value) => {
-    setFormData((prev) => {
-      const availability = [...prev.availability];
-      const dayIndex = availability.findIndex((a) => a.day === day);
-
-      if (dayIndex >= 0) {
-        availability[dayIndex] = { ...availability[dayIndex], [field]: value };
-      } else {
-        availability.push({ day, [field]: value });
-      }
-
-      return { ...prev, availability };
-    });
-  };
-
   const handleLanguageToggle = (language) => {
     setFormData((prev) => ({
       ...prev,
@@ -472,52 +415,16 @@ const DoctorEnrollments = () => {
         ? prev.languagesKnown.filter((l) => l !== language)
         : [...prev.languagesKnown, language],
     }));
+
     if (errors.languagesKnown) {
       setErrors((prev) => ({ ...prev, languagesKnown: "" }));
     }
   };
 
-  // NEW HANDLER: Consultation Type Toggle (multi-select)
-  const handleConsultationTypeToggle = (type) => {
-    setFormData((prev) => ({
-      ...prev,
-      consultationType: prev.consultationType.includes(type)
-        ? prev.consultationType.filter((t) => t !== type)
-        : [...prev.consultationType, type],
-    }));
-    if (errors.consultationType) {
-      setErrors((prev) => ({ ...prev, consultationType: "" }));
-    }
-  };
-
-  // NEW HANDLER: Toggle day availability
-  const handleDayAvailabilityToggle = (day) => {
-    setFormData((prev) => {
-      const availability = [...prev.availability];
-      const dayIndex = availability.findIndex((a) => a.day === day);
-
-      if (dayIndex >= 0) {
-        // Remove day if already exists (toggle off)
-        availability.splice(dayIndex, 1);
-      } else {
-        // Add day with default times (toggle on)
-        availability.push({
-          day,
-          startTime: "",
-          endTime: "",
-          isAvailable: true,
-        });
-      }
-
-      return { ...prev, availability };
-    });
-  };
-
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 3) setCurrentStep(currentStep + 1);
+      if (currentStep < 2) setCurrentStep(currentStep + 1);
     } else {
-      // Scroll to first error
       const firstErrorElement = document.querySelector(".error-message");
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({
@@ -531,32 +438,22 @@ const DoctorEnrollments = () => {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      setErrors({}); // Clear errors when going back
+      setErrors({});
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateStep(3)) {
+    if (validateStep(2)) {
       console.log("Form submitted:", formData);
       setShowSuccess(true);
 
-      // Auto-hide success message after 5 seconds
       setTimeout(() => {
         setShowSuccess(false);
       }, 5000);
     }
   };
 
-  const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
   const languages = [
     "English",
     "Hindi",
@@ -578,7 +475,6 @@ const DoctorEnrollments = () => {
       "Heart Failure Specialist",
       "Preventive Cardiology",
     ],
-
     Dermatologist: [
       "Cosmetic Dermatology",
       "Dermatopathology",
@@ -586,7 +482,6 @@ const DoctorEnrollments = () => {
       "Trichology (Hair Specialist)",
       "Laser Dermatology",
     ],
-
     "Orthopedic Surgeon / Orthopedist": [
       "Joint Replacement",
       "Spine Surgery",
@@ -594,7 +489,6 @@ const DoctorEnrollments = () => {
       "Pediatric Orthopedics",
       "Trauma Surgery",
     ],
-
     "Orthopedic Surgery": [
       "Joint Replacement",
       "Spine Surgery",
@@ -602,7 +496,6 @@ const DoctorEnrollments = () => {
       "Pediatric Orthopedics",
       "Trauma Surgery",
     ],
-
     Neurologist: [
       "Stroke Specialist",
       "Epilepsy Specialist",
@@ -610,7 +503,6 @@ const DoctorEnrollments = () => {
       "Movement Disorders",
       "Neurocritical Care",
     ],
-
     Oncologist: [
       "Medical Oncology",
       "Surgical Oncology",
@@ -618,7 +510,6 @@ const DoctorEnrollments = () => {
       "Pediatric Oncology",
       "Gynecologic Oncology",
     ],
-
     Pediatrician: [
       "Neonatology",
       "Pediatric Cardiology",
@@ -626,7 +517,6 @@ const DoctorEnrollments = () => {
       "Pediatric Oncology",
       "Developmental Pediatrics",
     ],
-
     "Obstetrician and Gynecologist": [
       "Infertility Specialist",
       "Gynecologic Oncology",
@@ -634,7 +524,6 @@ const DoctorEnrollments = () => {
       "Reproductive Endocrinology",
       "Laparoscopic Surgery",
     ],
-
     Psychiatrist: [
       "Child Psychiatry",
       "Addiction Psychiatry",
@@ -642,7 +531,6 @@ const DoctorEnrollments = () => {
       "Forensic Psychiatry",
       "Psychotherapy",
     ],
-
     Radiologist: [
       "Interventional Radiology",
       "Neuroradiology",
@@ -650,7 +538,6 @@ const DoctorEnrollments = () => {
       "Pediatric Radiology",
       "Breast Imaging",
     ],
-
     Urologist: [
       "Andrology",
       "Endourology",
@@ -662,7 +549,6 @@ const DoctorEnrollments = () => {
 
   return (
     <div className="doctor-enrollment-container">
-      {/* Success Message */}
       {showSuccess && (
         <div className="success-message-overlay">
           <div className="success-message-card">
@@ -684,11 +570,10 @@ const DoctorEnrollments = () => {
       )}
 
       <div className="enrollment-card">
-        {/* Sidebar with steps */}
         <div className="steps-sidebar">
           <h2 className="enrollment-title">Enroll as a Doctor</h2>
           <p className="enrollment-subtitle">
-            Complete these 3 simple steps to join our platform.
+            Complete these 2 simple steps to join our platform.
           </p>
 
           <div className="steps-list">
@@ -702,18 +587,8 @@ const DoctorEnrollments = () => {
               </div>
             </div>
 
-            <div
-              className={`step-item ${currentStep === 2 ? "active" : ""} ${currentStep > 2 ? "completed" : ""}`}
-            >
+            <div className={`step-item ${currentStep === 2 ? "active" : ""}`}>
               <div className="step-number">2</div>
-              <div className="step-content">
-                <h4>Clinic Availability</h4>
-                <p>Clinic hours and availability</p>
-              </div>
-            </div>
-
-            <div className={`step-item ${currentStep === 3 ? "active" : ""}`}>
-              <div className="step-number">3</div>
               <div className="step-content">
                 <h4>Verification</h4>
                 <p>Credentials and payout information</p>
@@ -722,28 +597,22 @@ const DoctorEnrollments = () => {
           </div>
         </div>
 
-        {/* Main form area */}
         <div className="form-main">
           <div className="form-header">
-            <span className="step-indicator">Step {currentStep}/3</span>
+            <span className="step-indicator">Step {currentStep}/2</span>
             <h2>
               {currentStep === 1 && "Personal Details"}
-              {currentStep === 2 && "Clinic Availability"}
-              {currentStep === 3 && "Doctor Verification"}
+              {currentStep === 2 && "Doctor Verification"}
             </h2>
             {currentStep === 1 && (
               <p>Provide your professional and contact information.</p>
             )}
             {currentStep === 2 && (
-              <p>Set your clinic hours and language preferences.</p>
-            )}
-            {currentStep === 3 && (
               <p>Upload verification documents and payout details.</p>
             )}
           </div>
 
           <form onSubmit={handleSubmit}>
-            {/* Section 1 - Personal Details */}
             {currentStep === 1 && (
               <div className="form-section">
                 <div className="form-group">
@@ -1032,7 +901,7 @@ const DoctorEnrollments = () => {
                           <option key={index} value={sub}>
                             {sub}
                           </option>
-                        ),
+                        )
                       )}
                     </select>
                     <span className="helper-text">
@@ -1143,7 +1012,6 @@ const DoctorEnrollments = () => {
                   </div>
                 </div>
 
-                {/* NEW FIELDS - Section 1 */}
                 <div className="form-group">
                   <label>Profile Photo</label>
                   <input
@@ -1235,10 +1103,7 @@ const DoctorEnrollments = () => {
                   <div className="character-counter">
                     {formData.aboutDoctor.length}/300 characters
                     {formData.aboutDoctor.length < 150 && (
-                      <span className="counter-warning">
-                        {" "}
-                        (min 150 required)
-                      </span>
+                      <span className="counter-warning"> (min 150 required)</span>
                     )}
                   </div>
                   {errors.aboutDoctor && (
@@ -1246,7 +1111,29 @@ const DoctorEnrollments = () => {
                   )}
                 </div>
 
-                {/* Clinic Details */}
+                <div className="form-group">
+                  <label>Languages Known</label>
+                  <span className="helper-text">
+                    Select all languages you can communicate in.
+                  </span>
+                  <div className="language-chips">
+                    {languages.map((lang) => (
+                      <div
+                        key={lang}
+                        className={`chip ${formData.languagesKnown.includes(lang) ? "selected" : ""}`}
+                        onClick={() => handleLanguageToggle(lang)}
+                      >
+                        {lang}
+                      </div>
+                    ))}
+                  </div>
+                  {errors.languagesKnown && (
+                    <span className="error-message">
+                      {errors.languagesKnown}
+                    </span>
+                  )}
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label>Clinic Name</label>
@@ -1285,109 +1172,7 @@ const DoctorEnrollments = () => {
               </div>
             )}
 
-            {/* Section 2 - Clinic Availability */}
             {currentStep === 2 && (
-              <div className="form-section">
-                <div className="form-group">
-                  <label>Clinic Availability</label>
-                  <div className="availability-section">
-                    {days.map((day) => (
-                      <div key={day} className="availability-row">
-                        <span className="day-name">{day}</span>
-                        <input
-                          type="time"
-                          placeholder="Start Time"
-                          onChange={(e) =>
-                            handleAvailabilityChange(
-                              day,
-                              "startTime",
-                              e.target.value,
-                            )
-                          }
-                        />
-                        <span className="time-separator">:</span>
-                        <input
-                          type="time"
-                          placeholder="End Time"
-                          onChange={(e) =>
-                            handleAvailabilityChange(
-                              day,
-                              "endTime",
-                              e.target.value,
-                            )
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <div className="availability-options">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="is24x7Available"
-                        checked={formData.is24x7Available}
-                        onChange={handleInputChange}
-                      />
-                      <span>24/7 Available</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Languages Known</label>
-                  <span className="helper-text">
-                    Select all languages you can communicate in.
-                  </span>
-                  <div className="language-chips">
-                    {languages.map((lang) => (
-                      <div
-                        key={lang}
-                        className={`chip ${formData.languagesKnown.includes(lang) ? "selected" : ""}`}
-                        onClick={() => handleLanguageToggle(lang)}
-                      >
-                        {lang}
-                      </div>
-                    ))}
-                  </div>
-                  {errors.languagesKnown && (
-                    <span className="error-message">
-                      {errors.languagesKnown}
-                    </span>
-                  )}
-                </div>
-
-                <div className="quick-tip">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle
-                      cx="10"
-                      cy="10"
-                      r="9"
-                      stroke="#0C8B7A"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M10 6v4M10 14h.01"
-                      stroke="#0C8B7A"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div>
-                    <strong>Quick Tip:</strong>
-                    <p>
-                      Provide accurate availability and language details for a
-                      better patient experience.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Section 3 - Verification */}
-            {currentStep === 3 && (
               <div className="form-section">
                 <div className="form-row">
                   <div className="form-group">
@@ -1429,7 +1214,6 @@ const DoctorEnrollments = () => {
                   </div>
                 </div>
 
-                {/* NEW FIELDS - Section 3 */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>Medical Council Name</label>
@@ -1489,9 +1273,7 @@ const DoctorEnrollments = () => {
                       onChange={handleFileChange}
                       accept=".pdf,.jpg,.jpeg,.png"
                       required
-                      className={
-                        errors.medicalCertification ? "input-error" : ""
-                      }
+                      className={errors.medicalCertification ? "input-error" : ""}
                     />
                     <span className="helper-text">
                       Upload your medical degree certificate (PDF, JPG, PNG -
@@ -1662,7 +1444,6 @@ const DoctorEnrollments = () => {
               </div>
             )}
 
-            {/* Navigation buttons */}
             <div className="form-actions">
               {currentStep > 1 && (
                 <button
@@ -1675,7 +1456,7 @@ const DoctorEnrollments = () => {
               )}
 
               <div className="actions-right">
-                {currentStep < 3 ? (
+                {currentStep < 2 ? (
                   <button
                     type="button"
                     className="btn-primary"
