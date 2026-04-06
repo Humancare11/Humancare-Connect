@@ -36,7 +36,7 @@ export default function Footer() {
           </div>
           <div className="footer-col">
             <h5>Support</h5>
-            <a href="#">Help Center</a>
+            <a href="/doctor-login">Doctors Login</a>
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>
             <a href="#">HIPAA Notice</a>

@@ -3,9 +3,9 @@
 ══════════════════════════════════════════════ */
 
 .doctor-enrollment-container {
-  min-height: 100vh;
+  /* min-height: 100vh; */
   background: var(--bg);
-  padding: 8rem 20px;
+  /* padding: 8rem 20px; */
   display: flex;
   justify-content: center;
   align-items: flex-start;

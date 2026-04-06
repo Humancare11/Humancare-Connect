@@ -442,17 +442,48 @@ const DoctorEnrollments = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateStep(2)) {
-      console.log("Form submitted:", formData);
-      setShowSuccess(true);
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 5000);
-    }
-  };
+  if (validateStep(2)) {
+    const enrolledDoctors =
+      JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
+
+    const newDoctor = {
+      id: Date.now(),
+      name: `Dr. ${formData.firstName} ${formData.surname}`.trim(),
+      degree: formData.qualification || "Doctor",
+      rating: 4.5,
+      experience: formData.experience ? `${formData.experience}+` : "1+",
+      specialty: formData.specialization || "General Physician",
+      languages:
+        formData.languagesKnown?.length > 0
+          ? formData.languagesKnown
+          : ["English"],
+      location: `${formData.city || ""}${formData.city && formData.state ? ", " : ""}${formData.state || ""}`.trim(),
+      price: Number(formData.consultantFees) || 500,
+      gender: formData.gender || "Any",
+      initials: `${formData.firstName?.[0] || ""}${formData.surname?.[0] || ""}`.toUpperCase(),
+      color: "#0C8B7A",
+      aboutDoctor: formData.aboutDoctor || "",
+      clinicName: formData.clinicName || "",
+      clinicAddress: formData.clinicAddress || "",
+      consultationMode: formData.consultationMode || "",
+      verified: false,
+      source: "enrollment",
+    };
+
+    enrolledDoctors.push(newDoctor);
+    localStorage.setItem("enrolledDoctors", JSON.stringify(enrolledDoctors));
+
+    console.log("Form submitted:", formData);
+    setShowSuccess(true);
+
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 5000);
+  }
+};
 
   const languages = [
     "English",
