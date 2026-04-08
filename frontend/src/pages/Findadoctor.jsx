@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import "./Findadoctor.css";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const specialities = [
   "Adolescent Medicine",
@@ -150,14 +153,38 @@ const ChevronRight = () => (
 
 export default function DoctorFinder() {
   const navigate = useNavigate();
-const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
+  const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
-useEffect(() => {
-  const enrolledDoctors =
-    JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
-
-  setDynamicDoctors([...enrolledDoctors, ...allDoctors]);
-}, []);
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/doctor/enrollments`);
+        // Map backend enrollment model to the format expected by the frontend
+        const mappedDoctors = res.data.map(enrollment => ({
+          id: enrollment.doctorId?._id || String(Math.random()),
+          name: `Dr. ${enrollment.firstName || ""} ${enrollment.surname || ""}`.trim(),
+          degree: enrollment.qualification || "Doctor",
+          rating: 4.5,
+          experience: enrollment.experience ? `${enrollment.experience}+` : "1+",
+          specialty: enrollment.specialization || "General Physician",
+          languages: enrollment.languagesKnown?.length > 0 ? enrollment.languagesKnown : ["English"],
+          location: `${enrollment.city || ""}${enrollment.city && enrollment.state ? ", " : ""}${enrollment.state || ""}`.trim(),
+          price: Number(enrollment.consultantFees) || 500,
+          gender: enrollment.gender || "Any",
+          initials: `${enrollment.firstName?.[0] || ""}${enrollment.surname?.[0] || ""}`.toUpperCase(),
+          color: "#0C8B7A",
+          verified: enrollment.verified || false,
+          source: "enrollment"
+        }));
+        
+        setDynamicDoctors([...mappedDoctors, ...allDoctors]);
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err);
+      }
+    };
+    
+    fetchDoctors();
+  }, []);
   const handleBook = (doc) => {
     const token = localStorage.getItem("token");
 

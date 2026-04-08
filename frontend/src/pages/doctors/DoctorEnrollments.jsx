@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { getNames } from "country-list";
+import axios from "axios";
 import "./DoctorEnrollments.css";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
@@ -461,59 +464,38 @@ const DoctorEnrollments = ({ onComplete, initialData, doctorId }) => {
     }
   };
 
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (validateStep(2)) {
-    const enrolledDoctors =
-      JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
+    try {
+      // In a real app we would use FormData to upload the files (profilePhoto)
+      // For this migration, we'll just send the JSON data minus the File objects
+      const { profilePhoto, medicalCertification, ...dataToSend } = formData;
+      dataToSend.doctorId = doctorId;
+      
+      const res = await axios.post(`${API_BASE}/doctor/enrollment`, dataToSend);
+      
+      // Update local storage status
+      const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "{}");
+      localStorage.setItem("currentDoctor", JSON.stringify({
+        ...currentDoctor,
+        isEnrolled: true,
+        name: `Dr. ${formData.firstName || ""} ${formData.surname || ""}`.trim()
+      }));
 
-    const doctorData = {
-      ...formData,
-      id: doctorId || initialData?.id || Date.now(),
-      name: `Dr. ${formData.firstName} ${formData.surname}`.trim(),
-      degree: formData.qualification || "Doctor",
-      rating: 4.5,
-      experience: formData.experience ? `${formData.experience}+` : "1+",
-      specialty: formData.specialization || "General Physician",
-      languages:
-        formData.languagesKnown?.length > 0
-          ? formData.languagesKnown
-          : ["English"],
-      location: `${formData.city || ""}${formData.city && formData.state ? ", " : ""}${formData.state || ""}`.trim(),
-      price: Number(formData.consultantFees) || 500,
-      gender: formData.gender || "Any",
-      initials: `${formData.firstName?.[0] || ""}${formData.surname?.[0] || ""}`.toUpperCase(),
-      color: "#0C8B7A",
-      aboutDoctor: formData.aboutDoctor || "",
-      clinicName: formData.clinicName || "",
-      clinicAddress: formData.clinicAddress || "",
-      consultationMode: formData.consultationMode || "",
-      verified: false,
-      source: "enrollment",
-      hasProfilePhoto: hasExistingProfilePhoto || !!formData.profilePhoto,
-      hasCertification: hasExistingCertification || !!formData.medicalCertification,
-    };
+      console.log("Form submitted to API:", res.data);
+      setShowSuccess(true);
 
-    const existingIndex = enrolledDoctors.findIndex(d => d.id === doctorData.id);
-    if (existingIndex !== -1) {
-      // Update existing
-      enrolledDoctors[existingIndex] = doctorData;
-    } else {
-      // Add new
-      enrolledDoctors.push(doctorData);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setIsReadOnly(true);
+        if (onComplete) onComplete(res.data);
+      }, 2000);
+    } catch (err) {
+      console.error("Error submitting enrollment:", err);
+      alert("Failed to submit enrollment. Please try again.");
     }
-    
-    localStorage.setItem("enrolledDoctors", JSON.stringify(enrolledDoctors));
-
-    console.log("Form submitted:", formData);
-    setShowSuccess(true);
-
-    setTimeout(() => {
-      setShowSuccess(false);
-      setIsReadOnly(true);
-      if (onComplete) onComplete(doctorData);
-    }, 2000);
   }
 };
 

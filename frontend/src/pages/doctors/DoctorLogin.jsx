@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./Doctor.css";
 
 // ── Change this to your deployed backend URL in production ──
@@ -40,33 +41,24 @@ export default function DoctorLogin() {
     setError("");
 
     try {
-      const doctors = JSON.parse(localStorage.getItem("registeredDoctors") || "[]");
-      const doctor = doctors.find(
-        (d) => d.email === form.email.trim().toLowerCase() && d.password === form.password
-      );
+      const res = await axios.post(`${API_BASE}/doctor/login`, {
+        email: form.email.trim(),
+        password: form.password,
+      });
 
-      if (!doctor) {
-        setError("Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-
-      // Check if this specific doctor has an enrollment
-      const savedEnrollment = localStorage.getItem(`doctorEnrollment_${doctor.id}`);
-      
+      const doctor = res.data.doctor;
       const currentDoctor = {
         ...doctor,
         isLoggedIn: true,
-        isEnrolled: !!savedEnrollment
       };
 
-      localStorage.setItem("doctorToken", `mock_token_${doctor.id}`);
+      localStorage.setItem("doctorToken", res.data.token);
       localStorage.setItem("currentDoctor", JSON.stringify(currentDoctor));
 
       navigate("/doctor-dashboard");
     } catch (err) {
       console.error("Login error:", err);
-      setError("Could not connect to server. Please try again.");
+      setError(err.response?.data?.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }

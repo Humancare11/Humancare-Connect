@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./Doctor.css";
 
 export default function DoctorRegister() {
@@ -41,36 +42,24 @@ export default function DoctorRegister() {
     setError("");
 
     try {
-      const doctors = JSON.parse(localStorage.getItem("registeredDoctors") || "[]");
-      
-      if (doctors.find(d => d.email === form.email.trim().toLowerCase())) {
-        setError("Email already registered.");
-        setLoading(false);
-        return;
-      }
+      const res = await axios.post("http://localhost:3000/api/doctor/register", {
+        email: form.email.trim(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+      });
 
-      const newDoctor = {
-        id: `dr_${Date.now()}`,
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        password: form.password, // In a real app, never store plain text passwords
-        isEnrolled: false
-      };
-
-      doctors.push(newDoctor);
-      localStorage.setItem("registeredDoctors", JSON.stringify(doctors));
-
-      // Auto login after registration
-      localStorage.setItem("doctorToken", `mock_token_${newDoctor.id}`);
+      // Save to localStorage just for the JWT token and basic info
+      localStorage.setItem("doctorToken", res.data.token);
       localStorage.setItem("currentDoctor", JSON.stringify({
-        ...newDoctor,
+        ...res.data.doctor,
+        name: form.name.trim(), // The backend model doesn't have name right now, keep it local briefly
         isLoggedIn: true
       }));
 
       navigate("/doctor-dashboard");
     } catch (err) {
       console.error("Registration error:", err);
-      setError("Something went wrong. Please try again.");
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }

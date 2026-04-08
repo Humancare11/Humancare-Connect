@@ -13,9 +13,9 @@ const signToken = (id, email) =>
 // ── POST /api/doctor/register ─────────────────────────────────
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword } = req.body;
 
-    if (!email || !password || !confirmPassword)
+    if (!name || !email || !password || !confirmPassword)
       return res.status(400).json({ message: "All fields are required." });
 
     if (!/\S+@\S+\.\S+/.test(email))
@@ -37,13 +37,13 @@ router.post("/register", async (req, res) => {
         message: "This email is already registered. Please login.",
       });
 
-    const doctor = await Doctor.create({ email, password });
+    const doctor = await Doctor.create({ name, email, password });
     const token = signToken(doctor._id, doctor.email);
 
     return res.status(201).json({
       message: "Doctor registered successfully.",
       token,
-      doctor: { id: doctor._id, email: doctor.email, isEnrolled: false },
+      doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: false },
     });
   } catch (err) {
     console.error("Doctor register error:", err);
@@ -81,7 +81,7 @@ router.post("/login", async (req, res) => {
     return res.status(200).json({
       message: "Login successful.",
       token,
-      doctor: { id: doctor._id, email: doctor.email, isEnrolled: doctor.isEnrolled },
+      doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });
   } catch (err) {
     console.error("Doctor login error:", err);
@@ -119,6 +119,21 @@ router.post("/enrollment", async (req, res) => {
     res.json(enrollment);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/stats/:doctorId", async (req, res) => {
+  try {
+    // In a real app, you would count patients, appointments, etc.
+    // For now, we'll return some dynamic-looking mock data that could be real later
+    res.json({
+      totalPatients: 0,
+      appointments: 0,
+      newMessages: 0,
+      revenue: 0
+    });
+  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });

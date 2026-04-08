@@ -30,21 +30,54 @@ export default function DoctorDashboard() {
   const [enrollmentData, setEnrollmentData] = useState(null);
 
   useEffect(() => {
-    const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
+    const token = localStorage.getItem("doctorToken");
 
-    if (!currentDoctor || !currentDoctor.isLoggedIn) {
+    if (!token) {
       navigate("/doctor-login");
       return;
     }
 
-    setDoctor(currentDoctor);
-    setIsEnrolled(currentDoctor.isEnrolled || false);
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/doctor/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-    // Load enrollment data if it exists
-    const savedEnrollment = JSON.parse(localStorage.getItem(`doctorEnrollment_${currentDoctor.id}`) || "null");
-    if (savedEnrollment) {
-      setEnrollmentData(savedEnrollment);
-    }
+        if (!res.ok) {
+          localStorage.removeItem("doctorToken");
+          localStorage.removeItem("currentDoctor");
+          navigate("/doctor-login");
+          return;
+        }
+
+        const { doctor: dbDoctor } = await res.json();
+        setDoctor(dbDoctor);
+        setIsEnrolled(dbDoctor.isEnrolled || false);
+
+        // Fetch enrollment data if they are enrolled or to check if they have a draft
+        const enrollRes = await fetch(`/api/doctor/enrollment/${dbDoctor._id || dbDoctor.id}`);
+        if (enrollRes.ok) {
+          const enrollData = await enrollRes.json();
+          if (enrollData) {
+            setEnrollmentData(enrollData);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        // Fallback to localStorage if offline or server error, but we want DB to be source of truth
+        const cachedDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
+        if (cachedDoctor) {
+          setDoctor(cachedDoctor);
+          setIsEnrolled(cachedDoctor.isEnrolled || false);
+        } else {
+          navigate("/doctor-login");
+        }
+      }
+    };
+
+    fetchProfile();
   }, [navigate]);
 
   const logout = () => {
@@ -54,12 +87,12 @@ export default function DoctorDashboard() {
   };
 
   const handleEnrollmentComplete = (data) => {
-    const updatedDoctor = { ...doctor, isEnrolled: true, name: data.name || `${data.firstName} ${data.surname}` };
-    setDoctor(updatedDoctor);
     setIsEnrolled(true);
     setEnrollmentData(data);
-    localStorage.setItem("currentDoctor", JSON.stringify(updatedDoctor));
-    localStorage.setItem(`doctorEnrollment_${doctor.id}`, JSON.stringify(data));
+    // Optionally update doctor state if name changed
+    if (data.firstName && data.surname) {
+      setDoctor(prev => ({ ...prev, name: `${data.firstName} ${data.surname}`, isEnrolled: true }));
+    }
   };
 
   if (!doctor) return null;
@@ -69,15 +102,16 @@ export default function DoctorDashboard() {
     : "DR";
 
   const renderContent = () => {
+    const docId = doctor._id || doctor.id;
     if (!isEnrolled) {
-      return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
+      return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={docId} />;
     }
 
     switch (activeMenu) {
       case "Dashboard":
-        return <Dashbord />;
+        return <Dashbord doctor={doctor} />;
       case "Enrollments":
-        return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
+        return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={docId} />;
       case "Appointments":
         return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>No upcoming appointments.</p></div>;
       case "My Patients":
