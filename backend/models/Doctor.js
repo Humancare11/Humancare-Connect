@@ -15,13 +15,18 @@ const doctorSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    isEnrolled: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true }
 );
 
-doctorSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+doctorSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 12);
+  next();
 });
 
 doctorSchema.methods.comparePassword = async function (candidatePassword) {

@@ -4,6 +4,8 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const http = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
+const { createServer: createViteServer } = require("vite");
 
 const app = express();
 
@@ -18,11 +20,38 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/qna", require("./routes/qna"));
-app.use("/api/doctor", require("./routes/doctorAuth")); // ← Naya add hua
+app.use("/api/doctor", require("./routes/doctorAuth"));
 
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.send("API Running...");
 });
+
+// userId => Set(socketIds)
+const onlineUsers = new Map();
+
+// API for initial active users count
+app.get("/api/admin/active-users", (req, res) => {
+  res.json({ activeUsers: onlineUsers.size });
+});
+
+// Vite middleware for development or static serving for production
+async function setupVite() {
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+}
+
+setupVite();
 
 // HTTP server
 const server = http.createServer(app);
@@ -30,16 +59,13 @@ const server = http.createServer(app);
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "*", // In production, restrict this to your frontend URL
     methods: ["GET", "POST"],
   },
 });
 
 // routes ke andar io use karne ke liye
 app.set("io", io);
-
-// userId => Set(socketIds)
-const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
@@ -77,13 +103,8 @@ io.on("connection", (socket) => {
   });
 });
 
-// API for initial active users count
-app.get("/api/admin/active-users", (req, res) => {
-  res.json({ activeUsers: onlineUsers.size });
-});
+const PORT = process.env.PORT || 3000; // AI Studio requires port 3000
 
-const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

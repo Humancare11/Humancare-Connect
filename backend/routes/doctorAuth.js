@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const Doctor = require("../models/Doctor");
+const Enrollment = require("../models/Enrollment");
 
 // JWT token banane ka helper
 const signToken = (id, email) =>
@@ -42,7 +43,7 @@ router.post("/register", async (req, res) => {
     return res.status(201).json({
       message: "Doctor registered successfully.",
       token,
-      doctor: { id: doctor._id, email: doctor.email },
+      doctor: { id: doctor._id, email: doctor.email, isEnrolled: false },
     });
   } catch (err) {
     console.error("Doctor register error:", err);
@@ -80,11 +81,45 @@ router.post("/login", async (req, res) => {
     return res.status(200).json({
       message: "Login successful.",
       token,
-      doctor: { id: doctor._id, email: doctor.email },
+      doctor: { id: doctor._id, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });
   } catch (err) {
     console.error("Doctor login error:", err);
     return res.status(500).json({ message: "Server error. Please try again." });
+  }
+});
+
+// ── Enrollment Routes ─────────────────────────────────────────
+
+router.get("/enrollment/:doctorId", async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findOne({ doctorId: req.params.doctorId });
+    res.json(enrollment);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/enrollment", async (req, res) => {
+  try {
+    const { doctorId, ...enrollmentData } = req.body;
+    
+    let enrollment = await Enrollment.findOne({ doctorId });
+    
+    if (enrollment) {
+      Object.assign(enrollment, enrollmentData);
+      enrollment.updatedAt = new Date();
+      await enrollment.save();
+    } else {
+      enrollment = new Enrollment({ doctorId, ...enrollmentData });
+      await enrollment.save();
+      await Doctor.findByIdAndUpdate(doctorId, { isEnrolled: true });
+    }
+
+    res.json(enrollment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
