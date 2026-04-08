@@ -40,28 +40,28 @@ export default function DoctorLogin() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
-        }),
-      });
+      const doctors = JSON.parse(localStorage.getItem("registeredDoctors") || "[]");
+      const doctor = doctors.find(
+        (d) => d.email === form.email.trim().toLowerCase() && d.password === form.password
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Login failed. Please try again.");
+      if (!doctor) {
+        setError("Invalid email or password.");
+        setLoading(false);
         return;
       }
 
-      // Store JWT token — NOT the password
-      localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem(
-        "currentDoctor",
-        JSON.stringify({ id: data.doctor.id, email: data.doctor.email, isLoggedIn: true })
-      );
+      // Check if this specific doctor has an enrollment
+      const savedEnrollment = localStorage.getItem(`doctorEnrollment_${doctor.id}`);
+      
+      const currentDoctor = {
+        ...doctor,
+        isLoggedIn: true,
+        isEnrolled: !!savedEnrollment
+      };
+
+      localStorage.setItem("doctorToken", `mock_token_${doctor.id}`);
+      localStorage.setItem("currentDoctor", JSON.stringify(currentDoctor));
 
       navigate("/doctor-dashboard");
     } catch (err) {

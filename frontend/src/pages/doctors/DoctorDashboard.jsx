@@ -25,6 +25,9 @@ export default function DoctorDashboard() {
   const [doctor, setDoctor] = useState(null);
   const [sideOpen, setSideOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [isEnrolled, setIsEnrolled] = useState(false);
+
+  const [enrollmentData, setEnrollmentData] = useState(null);
 
   useEffect(() => {
     const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
@@ -35,11 +38,28 @@ export default function DoctorDashboard() {
     }
 
     setDoctor(currentDoctor);
+    setIsEnrolled(currentDoctor.isEnrolled || false);
+
+    // Load enrollment data if it exists
+    const savedEnrollment = JSON.parse(localStorage.getItem(`doctorEnrollment_${currentDoctor.id}`) || "null");
+    if (savedEnrollment) {
+      setEnrollmentData(savedEnrollment);
+    }
   }, [navigate]);
 
   const logout = () => {
     localStorage.removeItem("currentDoctor");
+    localStorage.removeItem("doctorToken");
     navigate("/doctor-login");
+  };
+
+  const handleEnrollmentComplete = (data) => {
+    const updatedDoctor = { ...doctor, isEnrolled: true, name: data.name || `${data.firstName} ${data.surname}` };
+    setDoctor(updatedDoctor);
+    setIsEnrolled(true);
+    setEnrollmentData(data);
+    localStorage.setItem("currentDoctor", JSON.stringify(updatedDoctor));
+    localStorage.setItem(`doctorEnrollment_${doctor.id}`, JSON.stringify(data));
   };
 
   if (!doctor) return null;
@@ -49,21 +69,25 @@ export default function DoctorDashboard() {
     : "DR";
 
   const renderContent = () => {
+    if (!isEnrolled) {
+      return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
+    }
+
     switch (activeMenu) {
       case "Dashboard":
         return <Dashbord />;
-        case "Enrollments":
-      return <DoctorEnrollments />;
+      case "Enrollments":
+        return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
       case "Appointments":
-        return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2></div>;
+        return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>No upcoming appointments.</p></div>;
       case "My Patients":
-        return <div className="dd-card"><h2 className="dd-card-title">My Patients</h2></div>;
+        return <div className="dd-card"><h2 className="dd-card-title">My Patients</h2><p>You have no patients yet.</p></div>;
       case "Messages":
-        return <div className="dd-card"><h2 className="dd-card-title">Messages</h2></div>;
+        return <div className="dd-card"><h2 className="dd-card-title">Messages</h2><p>No new messages.</p></div>;
       case "Analytics":
-        return <div className="dd-card"><h2 className="dd-card-title">Analytics</h2></div>;
+        return <div className="dd-card"><h2 className="dd-card-title">Analytics</h2><p>Analytics will be available once you have patient data.</p></div>;
       case "Settings":
-        return <div className="dd-card"><h2 className="dd-card-title">Settings</h2></div>;
+        return <div className="dd-card"><h2 className="dd-card-title">Settings</h2><p>Manage your account settings here.</p></div>;
       default:
         return <Dashbord />;
     }
@@ -71,7 +95,7 @@ export default function DoctorDashboard() {
 
   const menuItems = [
     { icon: "🏠", label: "Dashboard" },
-      { icon: "📝", label: "Enrollments" },
+    { icon: "📝", label: "Enrollments" },
     { icon: "📅", label: "Appointments" },
     { icon: "👥", label: "My Patients" },
     { icon: "💬", label: "Messages" },
@@ -92,7 +116,9 @@ export default function DoctorDashboard() {
             <button
               key={item.label}
               className={`dd-nav-item${activeMenu === item.label ? " active" : ""}`}
-              onClick={() => setActiveMenu(item.label)}
+              onClick={() => isEnrolled && setActiveMenu(item.label)}
+              style={{ opacity: isEnrolled ? 1 : 0.5, cursor: isEnrolled ? 'pointer' : 'not-allowed' }}
+              disabled={!isEnrolled}
             >
               <span className="dd-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
@@ -135,6 +161,11 @@ export default function DoctorDashboard() {
         </header>
 
         <div className="dd-content">
+          {!isEnrolled && (
+            <div style={{ marginBottom: '2rem', padding: '1rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#92400e', fontSize: '0.875rem' }}>
+              <strong>Action Required:</strong> Please complete your enrollment form to access all dashboard features.
+            </div>
+          )}
           {renderContent()}
         </div>
       </main>

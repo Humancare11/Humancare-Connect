@@ -6,11 +6,14 @@ import "./DoctorEnrollments.css";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
-const DoctorEnrollments = () => {
+const DoctorEnrollments = ({ onComplete, initialData, doctorId }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [countries, setCountries] = useState([]);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(!!initialData);
+  const [hasExistingProfilePhoto, setHasExistingProfilePhoto] = useState(false);
+  const [hasExistingCertification, setHasExistingCertification] = useState(false);
 
   const [formData, setFormData] = useState({
     // Section 1 - Personal Details
@@ -59,7 +62,20 @@ const DoctorEnrollments = () => {
     const countryNames = getNames();
     const sortedCountries = countryNames.sort((a, b) => a.localeCompare(b));
     setCountries(sortedCountries);
-  }, []);
+
+    // Populate form if initialData exists
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        // Ensure files are null as they can't be easily restored from JSON
+        profilePhoto: null,
+        medicalCertification: null
+      }));
+      setHasExistingProfilePhoto(!!initialData.hasProfilePhoto || !!initialData.profilePhoto);
+      setHasExistingCertification(!!initialData.hasCertification || !!initialData.medicalCertification);
+    }
+  }, [initialData]);
 
   const validators = {
     email: (value) => {
@@ -312,6 +328,9 @@ const DoctorEnrollments = () => {
         ]);
         if (sizeError) newErrors.profilePhoto = sizeError;
         else if (typeError) newErrors.profilePhoto = typeError;
+      } else if (!hasExistingProfilePhoto) {
+        // Only require if no existing photo
+        newErrors.profilePhoto = "Profile photo is required";
       }
     } else if (step === 2) {
       const fields = [
@@ -332,13 +351,13 @@ const DoctorEnrollments = () => {
         if (error) newErrors[field] = error;
       });
 
-      if (!formData.medicalCertification) {
-        newErrors.medicalCertification = "Medical certification file is required";
-      } else {
+      if (formData.medicalCertification) {
         const sizeError = validateFileSize(formData.medicalCertification);
         const typeError = validateFileType(formData.medicalCertification);
         if (sizeError) newErrors.medicalCertification = sizeError;
         else if (typeError) newErrors.medicalCertification = typeError;
+      } else if (!hasExistingCertification) {
+        newErrors.medicalCertification = "Medical certification file is required";
       }
 
       if (formData.payoutEmail) {
@@ -449,8 +468,9 @@ const handleSubmit = (e) => {
     const enrolledDoctors =
       JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
 
-    const newDoctor = {
-      id: Date.now(),
+    const doctorData = {
+      ...formData,
+      id: doctorId || initialData?.id || Date.now(),
       name: `Dr. ${formData.firstName} ${formData.surname}`.trim(),
       degree: formData.qualification || "Doctor",
       rating: 4.5,
@@ -471,9 +491,19 @@ const handleSubmit = (e) => {
       consultationMode: formData.consultationMode || "",
       verified: false,
       source: "enrollment",
+      hasProfilePhoto: hasExistingProfilePhoto || !!formData.profilePhoto,
+      hasCertification: hasExistingCertification || !!formData.medicalCertification,
     };
 
-    enrolledDoctors.push(newDoctor);
+    const existingIndex = enrolledDoctors.findIndex(d => d.id === doctorData.id);
+    if (existingIndex !== -1) {
+      // Update existing
+      enrolledDoctors[existingIndex] = doctorData;
+    } else {
+      // Add new
+      enrolledDoctors.push(doctorData);
+    }
+    
     localStorage.setItem("enrolledDoctors", JSON.stringify(enrolledDoctors));
 
     console.log("Form submitted:", formData);
@@ -481,7 +511,9 @@ const handleSubmit = (e) => {
 
     setTimeout(() => {
       setShowSuccess(false);
-    }, 5000);
+      setIsReadOnly(true);
+      if (onComplete) onComplete(doctorData);
+    }, 2000);
   }
 };
 
@@ -590,12 +622,6 @@ const handleSubmit = (e) => {
               review your application and get back to you within 2-3 business
               days.
             </p>
-            <button
-              className="btn-primary"
-              onClick={() => setShowSuccess(false)}
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
@@ -629,17 +655,33 @@ const handleSubmit = (e) => {
         </div>
 
         <div className="form-main">
-          <div className="form-header">
-            <span className="step-indicator">Step {currentStep}/2</span>
-            <h2>
-              {currentStep === 1 && "Personal Details"}
-              {currentStep === 2 && "Doctor Verification"}
-            </h2>
-            {currentStep === 1 && (
-              <p>Provide your professional and contact information.</p>
-            )}
-            {currentStep === 2 && (
-              <p>Upload verification documents and payout details.</p>
+          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span className="step-indicator">Step {currentStep}/2</span>
+              <h2>
+                {currentStep === 1 && "Personal Details"}
+                {currentStep === 2 && "Doctor Verification"}
+              </h2>
+              {currentStep === 1 && (
+                <p>Provide your professional and contact information.</p>
+              )}
+              {currentStep === 2 && (
+                <p>Upload verification documents and payout details.</p>
+              )}
+            </div>
+            {initialData && isReadOnly && (
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => setIsReadOnly(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Edit
+              </button>
             )}
           </div>
 
@@ -655,6 +697,7 @@ const handleSubmit = (e) => {
                     onChange={handleInputChange}
                     placeholder="e.g. doctor@example.com"
                     required
+                    disabled={isReadOnly}
                   />
                   <span className="helper-text">
                     Your professional email address.
@@ -671,10 +714,12 @@ const handleSubmit = (e) => {
                       country="in"
                       value={formData.phoneNumber}
                       onChange={handlePhoneChange}
+                      disabled={isReadOnly}
                       inputStyle={{
                         width: "100%",
                         height: "48px",
                         fontSize: "15px",
+                        backgroundColor: isReadOnly ? '#f8fafc' : 'white'
                       }}
                     />
                     {errors.phoneNumber && (
@@ -695,6 +740,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="Dr. John"
                       required
+                      disabled={isReadOnly}
                     />
                     {errors.firstName && (
                       <span className="error-message">{errors.firstName}</span>
@@ -710,6 +756,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="Doe"
                       required
+                      disabled={isReadOnly}
                     />
                     {errors.surname && (
                       <span className="error-message">{errors.surname}</span>
@@ -725,6 +772,7 @@ const handleSubmit = (e) => {
                       value={formData.gender}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                     >
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
@@ -744,6 +792,7 @@ const handleSubmit = (e) => {
                       value={formData.dob}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                     />
                     {errors.dob && (
                       <span className="error-message">{errors.dob}</span>
@@ -760,6 +809,7 @@ const handleSubmit = (e) => {
                     onChange={handleInputChange}
                     placeholder="e.g. MBBS, MD"
                     required
+                    disabled={isReadOnly}
                   />
                   {errors.qualification && (
                     <span className="error-message">
@@ -776,141 +826,12 @@ const handleSubmit = (e) => {
                       value={formData.specialization}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                     >
                       <option value="">Select Specialization</option>
-                      <option value="Adolescent Medicine">
-                        Adolescent Medicine
-                      </option>
-                      <option value="Adult Reconstructive Orthopaedics">
-                        Adult Reconstructive Orthopaedics
-                      </option>
-                      <option value="Andrologist">Andrologist</option>
-                      <option value="Anesthesiologist">Anesthesiologist</option>
-                      <option value="Audiologist">Audiologist</option>
-                      <option value="Cardiologist">Cardiologist</option>
-                      <option value="Cardiothoracic Surgeon">
-                        Cardiothoracic Surgeon
-                      </option>
-                      <option value="Child & Adolescent Psychiatrist">
-                        Child & Adolescent Psychiatrist
-                      </option>
-                      <option value="Critical Care Medicine Specialist">
-                        Critical Care Medicine Specialist
-                      </option>
-                      <option value="Dental Prosthetics">
-                        Dental Prosthetics
-                      </option>
-                      <option value="Dental Surgeon">Dental Surgeon</option>
-                      <option value="Dentist">Dentist</option>
-                      <option value="Dermatologist">Dermatologist</option>
-                      <option value="Diagnostician">Diagnostician</option>
-                      <option value="Dietician">Dietician</option>
-                      <option value="Emergency Medicine Specialist">
-                        Emergency Medicine Specialist
-                      </option>
-                      <option value="Endocrinologist">Endocrinologist</option>
-                      <option value="Epidemiologist">Epidemiologist</option>
-                      <option value="Family Medicine">Family Medicine</option>
-                      <option value="Family Practice / General Practice">
-                        Family Practice / General Practice
-                      </option>
-                      <option value="Gastroenterologist">
-                        Gastroenterologist
-                      </option>
-                      <option value="General Practice">General Practice</option>
-                      <option value="Geriatric Medicine">
-                        Geriatric Medicine
-                      </option>
-                      <option value="Geriatric Medicine Specialist">
-                        Geriatric Medicine Specialist
-                      </option>
-                      <option value="Hematologist">Hematologist</option>
-                      <option value="Hematologist & Oncologist">
-                        Hematologist & Oncologist
-                      </option>
-                      <option value="Hepatologist">Hepatologist</option>
-                      <option value="Homeopathic Medicine">
-                        Homeopathic Medicine
-                      </option>
-                      <option value="Infectious Disease Specialist">
-                        Infectious Disease Specialist
-                      </option>
-                      <option value="Intensivist">Intensivist</option>
-                      <option value="Internal Medicine Specialist">
-                        Internal Medicine Specialist
-                      </option>
-                      <option value="Maxillofacial Surgeon / Oral Surgeon">
-                        Maxillofacial Surgeon / Oral Surgeon
-                      </option>
-                      <option value="Medical Education">
-                        Medical Education
-                      </option>
-                      <option value="Medical Examiner">Medical Examiner</option>
-                      <option value="Microbiologist">Microbiologist</option>
-                      <option value="Naturopathy">Naturopathy</option>
-                      <option value="Nephrologist">Nephrologist</option>
-                      <option value="Neurologist">Neurologist</option>
-                      <option value="Neurosurgeon">Neurosurgeon</option>
-                      <option value="Nuclear Medicine Specialist">
-                        Nuclear Medicine Specialist
-                      </option>
-                      <option value="Nurse Education">Nurse Education</option>
-                      <option value="Obstetrician and Gynecologist">
-                        Obstetrician and Gynecologist
-                      </option>
-                      <option value="Occupational Medicine Specialist">
-                        Occupational Medicine Specialist
-                      </option>
-                      <option value="Oncologist">Oncologist</option>
-                      <option value="Ophthalmologist">Ophthalmologist</option>
-                      <option value="Optometrist">Optometrist</option>
-                      <option value="Optometrist/Optician">
-                        Optometrist/Optician
-                      </option>
-                      <option value="Orthopedic Surgeon / Orthopedist">
-                        Orthopedic Surgeon / Orthopedist
-                      </option>
-                      <option value="Orthopedic Surgery">
-                        Orthopedic Surgery
-                      </option>
-                      <option value="Otolaryngologist / ENT">
-                        Otolaryngologist / ENT
-                      </option>
-                      <option value="Pain Medicine">Pain Medicine</option>
-                      <option value="Pathologist">Pathologist</option>
-                      <option value="Pediatrician">Pediatrician</option>
-                      <option value="Periodontist">Periodontist</option>
-                      <option value="Pharmacist">Pharmacist</option>
-                      <option value="Physiatrist">Physiatrist</option>
-                      <option value="Physiologist">Physiologist</option>
-                      <option value="Physiotherapist">Physiotherapist</option>
-                      <option value="Plastic Surgeon">Plastic Surgeon</option>
-                      <option value="Prosthetist/Orthotist">
-                        Prosthetist/Orthotist
-                      </option>
-                      <option value="Psychiatrist">Psychiatrist</option>
-                      <option value="Psychology/Psychotherapist">
-                        Psychology/Psychotherapist
-                      </option>
-                      <option value="Pulmonologist">Pulmonologist</option>
-                      <option value="Radiation Oncologist">
-                        Radiation Oncologist
-                      </option>
-                      <option value="Radiologist">Radiologist</option>
-                      <option value="Rheumatologist">Rheumatologist</option>
-                      <option value="Sexologist">Sexologist</option>
-                      <option value="Sexologist and Psychiatrist">
-                        Sexologist and Psychiatrist
-                      </option>
-                      <option value="Sexologist/General Physician">
-                        Sexologist/General Physician
-                      </option>
-                      <option value="Siddha/Ayurvedha">Siddha/Ayurvedha</option>
-                      <option value="Sports Medicine Specialist">
-                        Sports Medicine Specialist
-                      </option>
-                      <option value="Surgeon">Surgeon</option>
-                      <option value="Urologist">Urologist</option>
+                      {Object.keys(specialities).map(spec => (
+                        <option key={spec} value={spec}>{spec}</option>
+                      ))}
                     </select>
                     {errors.specialization && (
                       <span className="error-message">
@@ -925,6 +846,7 @@ const handleSubmit = (e) => {
                       name="subSpecialization"
                       value={formData.subSpecialization}
                       onChange={handleInputChange}
+                      disabled={isReadOnly}
                     >
                       <option value="">Select Sub-Specialization</option>
                       {specialities[formData.specialization]?.map(
@@ -950,6 +872,7 @@ const handleSubmit = (e) => {
                     onChange={handleInputChange}
                     placeholder="Enter consultation fee"
                     required
+                    disabled={isReadOnly}
                   />
                   {errors.consultantFees && (
                     <span className="error-message">
@@ -967,6 +890,7 @@ const handleSubmit = (e) => {
                     placeholder="Enter your clinic/practice address"
                     rows="3"
                     required
+                    disabled={isReadOnly}
                   />
                   {errors.address && (
                     <span className="error-message">{errors.address}</span>
@@ -981,6 +905,7 @@ const handleSubmit = (e) => {
                       value={formData.country}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                     >
                       <option value="">Select Country</option>
                       {countries.map((country) => (
@@ -1003,6 +928,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="State"
                       required
+                      disabled={isReadOnly}
                     />
                     {errors.state && (
                       <span className="error-message">{errors.state}</span>
@@ -1020,6 +946,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="City"
                       required
+                      disabled={isReadOnly}
                     />
                     {errors.city && (
                       <span className="error-message">{errors.city}</span>
@@ -1035,6 +962,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="Postal Code"
                       required
+                      disabled={isReadOnly}
                       className={errors.zip ? "input-error" : ""}
                     />
                     {errors.zip && (
@@ -1045,34 +973,45 @@ const handleSubmit = (e) => {
 
                 <div className="form-group">
                   <label>Profile Photo</label>
-                  <input
-                    type="file"
-                    name="profilePhoto"
-                    onChange={handleFileChange}
-                    accept="image/jpeg,image/jpg,image/png"
-                    className={errors.profilePhoto ? "input-error" : ""}
-                  />
-                  {profilePhotoPreview && (
+                  {!isReadOnly && (
+                    <input
+                      type="file"
+                      name="profilePhoto"
+                      onChange={handleFileChange}
+                      accept="image/jpeg,image/jpg,image/png"
+                      className={errors.profilePhoto ? "input-error" : ""}
+                    />
+                  )}
+                  {(profilePhotoPreview || hasExistingProfilePhoto) && (
                     <div className="profile-photo-preview">
-                      <img src={profilePhotoPreview} alt="Profile Preview" />
-                      <button
-                        type="button"
-                        className="remove-photo-btn"
-                        onClick={() => {
-                          setProfilePhotoPreview(null);
-                          setFormData((prev) => ({
-                            ...prev,
-                            profilePhoto: null,
-                          }));
-                        }}
-                      >
-                        ✕ Remove
-                      </button>
+                      {profilePhotoPreview ? (
+                        <img src={profilePhotoPreview} alt="Profile Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} />
+                      ) : (
+                        <div style={{ width: '100px', height: '100px', background: '#f1f5f9', borderRadius: '8px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#64748b', textAlign: 'center', padding: '0.5rem' }}>Photo Uploaded</div>
+                      )}
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          className="remove-photo-btn"
+                          onClick={() => {
+                            setProfilePhotoPreview(null);
+                            setHasExistingProfilePhoto(false);
+                            setFormData((prev) => ({
+                              ...prev,
+                              profilePhoto: null,
+                            }));
+                          }}
+                        >
+                          ✕ Remove
+                        </button>
+                      )}
                     </div>
                   )}
-                  <span className="helper-text">
-                    Upload a professional photo (JPG, PNG - Max 2MB)
-                  </span>
+                  {!isReadOnly && (
+                    <span className="helper-text">
+                      Upload a professional photo (JPG, PNG - Max 2MB)
+                    </span>
+                  )}
                   {errors.profilePhoto && (
                     <span className="error-message">{errors.profilePhoto}</span>
                   )}
@@ -1090,6 +1029,7 @@ const handleSubmit = (e) => {
                       required
                       min="1"
                       max="60"
+                      disabled={isReadOnly}
                       className={errors.experience ? "input-error" : ""}
                     />
                     {errors.experience && (
@@ -1104,6 +1044,7 @@ const handleSubmit = (e) => {
                       value={formData.consultationMode}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                       className={errors.consultationMode ? "input-error" : ""}
                     >
                       <option value="">Select Mode</option>
@@ -1129,14 +1070,17 @@ const handleSubmit = (e) => {
                     rows="4"
                     required
                     maxLength="300"
+                    disabled={isReadOnly}
                     className={errors.aboutDoctor ? "input-error" : ""}
                   />
-                  <div className="character-counter">
-                    {formData.aboutDoctor.length}/300 characters
-                    {formData.aboutDoctor.length < 150 && (
-                      <span className="counter-warning"> (min 150 required)</span>
-                    )}
-                  </div>
+                  {!isReadOnly && (
+                    <div className="character-counter">
+                      {formData.aboutDoctor.length}/300 characters
+                      {formData.aboutDoctor.length < 150 && (
+                        <span className="counter-warning" style={{ color: '#ef4444' }}> (min 150 required)</span>
+                      )}
+                    </div>
+                  )}
                   {errors.aboutDoctor && (
                     <span className="error-message">{errors.aboutDoctor}</span>
                   )}
@@ -1144,15 +1088,18 @@ const handleSubmit = (e) => {
 
                 <div className="form-group">
                   <label>Languages Known</label>
-                  <span className="helper-text">
-                    Select all languages you can communicate in.
-                  </span>
+                  {!isReadOnly && (
+                    <span className="helper-text">
+                      Select all languages you can communicate in.
+                    </span>
+                  )}
                   <div className="language-chips">
                     {languages.map((lang) => (
                       <div
                         key={lang}
                         className={`chip ${formData.languagesKnown.includes(lang) ? "selected" : ""}`}
-                        onClick={() => handleLanguageToggle(lang)}
+                        onClick={() => !isReadOnly && handleLanguageToggle(lang)}
+                        style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
                       >
                         {lang}
                       </div>
@@ -1175,6 +1122,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="e.g. Apollo Clinic"
                       required
+                      disabled={isReadOnly}
                       className={errors.clinicName ? "input-error" : ""}
                     />
                     {errors.clinicName && (
@@ -1192,6 +1140,7 @@ const handleSubmit = (e) => {
                     placeholder="Enter complete clinic address"
                     rows="3"
                     required
+                    disabled={isReadOnly}
                     className={errors.clinicAddress ? "input-error" : ""}
                   />
                   {errors.clinicAddress && (
@@ -1215,6 +1164,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="Enter your MCI registration number"
                       required
+                      disabled={isReadOnly}
                       className={
                         errors.medicalRegistrationNumber ? "input-error" : ""
                       }
@@ -1235,6 +1185,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="State medical license number"
                       required
+                      disabled={isReadOnly}
                       className={errors.medicalLicense ? "input-error" : ""}
                     />
                     {errors.medicalLicense && (
@@ -1253,6 +1204,7 @@ const handleSubmit = (e) => {
                       value={formData.medicalCouncilName}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                       className={errors.medicalCouncilName ? "input-error" : ""}
                     >
                       <option value="">Select Medical Council</option>
@@ -1285,6 +1237,7 @@ const handleSubmit = (e) => {
                       required
                       min="1950"
                       max={new Date().getFullYear()}
+                      disabled={isReadOnly}
                       className={errors.registrationYear ? "input-error" : ""}
                     />
                     {errors.registrationYear && (
@@ -1298,18 +1251,41 @@ const handleSubmit = (e) => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Medical Certification (Upload)</label>
-                    <input
-                      type="file"
-                      name="medicalCertification"
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      required
-                      className={errors.medicalCertification ? "input-error" : ""}
-                    />
-                    <span className="helper-text">
-                      Upload your medical degree certificate (PDF, JPG, PNG -
-                      Max 2MB)
-                    </span>
+                    {!isReadOnly && (
+                      <input
+                        type="file"
+                        name="medicalCertification"
+                        onChange={handleFileChange}
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        required={!hasExistingCertification}
+                        disabled={isReadOnly}
+                        className={errors.medicalCertification ? "input-error" : ""}
+                      />
+                    )}
+                    {hasExistingCertification && (
+                      <div style={{ fontSize: '0.875rem', color: '#0c8b7a', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Certification Uploaded
+                        {!isReadOnly && (
+                          <button 
+                            type="button" 
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem' }}
+                            onClick={() => setHasExistingCertification(false)}
+                          >
+                            Change
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {!isReadOnly && !hasExistingCertification && (
+                      <span className="helper-text">
+                        Upload your medical degree certificate (PDF, JPG, PNG -
+                        Max 2MB)
+                      </span>
+                    )}
                     {errors.medicalCertification && (
                       <span className="error-message">
                         {errors.medicalCertification}
@@ -1324,6 +1300,7 @@ const handleSubmit = (e) => {
                       value={formData.idProofType}
                       onChange={handleInputChange}
                       required
+                      disabled={isReadOnly}
                       className={errors.idProofType ? "input-error" : ""}
                     >
                       <option value="">Select ID Proof</option>
@@ -1348,6 +1325,7 @@ const handleSubmit = (e) => {
                     onChange={handleInputChange}
                     placeholder="Enter ID proof number"
                     required
+                    disabled={isReadOnly}
                     className={errors.idProof ? "input-error" : ""}
                   />
                   {errors.idProof && (
@@ -1355,8 +1333,8 @@ const handleSubmit = (e) => {
                   )}
                 </div>
 
-                <div className="section-divider">
-                  <span>Payout Details</span>
+                <div className="section-divider" style={{ margin: '2rem 0', borderTop: '1px solid #e2e8f0', position: 'relative', textAlign: 'center' }}>
+                  <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 1rem', fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Payout Details</span>
                 </div>
 
                 <div className="form-group">
@@ -1367,6 +1345,7 @@ const handleSubmit = (e) => {
                     value={formData.payoutEmail}
                     onChange={handleInputChange}
                     placeholder="For payment notifications"
+                    disabled={isReadOnly}
                     className={errors.payoutEmail ? "input-error" : ""}
                   />
                   {errors.payoutEmail && (
@@ -1384,6 +1363,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="As per bank account"
                       required
+                      disabled={isReadOnly}
                       className={errors.accountHolderName ? "input-error" : ""}
                     />
                     {errors.accountHolderName && (
@@ -1402,6 +1382,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="e.g. State Bank of India"
                       required
+                      disabled={isReadOnly}
                       className={errors.bankName ? "input-error" : ""}
                     />
                     {errors.bankName && (
@@ -1420,6 +1401,7 @@ const handleSubmit = (e) => {
                       onChange={handleInputChange}
                       placeholder="Bank account number"
                       required
+                      disabled={isReadOnly}
                       className={errors.accountNumber ? "input-error" : ""}
                     />
                     {errors.accountNumber && (
@@ -1439,6 +1421,7 @@ const handleSubmit = (e) => {
                       placeholder="e.g. SBIN0001234"
                       required
                       maxLength="11"
+                      disabled={isReadOnly}
                       style={{ textTransform: "uppercase" }}
                       className={errors.ifscCode ? "input-error" : ""}
                     />
@@ -1448,7 +1431,7 @@ const handleSubmit = (e) => {
                   </div>
                 </div>
 
-                <div className="quick-tip">
+                <div className="quick-tip" style={{ display: 'flex', gap: '1rem', padding: '1rem', background: '#f0fdfa', borderRadius: '10px', marginTop: '2rem' }}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <circle
                       cx="10"
@@ -1466,7 +1449,7 @@ const handleSubmit = (e) => {
                   </svg>
                   <div>
                     <strong>Quick Tip:</strong>
-                    <p>
+                    <p style={{ fontSize: '0.875rem', color: '#475569', margin: 0 }}>
                       Provide accurate credentials for faster verification and
                       account approval.
                     </p>
@@ -1505,18 +1488,20 @@ const handleSubmit = (e) => {
                     </svg>
                   </button>
                 ) : (
-                  <button type="submit" className="btn-primary">
-                    Submit Application
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M6 12l4-4-4-4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
+                  !isReadOnly && (
+                    <button type="submit" className="btn-primary">
+                      {initialData ? "Update Enrollment" : "Submit Application"}
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M6 12l4-4-4-4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  )
                 )}
               </div>
             </div>
