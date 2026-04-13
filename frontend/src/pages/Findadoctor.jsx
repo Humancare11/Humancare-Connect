@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import axios from "axios";
 import "./Findadoctor.css";
 import { useNavigate } from "react-router-dom";
 
@@ -37,23 +38,7 @@ const languages = [
   "Marathi",
 ];
 
-const allDoctors = [
-  // {
-  //   id: 1,
-  //   name: "Dr. Shilpa N Desai",
-  //   degree: "Ph.D, Health Psychologist",
-  //   rating: 4.5,
-  //   experience: "25+",
-  //   specialty: "Psychology/Psychotherapist",
-  //   languages: ["English", "Hindi", "Gujarati", "Marathi"],
-  //   location: "Mumbai, Maharashtra",
-  //   price: 3000,
-  //   gender: "Female",
-  //   initials: "SD",
-  //   color: "#4A90D9",
-  // },
-
-];
+const allDoctors = [];
 
 const DOCTORS_PER_PAGE = 10;
 
@@ -150,14 +135,14 @@ const ChevronRight = () => (
 
 export default function DoctorFinder() {
   const navigate = useNavigate();
-const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
+  const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
-useEffect(() => {
-  const enrolledDoctors =
-    JSON.parse(localStorage.getItem("enrolledDoctors")) || [];
-
-  setDynamicDoctors([...enrolledDoctors, ...allDoctors]);
-}, []);
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/doctor/approved")
+      .then((res) => setDynamicDoctors([...res.data, ...allDoctors]))
+      .catch(() => setDynamicDoctors(allDoctors));
+  }, []);
   const handleBook = (doc) => {
     const token = localStorage.getItem("token");
 

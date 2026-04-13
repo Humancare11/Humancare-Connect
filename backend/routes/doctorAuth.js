@@ -147,6 +147,38 @@ router.post("/enrollment", async (req, res) => {
   }
 });
 
+// ── GET /api/doctor/approved ──────────────────────────────
+// Public — only returns doctors whose enrollment is approved
+router.get("/approved", async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ approvalStatus: "approved" })
+      .populate("doctorId", "name email")
+      .lean();
+
+    const doctors = enrollments.map((e) => ({
+      id: e._id,
+      doctorId: e.doctorId?._id,
+      name: `Dr. ${e.firstName || ""} ${e.surname || ""}`.trim(),
+      degree: e.qualification || "",
+      specialty: e.specialization || "",
+      languages: e.languagesKnown || [],
+      location: [e.city, e.state].filter(Boolean).join(", "),
+      price: e.consultantFees || 0,
+      experience: e.experience || 0,
+      gender: e.gender || "",
+      rating: 0,
+      initials: `${(e.firstName || " ")[0]}${(e.surname || " ")[0]}`.toUpperCase(),
+      color: "#2563eb",
+      source: "enrollment",
+    }));
+
+    return res.json(doctors);
+  } catch (err) {
+    console.error("approved doctors error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 // ── GET /api/doctor/me ─────────────────────────────────────
 router.get("/me", async (req, res) => {
   try {

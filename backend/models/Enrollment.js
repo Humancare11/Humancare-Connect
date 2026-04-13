@@ -44,7 +44,14 @@ const enrollmentSchema = new mongoose.Schema({
   hasProfilePhoto: { type: Boolean, default: false },
   hasCertification: { type: Boolean, default: false },
   verified: { type: Boolean, default: false },
-  
+
+  // Admin approval
+  approvalStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+
   updatedAt: { type: Date, default: Date.now }
 });
 
