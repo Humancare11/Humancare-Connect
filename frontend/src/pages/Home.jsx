@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./home.css";
 import Sa from "../components/Sa";
 import Aa from "../components/Aa";
@@ -8,6 +8,166 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
+import { FaFileMedical, FaSyncAlt, FaCalendarAlt } from "react-icons/fa";
+
+const SCENE_VISUALS = [
+  {
+    bg: "linear-gradient(135deg, #E8F0FE 0%, #DCE6F2 100%)",
+    icon: "📱",
+    label: "Phone",
+  },
+  {
+    bg: "linear-gradient(135deg, #E8F5F3 0%, #DCE6F2 100%)",
+    icon: "👨‍⚕️",
+    label: "Doctor",
+  },
+  {
+    bg: "linear-gradient(135deg, #FEF3E2 0%, #F4F7FB 100%)",
+    icon: "⏱️",
+    label: "Timer",
+  },
+  {
+    bg: "linear-gradient(135deg, #E8F0FE 0%, #E8F5F3 100%)",
+    icon: "🎥",
+    label: "Video",
+  },
+  {
+    bg: "linear-gradient(135deg, #E8F5F3 0%, #F4F7FB 100%)",
+    icon: "💊",
+    label: "Rx",
+  },
+  {
+    bg: "linear-gradient(135deg, #E8F5F3 0%, #FEF3E2 100%)",
+    icon: "✅",
+    label: "Done",
+  },
+];
+
+// ─── Scene data ───────────────────────────────────────────────────────────────
+const SCENES = [
+  {
+    step: 1,
+    badge: "Open App",
+    title: "Launch Humancare",
+    desc: "Open the app or website. Your health dashboard loads instantly with your profile ready.",
+    metricValue: "< 1s",
+    metricLabel: "App load time",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
+  },
+  {
+    step: 2,
+    badge: "AI Match",
+    title: "Matched to Dr. Patel",
+    desc: "Our AI matches you to the best available physician based on your symptoms and history.",
+    metricValue: "4 sec",
+    metricLabel: "Match time",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    step: 3,
+    badge: "Waiting",
+    title: "Virtual Waiting Room",
+    desc: "A brief hold while your doctor prepares. Average wait is under 90 seconds nationwide.",
+    metricValue: "~12 sec",
+    metricLabel: "Your wait today",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    step: 4,
+    badge: "Connected",
+    title: "Video Consultation",
+    desc: "Face-to-face with your doctor over HIPAA-secured, HD video. Share symptoms, ask questions.",
+    metricValue: "256-bit",
+    metricLabel: "Encrypted",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+  },
+  {
+    step: 5,
+    badge: "E-Prescribe",
+    title: "Prescription Sent",
+    desc: "Your doctor sends the prescription electronically to your preferred pharmacy. Ready for pickup.",
+    metricValue: "Instant",
+    metricLabel: "E-Rx delivery",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+  },
+  {
+    step: 6,
+    badge: "Done",
+    title: "Visit Complete!",
+    desc: "Rate your experience, schedule follow-ups, and access visit notes — all from one dashboard.",
+    metricValue: "4.9 ★",
+    metricLabel: "Avg rating",
+    metricIcon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26" />
+      </svg>
+    ),
+  },
+];
+
+const STEP_ICONS = [
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <rect x="5" y="2" width="14" height="20" rx="3" />
+    <line x1="12" y1="18" x2="12.01" y2="18" />
+  </svg>,
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="m22 8-4 4-2-2" />
+  </svg>,
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>,
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <polygon points="23 7 16 12 23 17 23 7" />
+    <rect x="1" y="5" width="15" height="14" rx="2" />
+  </svg>,
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+  </svg>,
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>,
+];
+
+const DOT_LABELS = [
+  "Open App",
+  "Match Doctor",
+  "Wait Room",
+  "Video Call",
+  "Rx Sent",
+  "Complete",
+];
+const TOTAL_STEPS = 6;
+const STEP_DURATION = 4000;
+const CIRCUMFERENCE = 2 * Math.PI * 10;
 
 export default function HomePage() {
   // Testimonials data
@@ -85,14 +245,275 @@ export default function HomePage() {
     };
   }, []);
 
+  class Particle {
+    constructor(canvas) {
+      this.canvas = canvas;
+      this.init();
+    }
+
+    init() {
+      this.x = Math.random() * this.canvas.width;
+      this.y = Math.random() * this.canvas.height;
+      this.vx = 0;
+      this.vy = 0;
+      this.age = 0;
+      this.maxAge = Math.random() * 200 + 100;
+      this.color = Math.random() > 0.5 ? "#3B372E" : "#24221D";
+    }
+
+    update(mouse, noiseScale = 0.005) {
+      // Base Flow Logic
+      let angle =
+        (Math.sin(this.x * noiseScale) + Math.cos(this.y * noiseScale)) *
+        Math.PI *
+        2;
+      this.vx = Math.cos(angle) * 1.2;
+      this.vy = Math.sin(angle) * 1.2;
+
+      // STRONG REPULSION LOGIC
+      let dx = this.x - mouse.x;
+      let dy = this.y - mouse.y;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      let forceRadius = 150;
+
+      if (distance < forceRadius) {
+        let force = (forceRadius - distance) / forceRadius;
+        let dirX = dx / distance;
+        let dirY = dy / distance;
+        this.vx += dirX * force * 5; // Push away force
+        this.vy += dirY * force * 5;
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+      this.age++;
+
+      if (
+        this.x < 0 ||
+        this.x > this.canvas.width ||
+        this.y < 0 ||
+        this.y > this.canvas.height ||
+        this.age > this.maxAge
+      ) {
+        this.init();
+      }
+    }
+
+    draw(ctx) {
+      ctx.beginPath();
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 1;
+      ctx.moveTo(this.x - this.vx, this.y - this.vy);
+      ctx.lineTo(this.x, this.y);
+      ctx.stroke();
+    }
+  }
+
+  class Hologram {
+    constructor(canvas, type) {
+      this.canvas = canvas;
+      this.type = type;
+      this.x = Math.random() * (canvas.width - 200) + 100;
+      this.y = Math.random() * (canvas.height - 200) + 100;
+      this.opacity = 0;
+      this.maxOpacity = 0.6;
+      this.scale = 0.5;
+      this.state = "fadein"; // fadein, float, fadeout
+      this.timer = 0;
+    }
+
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.scale(this.scale, this.scale);
+      ctx.strokeStyle = `rgba(45, 212, 191, ${this.opacity})`;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = "#2dd4bf";
+
+      ctx.beginPath();
+      // if (this.type === "heart") this.drawHeart(ctx);
+      // if (this.type === "eye") this.drawEye(ctx);
+      // if (this.type === "cross") this.drawCross(ctx);
+      // if (this.type === "dna") this.drawDNA(ctx);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    drawHeart(ctx) {
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-10, -10, -20, 0, 0, 20);
+      ctx.bezierCurveTo(20, 0, 10, -10, 0, 0);
+    }
+
+    drawEye(ctx) {
+      ctx.arc(0, 0, 15, 0, Math.PI * 2); // Outer
+      ctx.moveTo(-5, 0);
+      ctx.lineTo(5, 0); // Pupil
+    }
+
+    drawCross(ctx) {
+      ctx.moveTo(-10, 0);
+      ctx.lineTo(10, 0);
+      ctx.moveTo(0, -10);
+      ctx.lineTo(0, 10);
+    }
+
+    drawDNA(ctx) {
+      ctx.moveTo(-10, -10);
+      ctx.quadraticCurveTo(0, 0, 10, -10);
+      ctx.moveTo(-10, 10);
+      ctx.quadraticCurveTo(0, 0, 10, 10);
+    }
+
+    update() {
+      this.timer++;
+      if (this.state === "fadein") {
+        this.opacity += 0.01;
+        this.scale += 0.005;
+        if (this.opacity >= this.maxOpacity) this.state = "float";
+      } else if (this.state === "float") {
+        this.y += Math.sin(this.timer * 0.05) * 0.2;
+        if (this.timer > 200) this.state = "fadeout";
+      } else {
+        this.opacity -= 0.01;
+        if (this.opacity <= 0) return false;
+      }
+      return true;
+    }
+  }
+
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return; // Add null check
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return; // Add context check
+
+    let particles = [];
+    let holograms = [];
+    let animationFrameId;
+    let spawnInterval;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    const spawnHologram = () => {
+      const types = ["heart", "eye", "cross", "dna"];
+      const randomType = types[Math.floor(Math.random() * types.length)];
+      holograms.push(new Hologram(canvas, randomType));
+    };
+
+    const handleMouseMove = (e) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const animate = () => {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((p) => {
+        p.update(mouseRef.current);
+        p.draw(ctx);
+      });
+
+      holograms = holograms.filter((h) => {
+        const alive = h.update();
+        if (alive) h.draw(ctx);
+        return alive;
+      });
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", handleMouseMove);
+
+    for (let i = 0; i < 700; i++) {
+      particles.push(new Particle(canvas));
+    }
+
+    spawnInterval = setInterval(spawnHologram, 5000);
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+      clearInterval(spawnInterval);
+    };
+  }, []);
+
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [timerOffset, setTimerOffset] = useState(CIRCUMFERENCE);
+  const elapsedRef = useRef(0);
+  const lastTickRef = useRef(Date.now());
+  const rafRef = useRef(null);
+  const pausedRef = useRef(false);
+  const currentRef = useRef(0);
+
+  // Keep refs in sync
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
+
+  const tick = useCallback(() => {
+    if (pausedRef.current) return;
+    const now = Date.now();
+    elapsedRef.current += now - lastTickRef.current;
+    lastTickRef.current = now;
+
+    const pct = elapsedRef.current / STEP_DURATION;
+    setTimerOffset(CIRCUMFERENCE * (1 - pct));
+
+    if (elapsedRef.current >= STEP_DURATION) {
+      elapsedRef.current = 0;
+      setCurrent((prev) => (prev + 1) % TOTAL_STEPS);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  useEffect(() => {
+    lastTickRef.current = Date.now();
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [tick]);
+
+  const jumpTo = (step) => {
+    elapsedRef.current = 0;
+    lastTickRef.current = Date.now();
+    setCurrent(step);
+  };
+
+  const togglePause = () => {
+    setPaused((p) => {
+      const next = !p;
+      if (!next) {
+        lastTickRef.current = Date.now();
+        rafRef.current = requestAnimationFrame(tick);
+      }
+      return next;
+    });
+  };
+
+  const progressPct = (current / (TOTAL_STEPS - 1)) * 100;
+
   return (
     <>
-      {/* HEADER */}
-      {/* <ServicesSection /> */}
-      {/* ══════════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════════ */}
+      {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
       <section className="hero">
+        {/* <canvas ref={canvasRef} className="hero-canvas"></canvas> */}
         <div className="hero-left">
           <div className="hero-badge">
             <div className="badge-pulse"></div>
@@ -176,125 +597,108 @@ export default function HomePage() {
         </div>
 
         <div className="hero-right">
-          {/* Floating top tag */}
-          <div className="float-tag ft-top">
-            <span style={{ fontSize: "16px" }}>⚡</span>
-            Next slot:{" "}
-            <strong style={{ color: "var(--teal)" }}>Available Now</strong>
-          </div>
+          <div className="timeline-container">
+            <div className="t-orb t-orb-1" />
+            <div className="t-orb t-orb-2" />
+            <div className="t-orb t-orb-3" />
 
-          {/* Doctor profile card */}
-          <div className="h-card doc-profile">
-            <div className="doc-row">
-              <div className="doc-avi">👩‍⚕️</div>
-              <div className="doc-name-wrap">
-                <div className="dname">Dr. Sarah Mitchell</div>
-                <div className="dspec">
-                  Internal Medicine · 12 yrs experience
-                </div>
-              </div>
+            <div className="timeline-header">
+              <div className="eyebrow-hero">The Humancare Experience</div>
+              <h3>
+                Your Visit in <span>90 Seconds</span>
+              </h3>
             </div>
-            <div className="doc-chips">
-              <span className="dchip">⭐ 4.97</span>
-              <span className="dchip">NY Licensed</span>
-              <span className="dchip">Video Visit</span>
-            </div>
-            <div className="doc-avail">
-              <div className="avail-dot"></div> Available now — instant booking
-            </div>
-          </div>
 
-          {/* Upcoming appointment card */}
-          <div className="h-card appt-card">
-            <div className="appt-icon-wrap">
-              <svg
-                width="20"
-                height="20"
-                fill="none"
-                stroke="var(--primary)"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            </div>
-            <div className="appt-text">
-              <h4>Upcoming Visit</h4>
-              <p>Dr. Chen · Cardio Follow-up</p>
-            </div>
-            <div className="appt-time">
-              <div className="time-big">3:30</div>
-              <div className="time-sm">Today PM</div>
-            </div>
-          </div>
-
-          {/* Prescriptions card */}
-          <div className="h-card rx-card">
-            <div className="rx-head">Active Prescriptions</div>
-            <div className="rx-row">
+            <div className="progress-track">
               <div
-                className="rx-dot"
-                style={{ background: "var(--primary)" }}
-              ></div>
-              <span className="rx-label">Lisinopril</span>
-              <span className="rx-dose">10mg · daily</span>
-              <div className="rx-bar">
-                <div className="rx-fill" style={{ width: "75%" }}></div>
-              </div>
+                className="progress-fill"
+                style={{ width: `${progressPct}%` }}
+              />
             </div>
-            <div className="rx-row">
-              <div
-                className="rx-dot"
-                style={{ background: "var(--teal)" }}
-              ></div>
-              <span className="rx-label">Metformin</span>
-              <span className="rx-dose">500mg · 2×</span>
-              <div className="rx-bar">
-                <div
-                  className="rx-fill"
-                  style={{
-                    width: "45%",
-                    background: "linear-gradient(90deg,var(--teal),#0a6b5e)",
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="rx-row" style={{ marginBottom: "0" }}>
-              <div
-                className="rx-dot"
-                style={{ background: "var(--gold)" }}
-              ></div>
-              <span className="rx-label">Atorvastatin</span>
-              <span className="rx-dose">20mg · nightly</span>
-              <div className="rx-bar">
-                <div
-                  className="rx-fill"
-                  style={{
-                    width: "88%",
-                    background: "linear-gradient(90deg,var(--gold),#a06010)",
-                  }}
-                ></div>
-              </div>
-            </div>
-          </div>
 
-          {/* Floating bottom tag */}
-          <div className="float-tag ft-bot">
-            <svg
-              width="13"
-              height="13"
-              fill="none"
-              stroke="var(--teal)"
-              strokeWidth="2.5"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            HIPAA Certified Platform
+            <div className="step-dots">
+              {DOT_LABELS.map((label, i) => {
+                const isActive = i === current;
+                const isCompleted = i < current;
+                return (
+                  <div
+                    key={i}
+                    className={`step-dot${isActive ? " active" : ""}${isCompleted ? " completed" : ""}`}
+                    onClick={() => jumpTo(i)}
+                  >
+                    <div className="ring">{STEP_ICONS[i]}</div>
+                    <span className="dot-label">{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Scene Cards */}
+            <div className="scene-viewport">
+              {SCENES.map((scene, i) => {
+                const isActive = i === current;
+                const isExitUp =
+                  i === (current - 1 + TOTAL_STEPS) % TOTAL_STEPS &&
+                  current !== 0;
+                return (
+                  <div
+                    key={i}
+                    className={`scene-card${isActive ? " active" : ""}${isExitUp ? " exit-up" : ""}`}
+                  >
+                    <div
+                      className="scene-visual"
+                      style={{ background: SCENE_VISUALS[i].bg }}
+                    >
+                      <div className="scene-icon">{SCENE_VISUALS[i].icon}</div>
+                    </div>
+                    <div className="scene-content">
+                      <div className="scene-step-badge">
+                        <span className="num">{scene.step}</span>
+                        {scene.badge}
+                      </div>
+                      <div className="scene-title">{scene.title}</div>
+                      <div className="scene-desc">{scene.desc}</div>
+                      <div className="scene-metric">
+                        <div className="metric-icon">{scene.metricIcon}</div>
+                        <div className="metric-text">
+                          <span className="metric-value">
+                            {scene.metricValue}
+                          </span>
+                          <span className="metric-label">
+                            {scene.metricLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="auto-timer">
+              <div className="timer-ring">
+                <svg viewBox="0 0 24 24">
+                  <circle className="bg" cx="12" cy="12" r="10" />
+                  <circle
+                    className="fg"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    style={{ strokeDashoffset: timerOffset }}
+                  />
+                </svg>
+              </div>
+              <span className="timer-text">
+                {paused ? "Paused" : "Auto-playing"}
+              </span>
+              <span className="auto-badge" onClick={togglePause}>
+                {paused ? "Resume" : "Pause"}
+              </span>
+            </div>
           </div>
         </div>
       </section>
+      {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
 
       <Sa />
 
@@ -351,141 +755,19 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           SPECIALTIES
       ══════════════════════════════════════════════ */}
-
       <Aa />
-      {/* ══════════════════════════════════════════════
-          WHY HUMANCARE
-      ══════════════════════════════════════════════ */}
-      <section className="section" id="why">
-        <div className="why-grid">
-          <div className="why-visual">
-            <div className="stat-card-main">
-              <div className="sc-label">Patient outcome improvement</div>
-              <div className="sc-big">
-                94<span style={{ fontSize: "24px" }}>%</span>
-              </div>
-              <div className="sc-sub">After 3 months on Humancare</div>
-              <div className="sc-divider"></div>
-              <div className="sc-row">
-                <span>Visit completion rate</span>
-                <strong>98.2%</strong>
-              </div>
-              <div className="sc-prog">
-                <div className="sc-fill" style={{ width: "98%" }}></div>
-              </div>
-              <div className="sc-row">
-                <span>Prescription accuracy</span>
-                <strong>99.7%</strong>
-              </div>
-              <div className="sc-prog">
-                <div
-                  className="sc-fill"
-                  style={{
-                    width: "99.7%",
-                    background:
-                      "linear-gradient(90deg,var(--teal),var(--gold))",
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="stat-float sf1">
-              <div className="sf-label">Patients served</div>
-              <div className="sf-val" style={{ color: "var(--primary)" }}>
-                2.4M+
-              </div>
-            </div>
-            <div className="stat-float sf2">
-              <div className="sf-label">Avg. response</div>
-              <div className="sf-val" style={{ color: "var(--teal)" }}>
-                &lt;4 min
-              </div>
-            </div>
-            <div className="stat-float sf3">
-              <div className="sf-label">Rating</div>
-              <div className="sf-val" style={{ color: "var(--gold)" }}>
-                4.9 ★
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="section-eyebrow">Why Humancare</div>
-            <h2 className="section-title" style={{ marginBottom: "34px" }}>
-              Built on trust,
-              <br />
-              at every step.
-            </h2>
-            <div className="why-list">
-              <div className="why-item reveal">
-                <div className="why-icon">🔒</div>
-                <div>
-                  <div className="why-item-title">
-                    HIPAA &amp; SOC 2 Certified
-                  </div>
-                  <div className="why-item-desc">
-                    End-to-end encryption on every visit, message, and record.
-                    Your health data never leaves our secure, audited
-                    infrastructure.
-                  </div>
-                </div>
-              </div>
-              <div className="why-item reveal">
-                <div className="why-icon">✅</div>
-                <div>
-                  <div className="why-item-title">
-                    Board-Certified Physicians Only
-                  </div>
-                  <div className="why-item-desc">
-                    Every doctor clears a rigorous 9-step credentialing process
-                    — state licensure, malpractice history, peer reviews, and
-                    ongoing audits.
-                  </div>
-                </div>
-              </div>
-              <div className="why-item reveal">
-                <div className="why-icon">💳</div>
-                <div>
-                  <div className="why-item-title">
-                    Transparent, Flat-Fee Pricing
-                  </div>
-                  <div className="why-item-desc">
-                    No surprise bills. See the exact cost before booking. Most
-                    major insurance plans accepted, or a flat $49 uninsured
-                    rate.
-                  </div>
-                </div>
-              </div>
-              <div className="why-item reveal">
-                <div className="why-icon">📞</div>
-                <div>
-                  <div className="why-item-title">24 / 7 Human Support</div>
-                  <div className="why-item-desc">
-                    Real people — by chat, phone, or video — available around
-                    the clock for urgent questions, escalations, and care
-                    coordination.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ══════════════════════════════════════════════
           DOCTORS
       ══════════════════════════════════════════════ */}
       <section className="pcp-section-wrapper">
         <div className="pcp-container">
-          {/* LEFT */}
-          <div className="pcp-left">
+          {/* HEADER */}
+          <div className="pcp-header">
             <span className="pcp-eyebrow">— NO PCP? NO PROBLEM.</span>
 
             <h2 className="pcp-heading">
-              Don't have a
-              <br />
-              primary care doctor?
-              <br />
-              <span>We’ve got you.</span>
+              Don't have a primary care doctor?
+              <span>We've got you.</span>
             </h2>
 
             <p className="pcp-desc">
@@ -493,10 +775,15 @@ export default function HomePage() {
               bridges that gap — giving you instant access to licensed providers
               who can serve as your primary care team.
             </p>
+          </div>
 
+          {/* LEFT - Features */}
+          <div className="pcp-left">
             <div className="pcp-features">
               <div className="pcp-feature">
-                <div className="pcp-icon">📄</div>
+                <div className="pcp-icon">
+                  <FaFileMedical />
+                </div>
                 <div>
                   <h4>Acts as Your PCP</h4>
                   <p>
@@ -507,7 +794,9 @@ export default function HomePage() {
               </div>
 
               <div className="pcp-feature">
-                <div className="pcp-icon">🔁</div>
+                <div className="pcp-icon">
+                  <FaSyncAlt />
+                </div>
                 <div>
                   <h4>Continuity of Care</h4>
                   <p>
@@ -518,7 +807,9 @@ export default function HomePage() {
               </div>
 
               <div className="pcp-feature">
-                <div className="pcp-icon">📅</div>
+                <div className="pcp-icon">
+                  <FaCalendarAlt />
+                </div>
                 <div>
                   <h4>365 Days a Year</h4>
                   <p>
@@ -529,7 +820,14 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* <button className="pcp-btn">
+              Get a doctor today — free to start
+            </button> */}
             <button className="pcp-btn">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
               Get a doctor today — free to start
             </button>
           </div>
@@ -577,19 +875,132 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      {/* ══════════════════════════════════════════════
+          WHY HUMANCARE
+      ══════════════════════════════════════════════ */}
+      <section className="why-section-container">
+        <div className="why-section" id="why">
+          <div className="why-grid">
+            <div className="why-visual">
+              <div className="stat-card-main">
+                <div className="sc-label">Patient outcome improvement</div>
+                <div className="sc-big">
+                  94<span style={{ fontSize: "24px" }}>%</span>
+                </div>
+                <div className="sc-sub">After 3 months on Humancare</div>
+                <div className="sc-divider"></div>
+                <div className="sc-row">
+                  <span>Visit completion rate</span>
+                  <strong>98.2%</strong>
+                </div>
+                <div className="sc-prog">
+                  <div className="sc-fill" style={{ width: "98%" }}></div>
+                </div>
+                <div className="sc-row">
+                  <span>Prescription accuracy</span>
+                  <strong>99.7%</strong>
+                </div>
+                <div className="sc-prog">
+                  <div
+                    className="sc-fill"
+                    style={{
+                      width: "99.7%",
+                      background:
+                        "linear-gradient(90deg,var(--teal),var(--gold))",
+                    }}
+                  ></div>
+                </div>
+              </div>
+              <div className="stat-float sf1">
+                <div className="sf-label">Patients served</div>
+                <div className="sf-val" style={{ color: "var(--primary)" }}>
+                  2.4M+
+                </div>
+              </div>
+              <div className="stat-float sf2">
+                <div className="sf-label">Avg. response</div>
+                <div className="sf-val" style={{ color: "var(--teal)" }}>
+                  &lt;4 min
+                </div>
+              </div>
+              <div className="stat-float sf3">
+                <div className="sf-label">Rating</div>
+                <div className="sf-val" style={{ color: "var(--gold)" }}>
+                  4.9 ★
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="section-eyebrow">Why Humancare</div>
+              <h2 className="section-title" style={{ marginBottom: "34px" }}>
+                Built on trust, at every step.
+              </h2>
+              <div className="why-list">
+                <div className="why-item reveal">
+                  {/* <div className="why-icon">🔒</div> */}
+                  <div>
+                    <div className="why-item-title">
+                      HIPAA &amp; SOC 2 Certified
+                    </div>
+                    <div className="why-item-desc">
+                      End-to-end encryption on every visit, message, and record.
+                      Your health data never leaves our secure, audited
+                      infrastructure.
+                    </div>
+                  </div>
+                </div>
+                <div className="why-item reveal">
+                  {/* <div className="why-icon">✅</div> */}
+                  <div>
+                    <div className="why-item-title">
+                      Board-Certified Physicians Only
+                    </div>
+                    <div className="why-item-desc">
+                      Every doctor clears a rigorous 9-step credentialing
+                      process — state licensure, malpractice history, peer
+                      reviews, and ongoing audits.
+                    </div>
+                  </div>
+                </div>
+                <div className="why-item reveal">
+                  {/* <div className="why-icon">💳</div> */}
+                  <div>
+                    <div className="why-item-title">
+                      Transparent, Flat-Fee Pricing
+                    </div>
+                    <div className="why-item-desc">
+                      No surprise bills. See the exact cost before booking. Most
+                      major insurance plans accepted, or a flat $49 uninsured
+                      rate.
+                    </div>
+                  </div>
+                </div>
+                <div className="why-item reveal">
+                  {/* <div className="why-icon">📞</div> */}
+                  <div>
+                    <div className="why-item-title">24 / 7 Human Support</div>
+                    <div className="why-item-desc">
+                      Real people — by chat, phone, or video — available around
+                      the clock for urgent questions, escalations, and care
+                      coordination.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ══════════════════════════════════════════════
           TESTIMONIALS
       ══════════════════════════════════════════════ */}
-      <section className="section">
+      <section className="testimonials-section">
         <div className="section-eyebrow">Patient Stories</div>
-        <h2 className="section-title">
-          Real people,
-          <br />
-          real outcomes.
-        </h2>
+        <h2 className="section-title">Real people, real outcomes.</h2>
         <Swiper
-          modules={[Pagination, Autoplay]}
+          modules={[Pagination]}
           spaceBetween={20}
           loop={true}
           autoplay={{
@@ -602,12 +1013,27 @@ export default function HomePage() {
           breakpoints={{
             0: {
               slidesPerView: 1,
+              spaceBetween: 16,
+            },
+            576: {
+              slidesPerView: 1,
+              spaceBetween: 16,
             },
             768: {
-              slidesPerView: 2,
+              slidesPerView: 1,
+              spaceBetween: 18,
             },
             1024: {
-              slidesPerView: 5,
+              slidesPerView: 2,
+              spaceBetween: 20,
+            },
+            1280: {
+              slidesPerView: 3,
+              spaceBetween: 20,
+            },
+            1600: {
+              slidesPerView: 3,
+              spaceBetween: 20,
             },
           }}
           className="testi-track"
@@ -615,15 +1041,16 @@ export default function HomePage() {
           {testimonials.map((testimonial) => (
             <SwiperSlide key={testimonial.id}>
               <div className="testi-card">
-                <div className="testi-stars">{testimonial.stars}</div>
-                <p className="testi-q">"{testimonial.quote}"</p>
-                <div className="testi-au">
-                  <div className="testi-avi">{testimonial.initials}</div>
-                  <div>
-                    <div className="testi-aname">{testimonial.name}</div>
-                    <div className="testi-aloc">{testimonial.location}</div>
+                <div className="testi-stars">
+                  <div className="testi-au">
+                    <div className="testi-avi">{testimonial.initials}</div>
+                    <div>
+                      <div className="testi-aname">{testimonial.name}</div>
+                      <div>{testimonial.stars}</div>
+                    </div>
                   </div>
                 </div>
+                <p className="testi-q">"{testimonial.quote}"</p>
               </div>
             </SwiperSlide>
           ))}
@@ -633,7 +1060,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           CTA BAND
       ══════════════════════════════════════════════ */}
-      <div className="cta-band">
+      <section className="cta-band">
         <div className="cta-inner">
           <div className="section-eyebrow">Get Started</div>
           <h2 className="cta-title">
@@ -705,7 +1132,7 @@ export default function HomePage() {
             </span>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ══════════════════════════════════════════════
           FOOTER

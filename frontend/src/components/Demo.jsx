@@ -130,7 +130,16 @@ const TOTAL = industries.length;
 export default function IndustryCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [screenWidth, setScreenWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setScreenWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const startAuto = () => {
     clearInterval(intervalRef.current);
@@ -161,29 +170,97 @@ export default function IndustryCarousel() {
   const slotConfig = (offset) => {
     const abs = Math.abs(offset);
     const sign = offset < 0 ? -1 : 1;
+
+    // Responsive positioning based on screen width
+    let tx1, tx2, tx3;
+    let scale1, scale2, scale3;
+    let opacity1, opacity2;
+
+    if (screenWidth < 480) {
+      // Extra small mobile
+      tx1 = sign * 160;
+      tx2 = sign * 220;
+      tx3 = sign * 280;
+      scale1 = 0.65;
+      scale2 = 0.45;
+      scale3 = 0.3;
+      opacity1 = 0.5;
+      opacity2 = 0.2;
+    } else if (screenWidth < 640) {
+      // Small mobile
+      tx1 = sign * 180;
+      tx2 = sign * 250;
+      tx3 = sign * 320;
+      scale1 = 0.68;
+      scale2 = 0.48;
+      scale3 = 0.32;
+      opacity1 = 0.55;
+      opacity2 = 0.25;
+    } else if (screenWidth < 768) {
+      // Mobile
+      tx1 = sign * 220;
+      tx2 = sign * 300;
+      tx3 = sign * 380;
+      scale1 = 0.7;
+      scale2 = 0.5;
+      scale3 = 0.35;
+      opacity1 = 0.6;
+      opacity2 = 0.3;
+    } else if (screenWidth < 1024) {
+      // Tablet
+      tx1 = sign * 300;
+      tx2 = sign * 400;
+      tx3 = sign * 500;
+      scale1 = 0.73;
+      scale2 = 0.52;
+      scale3 = 0.36;
+      opacity1 = 0.65;
+      opacity2 = 0.35;
+    } else if (screenWidth < 1400) {
+      // Medium desktop
+      tx1 = sign * 360;
+      tx2 = sign * 480;
+      tx3 = sign * 600;
+      scale1 = 0.75;
+      scale2 = 0.54;
+      scale3 = 0.37;
+      opacity1 = 0.7;
+      opacity2 = 0.36;
+    } else {
+      // Large desktop (default)
+      tx1 = sign * 400;
+      tx2 = sign * 540;
+      tx3 = sign * 700;
+      scale1 = 0.76;
+      scale2 = 0.55;
+      scale3 = 0.38;
+      opacity1 = 0.72;
+      opacity2 = 0.38;
+    }
+
     if (offset === 0)
       return { tx: 0, scale: 1, ry: 0, z: 20, opacity: 1, blur: 0 };
     if (abs === 1)
       return {
-        tx: sign * 400,
-        scale: 0.76,
+        tx: tx1,
+        scale: scale1,
         ry: -sign * 14,
         z: 10,
-        opacity: 0.72,
+        opacity: opacity1,
         blur: 0,
       };
     if (abs === 2)
       return {
-        tx: sign * 540,
-        scale: 0.55,
+        tx: tx2,
+        scale: scale2,
         ry: -sign * 24,
         z: 5,
-        opacity: 0.38,
+        opacity: opacity2,
         blur: 1,
       };
     return {
-      tx: sign * 700,
-      scale: 0.38,
+      tx: tx3,
+      scale: scale3,
       ry: -sign * 32,
       z: 1,
       opacity: 0,

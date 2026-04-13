@@ -81,6 +81,8 @@ function AppLayout() {
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
+        
+
         {/* Admin routes */}
         <Route
           path="/admin"

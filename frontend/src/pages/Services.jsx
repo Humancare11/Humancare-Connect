@@ -23,12 +23,13 @@ const SERVICES = [
       "Sent directly to your pharmacy or inbox",
       "Valid for all standard medications",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80",
     imageAlt: "Doctor writing a digital prescription on a tablet",
     badgeNum: "2K+",
     badgeLabel: "Prescriptions Issued",
   },
-    {
+  {
     id: 2,
     label: "Digital Health",
     title: "Online Prescription",
@@ -39,7 +40,8 @@ const SERVICES = [
       "Sent directly to your pharmacy or inbox",
       "Valid for all standard medications",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80",
     imageAlt: "Doctor writing a digital prescription on a tablet",
     badgeNum: "2K+",
     badgeLabel: "Prescriptions Issued",
@@ -55,7 +57,8 @@ const SERVICES = [
       "Issued within hours, not days",
       "Available for single or extended periods",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80",
     imageAlt: "Doctor reviewing medical certificate documents",
     badgeNum: "98%",
     badgeLabel: "Acceptance Rate",
@@ -71,7 +74,8 @@ const SERVICES = [
       "Quick turnaround — same day available",
       "Includes complete health assessment",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80",
     imageAlt: "Airplane flying with medical certificate concept",
     badgeNum: "500+",
     badgeLabel: "Airlines Covered",
@@ -87,7 +91,8 @@ const SERVICES = [
       "Results reviewed by our medical panel",
       "Integrated with your health records",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&q=80",
     imageAlt: "Laboratory technician analysing blood samples",
     badgeNum: "300+",
     badgeLabel: "Tests Available",
@@ -103,7 +108,8 @@ const SERVICES = [
       "Post-surgery and chronic care support",
       "Scheduled or on-demand visits",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
     imageAlt: "Home care nurse helping an elderly patient",
     badgeNum: "24/7",
     badgeLabel: "Care Available",
@@ -119,7 +125,8 @@ const SERVICES = [
       "Specialist referral and bed arrangement",
       "Insurance claim and billing assistance",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
     imageAlt: "Hospital corridor with supportive medical staff",
     badgeNum: "150+",
     badgeLabel: "Partner Hospitals",
@@ -135,7 +142,8 @@ const SERVICES = [
       "Secure video, audio, or chat sessions",
       "Follow-up care and prescriptions included",
     ],
-    imageUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=800&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=800&q=80",
     imageAlt: "Patient having a video consultation with a doctor",
     badgeNum: "4.9★",
     badgeLabel: "Patient Rating",
@@ -173,7 +181,7 @@ function useScrollReveal(ref) {
           observer.unobserve(el);
         }
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
 
     observer.observe(el);
@@ -194,7 +202,6 @@ function ServiceBlock({ service, isReverse }) {
       aria-labelledby={`service-title-${service.id}`}
     >
       <div className="ha-service-inner ha-animate" ref={blockRef}>
-
         {/* ── Image side ── */}
         <div className="ha-img-wrap">
           <img
@@ -213,16 +220,16 @@ function ServiceBlock({ service, isReverse }) {
         <div className="ha-content">
           <span className="ha-content-label">{service.label}</span>
 
-          <h2
-            className="ha-content-title"
-            id={`service-title-${service.id}`}
-          >
+          <h2 className="ha-content-title" id={`service-title-${service.id}`}>
             {service.title}
           </h2>
 
           <p className="ha-content-desc">{service.description}</p>
 
-          <ul className="ha-features" aria-label={`Features of ${service.title}`}>
+          <ul
+            className="ha-features"
+            aria-label={`Features of ${service.title}`}
+          >
             {service.features.map((feat, i) => (
               <li key={i} className="ha-feature-item">
                 <span className="ha-feature-icon">
@@ -237,7 +244,11 @@ function ServiceBlock({ service, isReverse }) {
             className="ha-cta-btn"
             type="button"
             aria-label={`Know more about ${service.title}`}
-            onClick={() => console.log(`[HealthcareAlternating] Know More → ${service.title}`)}
+            onClick={() =>
+              console.log(
+                `[HealthcareAlternating] Know More → ${service.title}`,
+              )
+            }
           >
             <span>Know More</span>
             <span className="ha-cta-btn-icon">
@@ -245,7 +256,6 @@ function ServiceBlock({ service, isReverse }) {
             </span>
           </button>
         </div>
-
       </div>
     </section>
   );
@@ -257,7 +267,6 @@ function ServiceBlock({ service, isReverse }) {
 export default function HealthcareAlternating() {
   return (
     <div className="ha-page">
-
       {/* ── Page Header ── */}
       {/* <header className="ha-page-header">
         <div className="ha-page-eyebrow">
@@ -273,14 +282,14 @@ export default function HealthcareAlternating() {
       </header> */}
       <section>
         <div className="ms-hero">
-  <div className="ms-hero-inner">
-    <h1>Our Healthcare Services</h1>
-    <p>
-      Reliable, fast & professional medical support — available anytime,
-      anywhere.
-    </p>
-  </div>
-</div>
+          <div className="ms-hero-inner">
+            <h1>Our Healthcare Services</h1>
+            <p>
+              Reliable, fast & professional medical support — available anytime,
+              anywhere.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ── Alternating Service Blocks ── */}
@@ -308,7 +317,6 @@ export default function HealthcareAlternating() {
           </button>
         </div>
       </div>
-
     </div>
   );
 }
