@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Doctor.css";
 
-// ── Change this to your deployed backend URL in production ──
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = "/api";
 
 export default function DoctorLogin() {
   const navigate = useNavigate();
@@ -41,24 +39,30 @@ export default function DoctorLogin() {
     setError("");
 
     try {
-      const res = await axios.post(`${API_BASE}/doctor/login`, {
-        email: form.email.trim(),
-        password: form.password,
+      const res = await fetch(`${API_BASE}/doctor/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+        }),
       });
 
-      const doctor = res.data.doctor;
-      const currentDoctor = {
-        ...doctor,
-        isLoggedIn: true,
-      };
+      const data = await res.json();
 
-      localStorage.setItem("doctorToken", res.data.token);
-      localStorage.setItem("currentDoctor", JSON.stringify(currentDoctor));
+      if (!res.ok) {
+        setError(data.message || "Invalid email or password.");
+        return;
+      }
+
+      // Store JWT token and minimal doctor info for session
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
 
       navigate("/doctor-dashboard");
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.response?.data?.message || "Invalid email or password.");
+      setError("Could not connect to server. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { getNames } from "country-list";
-import axios from "axios";
 import "./DoctorEnrollments.css";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
@@ -467,35 +464,46 @@ const DoctorEnrollments = ({ onComplete, initialData, doctorId }) => {
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (validateStep(2)) {
-    try {
-      // In a real app we would use FormData to upload the files (profilePhoto)
-      // For this migration, we'll just send the JSON data minus the File objects
-      const { profilePhoto, medicalCertification, ...dataToSend } = formData;
-      dataToSend.doctorId = doctorId;
-      
-      const res = await axios.post(`${API_BASE}/doctor/enrollment`, dataToSend);
-      
-      // Update local storage status
-      const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "{}");
-      localStorage.setItem("currentDoctor", JSON.stringify({
-        ...currentDoctor,
-        isEnrolled: true,
-        name: `Dr. ${formData.firstName || ""} ${formData.surname || ""}`.trim()
-      }));
+  if (!validateStep(2)) return;
 
-      console.log("Form submitted to API:", res.data);
-      setShowSuccess(true);
+  const token = localStorage.getItem("doctorToken");
 
-      setTimeout(() => {
-        setShowSuccess(false);
-        setIsReadOnly(true);
-        if (onComplete) onComplete(res.data);
-      }, 2000);
-    } catch (err) {
-      console.error("Error submitting enrollment:", err);
-      alert("Failed to submit enrollment. Please try again.");
+  // Exclude File objects — send only serializable data + flags
+  const { profilePhoto, medicalCertification, ...serializableData } = formData;
+
+  const payload = {
+    ...serializableData,
+    doctorId,
+    hasProfilePhoto: hasExistingProfilePhoto || !!profilePhoto,
+    hasCertification: hasExistingCertification || !!medicalCertification,
+  };
+
+  try {
+    const res = await fetch("/api/doctor/enrollment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      console.error("Enrollment error:", err.message);
+      return;
     }
+
+    const saved = await res.json();
+    setShowSuccess(true);
+
+    setTimeout(() => {
+      setShowSuccess(false);
+      setIsReadOnly(true);
+      if (onComplete) onComplete(saved);
+    }, 2000);
+  } catch (err) {
+    console.error("Enrollment submission failed:", err);
   }
 };
 

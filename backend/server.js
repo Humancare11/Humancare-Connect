@@ -5,7 +5,6 @@ const connectDB = require("./config/db");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
-const { createServer: createViteServer } = require("vite");
 
 const app = express();
 
@@ -34,24 +33,14 @@ app.get("/api/admin/active-users", (req, res) => {
   res.json({ activeUsers: onlineUsers.size });
 });
 
-// Vite middleware for development or static serving for production
-async function setupVite() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
+// Serve static frontend in production only
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.join(process.cwd(), "../frontend/dist");
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
 }
-
-setupVite();
 
 // HTTP server
 const server = http.createServer(app);

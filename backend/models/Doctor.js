@@ -18,23 +18,22 @@ const doctorSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      minlength: 6,
     },
     isEnrolled: {
       type: Boolean,
       default: false,
-    }
+    },
   },
   { timestamps: true }
 );
 
-doctorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+// Mongoose 9: async pre-save — do NOT call next(), just return the promise
+doctorSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
-doctorSchema.methods.comparePassword = async function (candidatePassword) {
+doctorSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 

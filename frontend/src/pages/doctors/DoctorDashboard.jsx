@@ -31,53 +31,34 @@ export default function DoctorDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("doctorToken");
+    const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
 
-    if (!token) {
+    if (!token || !currentDoctor) {
       navigate("/doctor-login");
       return;
     }
 
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch("/api/doctor/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    setDoctor(currentDoctor);
 
-        if (!res.ok) {
-          localStorage.removeItem("doctorToken");
-          localStorage.removeItem("currentDoctor");
-          navigate("/doctor-login");
-          return;
-        }
-
-        const { doctor: dbDoctor } = await res.json();
-        setDoctor(dbDoctor);
-        setIsEnrolled(dbDoctor.isEnrolled || false);
-
-        // Fetch enrollment data if they are enrolled or to check if they have a draft
-        const enrollRes = await fetch(`/api/doctor/enrollment/${dbDoctor._id || dbDoctor.id}`);
-        if (enrollRes.ok) {
-          const enrollData = await enrollRes.json();
-          if (enrollData) {
-            setEnrollmentData(enrollData);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-        // Fallback to localStorage if offline or server error, but we want DB to be source of truth
-        const cachedDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
-        if (cachedDoctor) {
-          setDoctor(cachedDoctor);
-          setIsEnrolled(cachedDoctor.isEnrolled || false);
+    // Fetch enrollment from backend
+    fetch(`/api/doctor/enrollment/${currentDoctor.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((enrollment) => {
+        if (enrollment) {
+          setIsEnrolled(true);
+          setEnrollmentData(enrollment);
+          const updated = { ...currentDoctor, isEnrolled: true };
+          localStorage.setItem("currentDoctor", JSON.stringify(updated));
+          setDoctor(updated);
         } else {
-          navigate("/doctor-login");
+          setIsEnrolled(currentDoctor.isEnrolled || false);
         }
-      }
-    };
-
-    fetchProfile();
+      })
+      .catch(() => {
+        setIsEnrolled(currentDoctor.isEnrolled || false);
+      });
   }, [navigate]);
 
   const logout = () => {
@@ -87,12 +68,11 @@ export default function DoctorDashboard() {
   };
 
   const handleEnrollmentComplete = (data) => {
+    const updatedDoctor = { ...doctor, isEnrolled: true };
+    setDoctor(updatedDoctor);
     setIsEnrolled(true);
     setEnrollmentData(data);
-    // Optionally update doctor state if name changed
-    if (data.firstName && data.surname) {
-      setDoctor(prev => ({ ...prev, name: `${data.firstName} ${data.surname}`, isEnrolled: true }));
-    }
+    localStorage.setItem("currentDoctor", JSON.stringify(updatedDoctor));
   };
 
   if (!doctor) return null;
@@ -102,16 +82,15 @@ export default function DoctorDashboard() {
     : "DR";
 
   const renderContent = () => {
-    const docId = doctor._id || doctor.id;
     if (!isEnrolled) {
-      return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={docId} />;
+      return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
     }
 
     switch (activeMenu) {
       case "Dashboard":
-        return <Dashbord doctor={doctor} />;
+        return <Dashbord />;
       case "Enrollments":
-        return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={docId} />;
+        return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
       case "Appointments":
         return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>No upcoming appointments.</p></div>;
       case "My Patients":

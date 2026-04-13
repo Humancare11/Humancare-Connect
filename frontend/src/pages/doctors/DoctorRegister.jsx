@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Doctor.css";
+
+const API_BASE = "/api";
 
 export default function DoctorRegister() {
   const navigate = useNavigate();
@@ -42,24 +43,32 @@ export default function DoctorRegister() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:3000/api/doctor/register", {
-        email: form.email.trim(),
-        password: form.password,
-        confirmPassword: form.confirmPassword,
+      const res = await fetch(`${API_BASE}/doctor/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+          confirmPassword: form.confirmPassword,
+        }),
       });
 
-      // Save to localStorage just for the JWT token and basic info
-      localStorage.setItem("doctorToken", res.data.token);
-      localStorage.setItem("currentDoctor", JSON.stringify({
-        ...res.data.doctor,
-        name: form.name.trim(), // The backend model doesn't have name right now, keep it local briefly
-        isLoggedIn: true
-      }));
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Registration failed. Please try again.");
+        return;
+      }
+
+      // Store JWT token and minimal doctor info for session
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
 
       navigate("/doctor-dashboard");
     } catch (err) {
       console.error("Registration error:", err);
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError("Could not connect to server. Please try again.");
     } finally {
       setLoading(false);
     }

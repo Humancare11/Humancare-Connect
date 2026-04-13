@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import socket from "../../socket";
 import QnAPage from "./QnAPage";
-import MigrationUtility from "../../components/MigrationUtility";
 import "./admindashboard.css";
 
 export default function AdminDashboard() {
@@ -71,9 +70,6 @@ export default function AdminDashboard() {
   const renderMainContent = () => {
     if (activeMenu === "qna") {
       return <QnAPage />;
-    }
-    if (activeMenu === "migration") {
-      return <MigrationUtility />;
     }
 
     return (
@@ -210,14 +206,6 @@ export default function AdminDashboard() {
               onClick={() => setActiveMenu("settings")}
             >
               Settings
-            </li>
-
-            <li
-              className={activeMenu === "migration" ? "active" : ""}
-              onClick={() => setActiveMenu("migration")}
-              style={{ color: '#d97706', fontWeight: 'bold' }}
-            >
-              Data Migration
             </li>
           </ul>
         </div>
