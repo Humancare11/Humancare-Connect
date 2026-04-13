@@ -5,11 +5,27 @@ const connectDB = require("./config/db");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const User = require("./models/User");
 
 const app = express();
 
-// DB connect
-connectDB();
+// DB connect + auto-seed admin
+const startServer = async () => {
+  await connectDB();
+
+  const existing = await User.findOne({ email: "admin@gmail.com" });
+  if (!existing) {
+    const hashed = await bcrypt.hash("admin123", 10);
+    await User.create({
+      name: "Admin",
+      email: "admin@gmail.com",
+      password: hashed,
+      role: "admin",
+    });
+    console.log("Admin account created ✅ (admin@gmail.com / admin123)");
+  }
+};
 
 // Middleware
 app.use(cors());
@@ -94,6 +110,11 @@ io.on("connection", (socket) => {
 
 const PORT = process.env.PORT || 3000; // AI Studio requires port 3000
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+startServer().then(() => {
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}).catch((err) => {
+  console.error("Startup error:", err);
+  process.exit(1);
 });
