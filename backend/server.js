@@ -14,26 +14,34 @@ const app = express();
 const startServer = async () => {
   await connectDB();
 
-  const existing = await User.findOne({ email: "admin@gmail.com" });
-  if (!existing) {
+  // Seed default admin
+  const existingAdmin = await User.findOne({ email: "admin@gmail.com" });
+  if (!existingAdmin) {
     const hashed = await bcrypt.hash("admin123", 10);
-    await User.create({
-      name: "Admin",
-      email: "admin@gmail.com",
-      password: hashed,
-      role: "admin",
-    });
+    await User.create({ name: "Admin", email: "admin@gmail.com", password: hashed, role: "admin" });
     console.log("Admin account created ✅ (admin@gmail.com / admin123)");
+  }
+
+  // Seed superadmin
+  const existingSuperAdmin = await User.findOne({ email: "superadmin@humancare.com" });
+  if (!existingSuperAdmin) {
+    const hashed = await bcrypt.hash("superadmin123", 10);
+    await User.create({ name: "Super Admin", email: "superadmin@humancare.com", password: hashed, role: "superadmin" });
+    console.log("Super Admin created ✅ (superadmin@humancare.com / superadmin123)");
   }
 };
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  credentials: true,
+}));
 app.use(express.json());
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/superadmin", require("./routes/superadmin"));
 app.use("/api/qna", require("./routes/qna"));
 app.use("/api/doctor", require("./routes/doctorAuth"));
 

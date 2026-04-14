@@ -84,6 +84,10 @@ const login = async (req, res) => {
     if (user.role === "doctor")
       return res.status(403).json({ msg: "Please use the Doctor Login page." });
 
+    // block superadmin from using this login (use /admin-login or superadmin portal)
+    if (user.role === "superadmin")
+      return res.status(403).json({ msg: "Please use the Super Admin login." });
+
     const match = await bcrypt.compare(password, user.password);
     if (!match)
       return res.status(400).json({ msg: "Invalid email or password." });
@@ -190,4 +194,33 @@ const doctorLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, doctorRegister, doctorLogin };
+// ════════════════════════════════════════════
+//  5. ADMIN / SUPERADMIN LOGIN
+// ════════════════════════════════════════════
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ msg: "Email and password are required." });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user || !["admin", "superadmin"].includes(user.role))
+      return res.status(401).json({ msg: "Invalid email or password." });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match)
+      return res.status(401).json({ msg: "Invalid email or password." });
+
+    return res.json({
+      msg: "Login successful.",
+      token: generateToken(user),
+      user: safeUser(user),
+    });
+  } catch (err) {
+    console.error("adminLogin error:", err);
+    return res.status(500).json({ msg: "Server error. Please try again." });
+  }
+};
+
+module.exports = { register, login, doctorRegister, doctorLogin, adminLogin };

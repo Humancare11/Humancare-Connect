@@ -1,7 +1,9 @@
 // src/pages/AskDoctor.jsx
-import { useState, useRef } from "react";
-import { useQnA } from "./admin/QnAContext"; // ✅ correct path — admin folder
+import { useState, useRef, useEffect, useCallback } from "react";
+import axios from "axios";
 import "./AskDoctor.css";
+
+const API = "http://localhost:5000/api/qna";
 
 const CATEGORIES = [
   "General", "Heart", "Skin", "Neuro", "Ortho",
@@ -21,8 +23,8 @@ const CATEGORY_META = {
   Gut:     { bg: "#F0FDF4", text: "#15803D" },
 };
 
-const PER_PAGE   = 4;
-const MAX_CHARS  = 2000;
+const PER_PAGE  = 4;
+const MAX_CHARS = 2000;
 
 const formatDate = (d) =>
   new Date(d).toLocaleDateString("en-IN", {
@@ -70,22 +72,33 @@ const IconChevRight = () => (
 );
 
 export default function AskDoctor() {
-  const { questions, addQuestion } = useQnA();
-
-  const [text,        setText]        = useState("");
-  const [file,        setFile]        = useState(null);
-  const [agreed,      setAgreed]      = useState(false);
-  const [errors,      setErrors]      = useState({});
-  const [category,    setCategory]    = useState("General");
-  const [submitted,   setSubmitted]   = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [expandedId,  setExpandedId]  = useState(null);
+  const [questions,    setQuestions]    = useState([]);
+  const [text,         setText]         = useState("");
+  const [file,         setFile]         = useState(null);
+  const [agreed,       setAgreed]       = useState(false);
+  const [errors,       setErrors]       = useState({});
+  const [category,     setCategory]     = useState("General");
+  const [submitted,    setSubmitted]    = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [currentPage,  setCurrentPage]  = useState(1);
+  const [expandedId,   setExpandedId]   = useState(null);
   const fileRef = useRef();
+
+  // Fetch questions from MongoDB on load
+  const fetchQuestions = useCallback(() => {
+    axios.get(API)
+      .then((res) => setQuestions(res.data))
+      .catch((err) => console.error("Failed to fetch questions:", err));
+  }, []);
+
+  useEffect(() => {
+    fetchQuestions();
+  }, [fetchQuestions]);
 
   /* validation */
   const validate = () => {
     const e = {};
-    if (!text.trim())            e.text = "Please enter your question.";
+    if (!text.trim())                 e.text = "Please enter your question.";
     else if (text.length > MAX_CHARS) e.text = `Maximum ${MAX_CHARS} characters allowed.`;
     if (file && text.trim().split(/\s+/).filter(Boolean).length < 20)
       e.file = "Please describe your problem in at least 20 words before uploading a file.";
@@ -94,17 +107,27 @@ export default function AskDoctor() {
   };
 
   /* submit */
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    addQuestion(text, category); // ✅ writes to localStorage → QnAPage reads it
-
-    setText(""); setFile(null); setAgreed(false);
-    setErrors({}); setCategory("General"); setCurrentPage(1);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 6000);
+    setSubmitting(true);
+    try {
+      const res = await axios.post(`${API}/ask`, {
+        question: text,
+        category,
+        name: "Anonymous",
+      });
+      setQuestions((prev) => [res.data, ...prev]);
+      setText(""); setFile(null); setAgreed(false);
+      setErrors({}); setCategory("General"); setCurrentPage(1);
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 6000);
+    } catch (err) {
+      setErrors({ text: err.response?.data?.msg || "Failed to submit. Please try again." });
+    }
+    setSubmitting(false);
   };
 
   /* pagination */
@@ -246,7 +269,9 @@ export default function AskDoctor() {
                 {errors.agreed && <span className="ad-err-msg">{errors.agreed}</span>}
               </div>
 
-              <button type="submit" className="ad-submit-btn">Ask Doctor Now →</button>
+              <button type="submit" className="ad-submit-btn" disabled={submitting}>
+                {submitting ? "Submitting…" : "Ask Doctor Now →"}
+              </button>
             </form>
           </div>
 
@@ -272,15 +297,15 @@ export default function AskDoctor() {
 
             {visible.map((q, i) => {
               const col      = CATEGORY_META[q.category] || CATEGORY_META.General;
-              const expanded = expandedId === q.id;
+              const expanded = expandedId === q._id;
               return (
-                <div className="ad-qcard" key={q.id} style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="ad-qcard" key={q._id} style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="ad-qcard-top">
                     <span className="ad-cat-badge" style={{ background: col.bg, color: col.text }}>{q.category}</span>
                     <span className={`ad-status-badge ${q.answered ? "answered" : "pending"}`}>
                       {q.answered ? "Answered" : "Pending"}
                     </span>
-                    <span className="ad-qdate"><IconCal /> {formatDate(q.date)}</span>
+                    <span className="ad-qdate"><IconCal /> {formatDate(q.createdAt)}</span>
                   </div>
 
                   <p className="ad-qtext">
@@ -288,7 +313,7 @@ export default function AskDoctor() {
                   </p>
 
                   {/* doctor info — shown once answered */}
-                  {q.answered && q.doctor && (
+                  {q.answered && q.doctor?.name && (
                     <div className="ad-doctor-row">
                       <div className="ad-doctor-avatar" style={{ background: col.bg, color: col.text }}>
                         {q.doctor.name.split(" ").pop()[0]}
@@ -313,7 +338,7 @@ export default function AskDoctor() {
                   )}
 
                   <div className="ad-qcard-actions">
-                    <button className="ad-read-btn" onClick={() => setExpandedId(expanded ? null : q.id)}>
+                    <button className="ad-read-btn" onClick={() => setExpandedId(expanded ? null : q._id)}>
                       {expanded ? "Show Less" : "Read More"}
                     </button>
                     <button className="ad-consult-btn">Consult Now</button>

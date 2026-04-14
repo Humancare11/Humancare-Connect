@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import QnAPage from "./QnAPage";
+import QnAPage from "./admin/QnAPage";
 import "./Dashboard.css";
 
-/* ── User Profile Modal ── */
-function UserProfileModal({ user, onClose }) {
-  if (!user) return null;
+/* ── Doctor Profile Modal ── */
+function DoctorProfileModal({ doctor, onClose }) {
+  if (!doctor) return null;
+  const name = `${doctor.firstName || ""} ${doctor.surname || ""}`.trim() || doctor.doctorId?.name || "—";
+  const statusColor = { pending: "#d97706", approved: "#059669", rejected: "#dc2626" };
 
   const row = (label, value) =>
     value ? (
@@ -21,179 +23,43 @@ function UserProfileModal({ user, onClose }) {
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "min(680px, 95vw)", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
         <div style={{ background: "#1f2937", color: "#fff", padding: "20px 24px", borderRadius: "16px 16px 0 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{user.name}</div>
-            <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>{user.email}</div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{name}</div>
+            <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>{doctor.specialization || "—"}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ background: "#05966925", color: "#059669", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-              User
+            <span style={{ background: `${statusColor[doctor.approvalStatus]}25`, color: statusColor[doctor.approvalStatus], padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, textTransform: "capitalize" }}>
+              {doctor.approvalStatus}
             </span>
             <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#9ca3af", fontSize: 22, cursor: "pointer" }}>✕</button>
           </div>
         </div>
         <div style={{ padding: "20px 24px" }}>
           <p style={{ fontWeight: 700, color: "#374151", marginBottom: 8, marginTop: 0 }}>Personal Details</p>
-          {row("Email", user.email)}
-          {row("Mobile", user.mobile)}
-          {row("Gender", user.gender)}
-          {row("Date of Birth", user.dob)}
-          {row("Role", user.role)}
-          {row("Account Created", new Date(user.createdAt).toLocaleDateString())}
-          {row("Last Updated", new Date(user.updatedAt).toLocaleDateString())}
+          {row("Email", doctor.email || doctor.doctorId?.email)}
+          {row("Phone", doctor.countryCode ? `+${doctor.countryCode} ${doctor.phoneNumber}` : doctor.phoneNumber)}
+          {row("Gender", doctor.gender)}
+          {row("Date of Birth", doctor.dob)}
+          {row("Address", doctor.address)}
+          {row("City / State / Country", [doctor.city, doctor.state, doctor.country].filter(Boolean).join(", "))}
+          {row("ZIP", doctor.zip)}
+          <p style={{ fontWeight: 700, color: "#374151", marginBottom: 8, marginTop: 20 }}>Professional Details</p>
+          {row("Qualification", doctor.qualification)}
+          {row("Specialization", doctor.specialization)}
+          {row("Sub-Specialization", doctor.subSpecialization)}
+          {row("Experience", doctor.experience ? `${doctor.experience} years` : null)}
+          {row("Consultation Fee", doctor.consultantFees ? `₹${doctor.consultantFees}` : null)}
+          {row("Consultation Mode", doctor.consultationMode)}
+          {row("Languages Known", doctor.languagesKnown?.join(", "))}
+          {row("Clinic Name", doctor.clinicName)}
+          {row("Clinic Address", doctor.clinicAddress)}
+          {row("About", doctor.aboutDoctor)}
+          <p style={{ fontWeight: 700, color: "#374151", marginBottom: 8, marginTop: 20 }}>Verification Details</p>
+          {row("Medical Registration No.", doctor.medicalRegistrationNumber)}
+          {row("Medical Council", doctor.medicalCouncilName)}
+          {row("Registration Year", doctor.registrationYear)}
+          {row("ID Proof Type", doctor.idProofType)}
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ── Manage Users Component ── */
-function ManageUsers() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const token = localStorage.getItem("adminToken");
-
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/admin/users", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(res.data);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      alert("Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleDeleteUser = async (userId, userName) => {
-    if (!window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(users.filter(user => user._id !== userId));
-      alert("User deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete user:", error);
-      alert("Failed to delete user");
-    }
-  };
-
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <div className="dash-section">
-        <h2 className="dash-section-title">Manage Users</h2>
-        <div style={{ textAlign: "center", padding: "40px" }}>Loading users...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="dash-section">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 className="dash-section-title">Manage Users ({filteredUsers.length})</h2>
-        <input
-          type="text"
-          placeholder="Search users by name or email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            border: "1px solid #d1d5db",
-            borderRadius: 6,
-            width: 300,
-            fontSize: 14
-          }}
-        />
-      </div>
-
-      <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Name</th>
-              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Email</th>
-              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Mobile</th>
-              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Gender</th>
-              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Joined</th>
-              <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, color: "#374151", fontSize: 14 }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user._id} style={{ borderBottom: "1px solid #f3f4f6", hover: { background: "#f9fafb" } }}>
-                <td style={{ padding: "12px 16px", fontSize: 14, color: "#111827" }}>{user.name}</td>
-                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.email}</td>
-                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.mobile || "—"}</td>
-                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.gender || "—"}</td>
-                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                  <button
-                    onClick={() => setSelectedUser(user)}
-                    style={{
-                      background: "#3b82f6",
-                      color: "#fff",
-                      border: "none",
-                      padding: "6px 12px",
-                      borderRadius: 4,
-                      fontSize: 12,
-                      cursor: "pointer",
-                      marginRight: 8
-                    }}
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user._id, user.name)}
-                    style={{
-                      background: "#dc2626",
-                      color: "#fff",
-                      border: "none",
-                      padding: "6px 12px",
-                      borderRadius: 4,
-                      fontSize: 12,
-                      cursor: "pointer"
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredUsers.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px", color: "#6b7280" }}>
-            {searchTerm ? "No users found matching your search." : "No users registered yet."}
-          </div>
-        )}
-      </div>
-
-      {selectedUser && (
-        <UserProfileModal
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-        />
-      )}
     </div>
   );
 }
@@ -307,7 +173,6 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     if (activeMenu === "manage-doctors") return <ManageDoctors />;
-    if (activeMenu === "manage-users") return <ManageUsers />;
     if (activeMenu === "qna") return <QnAPage />;
     return (
       <div className="dash-section">
@@ -315,7 +180,7 @@ export default function AdminDashboard() {
         <div className="dash-cards">
           {[
             { label: "Total Users", value: stats.totalUsers },
-            { label: "Active Users", value: stats.activeUsers },
+            { label: "Active Users (Live)", value: stats.activeUsers },
             { label: "Approved Doctors", value: stats.totalDoctors },
             { label: "Total Appointments", value: 0 },
           ].map((c) => (
@@ -369,7 +234,7 @@ export default function AdminDashboard() {
             </button>
           ))}
           {user.role === "superadmin" && (
-            <button className="dash-nav-item" onClick={() => navigate("/superadmin-dashboard")}>
+            <button className="dash-nav-item" onClick={() => navigate("/superadmin")}>
               Manage Admins
             </button>
           )}

@@ -1,102 +1,76 @@
 const express = require("express");
 const router = express.Router();
 const Question = require("../models/Question");
-const auth = require("../middleware/authMiddleware");
+const { verifyToken, adminOnly } = require("../middleware/verifyToken");
 
-// POST: Ask Question
-router.post("/ask", auth, async (req, res) => {
+// ── POST /api/qna/ask ─────────────────────────────────────────────
+// Public — no auth required (optionally reads token for user name)
+router.post("/ask", async (req, res) => {
   try {
-    const { question, name, category } = req.body;
+    const { question, category, name } = req.body;
 
-    if (!question || !question.trim()) {
-      return res.status(400).json({ msg: "Question is required" });
-    }
+    if (!question || !question.trim())
+      return res.status(400).json({ msg: "Question is required." });
 
-    const newQuestion = new Question({
-      user: req.user.id,
-      name: name || "User",
-      category: category || "General",
+    const newQuestion = await Question.create({
       question: question.trim(),
+      category: category || "General",
+      name:     name    || "Anonymous",
     });
 
-    await newQuestion.save();
-
-    const savedQuestion = await Question.findById(newQuestion._id);
-
     const io = req.app.get("io");
-    if (io) {
-      io.emit("new-question", savedQuestion);
-    }
+    if (io) io.emit("new-question", newQuestion);
 
-    res.status(201).json(savedQuestion);
-  } catch (error) {
-    console.error("Ask Question Error:", error);
+    res.status(201).json(newQuestion);
+  } catch (err) {
+    console.error("Ask Question Error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// GET: All Questions
+// ── GET /api/qna/ ─────────────────────────────────────────────────
+// Public — both user frontend and admin read from here
 router.get("/", async (req, res) => {
   try {
     const questions = await Question.find().sort({ createdAt: -1 });
     res.json(questions);
-  } catch (error) {
-    console.error("Get Questions Error:", error);
+  } catch (err) {
+    console.error("Get Questions Error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });
 
-// GET: Single Question
-router.get("/:id", async (req, res) => {
+// ── PUT /api/qna/:id/answer ───────────────────────────────────────
+// Admin only — submit / update a doctor's answer
+router.put("/:id/answer", verifyToken, adminOnly, async (req, res) => {
   try {
-    const question = await Question.findById(req.params.id);
+    const { answer, doctorName, doctorSpec } = req.body;
 
-    if (!question) {
-      return res.status(404).json({ msg: "Question not found" });
-    }
+    if (!answer || !answer.trim())
+      return res.status(400).json({ msg: "Answer is required." });
 
-    res.json(question);
-  } catch (error) {
-    console.error("Get Single Question Error:", error);
-    res.status(500).json({ msg: "Server error" });
-  }
-});
+    const question = await Question.findByIdAndUpdate(
+      req.params.id,
+      {
+        answer:   answer.trim(),
+        answered: true,
+        doctor: {
+          name:           (doctorName || "").trim(),
+          specialization: (doctorSpec  || "").trim(),
+        },
+      },
+      { new: true }
+    );
 
-// POST: Add Answer
-router.post("/:id/answer", auth, async (req, res) => {
-  try {
-    const { answer, name } = req.body;
-
-    if (!answer || !answer.trim()) {
-      return res.status(400).json({ msg: "Answer is required" });
-    }
-
-    const question = await Question.findById(req.params.id);
-
-    if (!question) {
-      return res.status(404).json({ msg: "Question not found" });
-    }
-
-    question.answers.push({
-      user: req.user.id,
-      name: name || "User",
-      answer: answer.trim(),
-    });
-
-    question.answered = true;
-
-    await question.save();
-
-    const updatedQuestion = await Question.findById(req.params.id);
+    if (!question)
+      return res.status(404).json({ msg: "Question not found." });
 
     const io = req.app.get("io");
-    if (io) {
-      io.emit("new-answer", updatedQuestion);
-    }
+    if (io) io.emit("question-answered", question);
 
-    res.json(updatedQuestion);
-  } catch (error) {
-    console.error("Post Answer Error:", error);
+    res.json(question);
+  } catch (err) {
+    console.error("Answer Error:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });

@@ -1,11 +1,10 @@
 // src/App.jsx
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import "./App.css";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -21,9 +20,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import BookAppointment from "./pages/BookAppointment";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import QnAPage from "./pages/admin/QnAPage";
-import { QnAProvider } from "./pages/admin/QnAContext";
 import socket from "./socket";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
@@ -31,31 +27,38 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 
+// Admin imports
+
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
+import AdminAuth from "./pages/admin/AdminAuth";
+
+// Private Route component for admin authentication
+function PrivateRoute({ children, allowedRoles }) {
+  const token = localStorage.getItem("adminToken");
+  const user = JSON.parse(localStorage.getItem("adminUser") || "null");
+  if (!token || !user) return <Navigate to="/admin-login" replace />;
+  if (!allowedRoles.includes(user.role)) return <Navigate to="/admin-login" replace />;
+  return children;
+}
+
 function AppLayout() {
   const location = useLocation();
 
-  const hideLayout =
-    location.pathname === "/admin" ||
-    location.pathname === "/qnapage" ||
-    location.pathname.startsWith("/doctor-dashboard");
+  const hideLayout = location.pathname.startsWith("/doctor-dashboard") || 
+                     location.pathname.startsWith("/admin") ||
+                     location.pathname.startsWith("/superadmin");
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-
     if (storedUser?._id) {
-      if (!socket.connected) {
-        socket.connect();
-      }
-
-      socket.emit("user-online", {
-        userId: storedUser._id,
-        role: storedUser.role,
-      });
+      if (!socket.connected) socket.connect();
+      socket.emit("user-online", { userId: storedUser._id, role: storedUser.role });
     }
   }, []);
 
   return (
-    <QnAProvider>
+    <>
       {!hideLayout && <Header />}
 
       <Routes>
@@ -81,29 +84,31 @@ function AppLayout() {
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-        
-
         {/* Admin routes */}
+        <Route path="/adminauth" element={<AdminAuth/>} />
+
+
         <Route
-          path="/admin"
+          path="/admin-dashboard"
           element={
-            <ProtectedRoute role="admin">
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
               <AdminDashboard />
-            </ProtectedRoute>
+            </PrivateRoute>
           }
         />
+
         <Route
-          path="/qnapage"
+          path="/superadmin-dashboard"
           element={
-            <ProtectedRoute role="admin">
-              <QnAPage />
-            </ProtectedRoute>
+            <PrivateRoute allowedRoles={["superadmin"]}>
+              <SuperAdminDashboard />
+            </PrivateRoute>
           }
         />
       </Routes>
 
       {!hideLayout && <Footer />}
-    </QnAProvider>
+    </>
   );
 }
 
