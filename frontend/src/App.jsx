@@ -33,7 +33,7 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 import useLenis from "./hooks/useLenis";
-
+import useLenis from "./hooks/useLenis";
 // User imports
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
@@ -48,6 +48,7 @@ import ChangePassword from "./pages/user/ChangePassword";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
+import Homee from "./pages/Homee";
 
 import Home2 from "./pages/Home-2";
 
@@ -110,6 +111,7 @@ function AppLayout() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/homee" element={<Homee />} />
 
         {/* User Routes */}
         <Route
