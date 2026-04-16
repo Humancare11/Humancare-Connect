@@ -206,9 +206,9 @@ h4 {
 }
 
 .search-bar button {
-  padding: 18px 24px;
+  padding: 11px 24px;
   border: none;
-  border-radius: 18px;
+  border-radius: 50px;
   background: var(--primary);
   color: white;
   font-family: "Inter", sans-serif;
@@ -862,7 +862,7 @@ h4 {
 }
 
 .sb-tag:hover {
-  color: rgb(255, 6, 6);
+  color: rgba(34, 58, 94, 0.452);
 }
 
 /* Ensure only the hovered tag is highlighted — keep others muted */

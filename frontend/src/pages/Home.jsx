@@ -4,6 +4,7 @@ import Sa from "../components/Sa";
 import Aa from "../components/Aa";
 import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
 import WordReveal from "../components/WordReveal";
+import StepProgress from "../components/StepProgress";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -445,12 +446,17 @@ export default function HomePage() {
 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [timerOffset, setTimerOffset] = useState(CIRCUMFERENCE);
+  // Replace per-frame state for timerOffset with a ref to avoid re-renders
+  const timerOffsetRef = useRef(CIRCUMFERENCE);
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
   const rafRef = useRef(null);
   const pausedRef = useRef(false);
   const currentRef = useRef(0);
+
+  // Refs for direct DOM updates to avoid re-rendering the whole page each animation frame
+  const progressFillRef = useRef(null);
+  const ringFillRefs = useRef([]);
 
   // Keep refs in sync
   useEffect(() => {
@@ -460,32 +466,82 @@ export default function HomePage() {
     currentRef.current = current;
   }, [current]);
 
+  const updateVisuals = useCallback(() => {
+    // update continuous track and rings from refs
+    const currentIdx = currentRef.current;
+    const timerOffset = timerOffsetRef.current;
+    const currentStepProgress = 1 - timerOffset / CIRCUMFERENCE;
+    let progressPct = ((currentIdx + currentStepProgress) / TOTAL_STEPS) * 100;
+    progressPct = Math.min(progressPct, 100);
+
+    if (progressFillRef.current) {
+      progressFillRef.current.style.width = `${progressPct}%`;
+    }
+
+    // update ring fills (small number of rings, fine to update each frame)
+    ringFillRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const isActive = i === currentIdx;
+      const isCompleted = i < currentIdx;
+      const progress = isActive
+        ? timerOffset / CIRCUMFERENCE
+        : isCompleted
+          ? 0
+          : 1;
+      const progressOffset = progress * STEP_CIRCUMFERENCE;
+      // set attribute for SVG stroke dashoffset
+      try {
+        el.setAttribute("stroke-dashoffset", String(progressOffset));
+      } catch (e) {
+        el.style.strokeDashoffset = String(progressOffset);
+      }
+    });
+  }, []);
+
   const tick = useCallback(() => {
     if (pausedRef.current) return;
     const now = Date.now();
     elapsedRef.current += now - lastTickRef.current;
     lastTickRef.current = now;
 
-    const pct = elapsedRef.current / STEP_DURATION;
-    setTimerOffset(CIRCUMFERENCE * (1 - pct));
+    const pct = Math.min(elapsedRef.current / STEP_DURATION, 1);
+    timerOffsetRef.current = CIRCUMFERENCE * (1 - pct);
+
+    // update visuals directly
+    updateVisuals();
 
     if (elapsedRef.current >= STEP_DURATION) {
       elapsedRef.current = 0;
-      setCurrent((prev) => (prev + 1) % TOTAL_STEPS);
+      setCurrent((prev) => {
+        const next = (prev + 1) % TOTAL_STEPS;
+        // keep currentRef in sync
+        currentRef.current = next;
+        return next;
+      });
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, []);
+  }, [updateVisuals]);
 
   useEffect(() => {
+    // initialize refs and start RAF
+    // ensure ringFillRefs current array has proper length
+    ringFillRefs.current = ringFillRefs.current.slice(0, TOTAL_STEPS);
+
+    // set initial visuals
+    updateVisuals();
+
     lastTickRef.current = Date.now();
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [tick]);
+  }, [tick, updateVisuals]);
 
   const jumpTo = (step) => {
     elapsedRef.current = 0;
     lastTickRef.current = Date.now();
     setCurrent(step);
+    currentRef.current = step;
+    // update visuals instantly
+    updateVisuals();
   };
 
   const togglePause = () => {
@@ -501,7 +557,8 @@ export default function HomePage() {
 
   // Continuous progress: includes completed steps + progress within current step
   // Progress should reach 100% only when the last step completes
-  const currentStepProgress = 1 - timerOffset / CIRCUMFERENCE;
+  const currentStepProgress =
+    1 - (timerOffsetRef.current ?? CIRCUMFERENCE) / CIRCUMFERENCE;
   // Divide by TOTAL_STEPS so progress continues during the last step
   let progressPct = ((current + currentStepProgress) / TOTAL_STEPS) * 100;
   progressPct = Math.min(progressPct, 100); // Cap at 100%
@@ -662,52 +719,19 @@ export default function HomePage() {
             <div className="progress-track">
               <div
                 className="progress-fill"
-                style={{ width: `${progressPct}%` }}
+                ref={progressFillRef}
+                style={{ width: "0%" }}
               />
             </div>
 
             <div className="step-dots">
-              {DOT_LABELS.map((label, i) => {
-                const isActive = i === current;
-                const isCompleted = i < current;
-                // Calculate progress: convert timerOffset (0-CIRCUMFERENCE) to STEP_CIRCUMFERENCE range
-                const progress = isActive
-                  ? timerOffset / CIRCUMFERENCE
-                  : isCompleted
-                    ? 0
-                    : 1;
-                const progressOffset = progress * STEP_CIRCUMFERENCE;
-                return (
-                  <div
-                    key={i}
-                    className={`step-dot${isActive ? " active" : ""}${isCompleted ? " completed" : ""}`}
-                    onClick={() => jumpTo(i)}
-                  >
-                    <div className="ring">
-                      <svg className="progress-ring" viewBox="0 0 44 44">
-                        <circle
-                          className="progress-ring-bg"
-                          cx="22"
-                          cy="22"
-                          r="20"
-                        />
-                        <circle
-                          className="progress-ring-fill"
-                          cx="22"
-                          cy="22"
-                          r="20"
-                          style={{
-                            strokeDasharray: STEP_CIRCUMFERENCE,
-                            strokeDashoffset: progressOffset,
-                          }}
-                        />
-                      </svg>
-                      <div className="ring-icon">{STEP_ICONS[i]}</div>
-                    </div>
-                    <span className="dot-label">{label}</span>
-                  </div>
-                );
-              })}
+              <StepProgress
+                steps={DOT_LABELS.map((label, i) => ({
+                  label,
+                  icon: STEP_ICONS[i],
+                }))}
+                duration={3000}
+              />
             </div>
 
             {/* Scene Cards */}
@@ -780,68 +804,8 @@ export default function HomePage() {
         </div>
       </section>
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
-      {/* <section>
-        <div className="scroll-container">
-          <div className="scroll-track">
-            {[...items, ...items].map((item, index) => (
-              <div className="scroll-item" key={index}>
-                ⭐ {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-      <Sa />
 
-      {/* ══════════════════════════════════════════════
-          HOW IT WORKS
-      ══════════════════════════════════════════════ */}
-      {/* <section className="section how" id="how">
-        <div className="how-flex">
-          <div>
-            <div className="section-eyebrow">Process</div>
-            <h2 className="section-title" style={{ color: "white" }}>
-              From signup to care
-              <br />
-              in under 5 minutes.
-            </h2>
-          </div>
-          <p className="section-sub">
-            We removed every friction point between you and a qualified physician.
-          </p>
-        </div>
-        <div className="steps">
-          <div className="step reveal">
-            <div className="step-num">01</div>
-            <div className="step-icon">🔍</div>
-            <h3>Find Your Doctor</h3>
-            <p>
-              Browse by specialty, condition, or availability. Filter by
-              insurance. Read verified reviews from real patients.
-            </p>
-            <div className="step-line"></div>
-          </div>
-          <div className="step reveal">
-            <div className="step-num">02</div>
-            <div className="step-icon">📅</div>
-            <h3>Book Instantly</h3>
-            <p>
-              Same-day slots. No hold music, no waiting rooms — just a clean
-              booking flow you complete in seconds.
-            </p>
-            <div className="step-line"></div>
-          </div>
-          <div className="step reveal">
-            <div className="step-num">03</div>
-            <div className="step-icon">💊</div>
-            <h3>Get Care &amp; Scripts</h3>
-            <p>
-              Your video visit happens on our encrypted platform. Prescriptions
-              reach your pharmacy within the hour.
-            </p>
-          </div>
-        </div>
-      </section> */}
+      <Sa />
 
       {/* ══════════════════════════════════════════════
           SPECIALTIES

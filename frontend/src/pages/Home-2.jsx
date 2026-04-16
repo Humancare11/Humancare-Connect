@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import "./home.css";
+import "./Home-2.css";
 import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
 import WordReveal from "../components/WordReveal";
 
@@ -8,7 +8,27 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-import { FaFileMedical, FaSyncAlt, FaCalendarAlt } from "react-icons/fa";
+import {
+  FaFileMedical,
+  FaSyncAlt,
+  FaCalendarAlt,
+  FaBrain,
+  FaStethoscope,
+  FaHeart,
+  FaHeartbeat,
+  FaPills,
+  FaBalanceScale,
+  FaLeaf,
+  FaChild,
+  FaBone,
+  FaEye,
+  FaThermometerHalf,
+  FaHeadSideCough,
+  FaLungsVirus,
+  FaHeartBroken,
+  FaWalking,
+  FaBandAid,
+} from "react-icons/fa";
 import {
   FiSmartphone,
   FiUserCheck,
@@ -18,30 +38,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 
-import {
-  FaBrain,
-  FaStethoscope,
-  FaHeart,
-  FaHeartbeat,
-  FaPills,
-  FaBalanceScale,
-  FaHeartbeat,
-  FaBrain,
-  FaLeaf,
-  FaChild,
-  FaBone,
-  FaEye,
-  FaStethoscope,
-  FaPills,
-  FaThermometerHalf,
-  FaHeadSideCough,
-  FaLungsVirus,
-  FaHeartBroken,
-  FaWalking,
-  FaBandAid,
-} from "react-icons/fa";
-
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SCENE_VISUALS = [
   {

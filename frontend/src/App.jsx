@@ -1,5 +1,11 @@
 // src/App.jsx
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { useEffect } from "react";
 import "./App.css";
 
@@ -26,10 +32,8 @@ import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
-
-<<<<<<< HEAD
 import useLenis from "./hooks/useLenis";
-=======
+
 // User imports
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
@@ -44,6 +48,8 @@ import ChangePassword from "./pages/user/ChangePassword";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
+
+import Home2 from "./pages/Home-2";
 
 // Private Route component for admin authentication
 function PrivateRoute({ children, allowedRoles }) {
@@ -60,7 +66,6 @@ function PrivateRoute({ children, allowedRoles }) {
 
   return children;
 }
->>>>>>> 84e6d1500998fa9c2500dcf35cdbe51f17d8d887
 
 function AppLayout() {
   const location = useLocation();
@@ -163,7 +168,10 @@ function AppLayout() {
             </UserLayout>
           }
         />
-        <Route path="/profile" element={<Navigate to="/user/dashboard" replace />} />
+        <Route
+          path="/profile"
+          element={<Navigate to="/user/dashboard" replace />}
+        />
 
         {/* Doctor Routes */}
         <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
@@ -171,16 +179,14 @@ function AppLayout() {
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-<<<<<<< HEAD
         {/* Admin routes */}
-=======
+
         {/* Video Call Route (Header/Footer Hidden) */}
         <Route path="/video-call/:appointmentId" element={<VideoCall />} />
 
         {/* Admin Routes */}
         <Route path="/adminauth" element={<AdminAuth />} />
 
->>>>>>> 84e6d1500998fa9c2500dcf35cdbe51f17d8d887
         <Route
           path="/admin-dashboard"
           element={
@@ -199,6 +205,8 @@ function AppLayout() {
           }
         />
       </Routes>
+
+      <Route path="/home-demo" element={<Home2 />} />
 
       {!hideLayout && <Footer />}
     </>
