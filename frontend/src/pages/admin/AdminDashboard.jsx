@@ -1,217 +1,453 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import socket from "../../socket";
 import QnAPage from "./QnAPage";
-import "./admindashboard.css";
+import "./Dashboard.css";
 
-export default function AdminDashboard() {
-  const [user, setUser] = useState(null);
-  const [activeUsers, setActiveUsers] = useState(0);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [activeMenu, setActiveMenu] = useState("dashboard");
+/* ── User Profile Modal ── */
+function UserProfileModal({ user, onClose }) {
+  if (!user) return null;
 
-  const navigate = useNavigate();
+  const row = (label, value) =>
+    value ? (
+      <div style={{ display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
+        <span style={{ minWidth: 180, fontWeight: 600, color: "#6b7280", fontSize: 13 }}>{label}</span>
+        <span style={{ color: "#111827", fontSize: 13 }}>{value}</span>
+      </div>
+    ) : null;
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "min(680px, 95vw)", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "#1f2937", color: "#fff", padding: "20px 24px", borderRadius: "16px 16px 0 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{user.name}</div>
+            <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>{user.email}</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ background: "#05966925", color: "#059669", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+              User
+            </span>
+            <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#9ca3af", fontSize: 22, cursor: "pointer" }}>✕</button>
+          </div>
+        </div>
+        <div style={{ padding: "20px 24px" }}>
+          <p style={{ fontWeight: 700, color: "#374151", marginBottom: 8, marginTop: 0 }}>Personal Details</p>
+          {row("Email", user.email)}
+          {row("Mobile", user.mobile)}
+          {row("Gender", user.gender)}
+          {row("Date of Birth", user.dob)}
+          {row("Role", user.role)}
+          {row("Account Created", new Date(user.createdAt).toLocaleDateString())}
+          {row("Last Updated", new Date(user.updatedAt).toLocaleDateString())}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-    if (!storedUser) {
-      navigate("/login");
+/* ── Manage Users Component ── */
+function ManageUsers() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const token = localStorage.getItem("adminToken");
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/admin/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(res.data);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      alert("Failed to load users");
+    } finally {
+      setLoading(false);
     }
-  }, [navigate]);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const statsRes = await axios.get("http://localhost:5000/api/admin/stats");
-        setTotalUsers(statsRes.data.totalUsers || 0);
-
-        const activeRes = await axios.get("http://localhost:5000/api/admin/active-users");
-        setActiveUsers(activeRes.data.activeUsers || 0);
-      } catch (err) {
-        console.log("Admin stats fetch error:", err);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  useEffect(() => {
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    const handleActiveUsers = (count) => {
-      setActiveUsers(count);
-    };
-
-    socket.on("active-users-count", handleActiveUsers);
-
-    return () => {
-      socket.off("active-users-count", handleActiveUsers);
-    };
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-
-    if (socket.connected) {
-      socket.disconnect();
-    }
-
-    window.dispatchEvent(new Event("authChange"));
-    navigate("/login");
   };
 
-  const renderMainContent = () => {
-    if (activeMenu === "qna") {
-      return <QnAPage />;
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+      return;
     }
 
-    return (
-      <>
-        <h2 className="admin-dashboard-title">Admin Dashboard</h2>
-
-        <div className="admin-cards">
-          <div className="admin-card">
-            <h4>Total Users</h4>
-            <h1>{totalUsers}</h1>
-          </div>
-
-          <div className="admin-card">
-            <h4>Active Users (Live)</h4>
-            <h1>{activeUsers}</h1>
-          </div>
-
-          <div className="admin-card">
-            <h4>Total Doctors</h4>
-            <h1>0</h1>
-          </div>
-
-          <div className="admin-card">
-            <h4>Total Appointments</h4>
-            <h1>0</h1>
-          </div>
-        </div>
-
-        <div className="admin-content-box">
-          <h3>Welcome Admin 👋</h3>
-          <p>
-            This is your admin control panel. From here, you can manage users,
-            doctors, appointments, questions, and platform content.
-          </p>
-        </div>
-
-        <div className="admin-content-box" style={{ marginTop: "20px" }}>
-          <h3>Quick Actions</h3>
-          <p>Manage your platform efficiently with admin controls.</p>
-
-          <div className="admin-actions">
-            <button>View Users</button>
-            <button>Manage Doctors</button>
-            <button>Check Appointments</button>
-            <button onClick={() => setActiveMenu("qna")}>Review Questions</button>
-          </div>
-        </div>
-      </>
-    );
+    try {
+      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(users.filter(user => user._id !== userId));
+      alert("User deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      alert("Failed to delete user");
+    }
   };
 
-  if (!user) {
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
     return (
-      <h2 style={{ textAlign: "center", marginTop: "150px" }}>
-        Please login first
-      </h2>
+      <div className="dash-section">
+        <h2 className="dash-section-title">Manage Users</h2>
+        <div style={{ textAlign: "center", padding: "40px" }}>Loading users...</div>
+      </div>
     );
   }
 
   return (
-    <div className="admin-dashboard-wrapper">
-      {/* Fixed Top Header */}
-      <header className="admin-top-header">
-        <div className="admin-top-left">
-          <h2>Humancare Admin</h2>
-        </div>
-
-        <div className="admin-top-right">
-          <span className="admin-top-user">
-            Welcome, {user.name}
-          </span>
-          <button className="admin-top-logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <div className="admin-dashboard">
-        <div className="admin-sidebar">
-          <div className="admin-profile-box">
-            <div className="admin-avatar">
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
-            <h3>{user.name}</h3>
-            <p>{user.email}</p>
-            <span className="admin-role-badge">Admin</span>
-          </div>
-
-          <ul className="admin-menu">
-            <li
-              className={activeMenu === "dashboard" ? "active" : ""}
-              onClick={() => setActiveMenu("dashboard")}
-            >
-              Dashboard
-            </li>
-
-            <li
-              className={activeMenu === "manage-users" ? "active" : ""}
-              onClick={() => setActiveMenu("manage-users")}
-            >
-              Manage Users
-            </li>
-
-            <li
-              className={activeMenu === "manage-doctors" ? "active" : ""}
-              onClick={() => setActiveMenu("manage-doctors")}
-            >
-              Manage Doctors
-            </li>
-
-            <li
-              className={activeMenu === "appointments" ? "active" : ""}
-              onClick={() => setActiveMenu("appointments")}
-            >
-              Appointments
-            </li>
-
-            <li
-              className={activeMenu === "qna" ? "active" : ""}
-              onClick={() => setActiveMenu("qna")}
-            >
-              Medical Questions
-            </li>
-
-            <li
-              className={activeMenu === "blogs" ? "active" : ""}
-              onClick={() => setActiveMenu("blogs")}
-            >
-              Blogs
-            </li>
-
-            <li
-              className={activeMenu === "settings" ? "active" : ""}
-              onClick={() => setActiveMenu("settings")}
-            >
-              Settings
-            </li>
-          </ul>
-        </div>
-
-        <div className="admin-main-content">{renderMainContent()}</div>
+    <div className="dash-section">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h2 className="dash-section-title">Manage Users ({filteredUsers.length})</h2>
+        <input
+          type="text"
+          placeholder="Search users by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: "8px 12px",
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+            width: 300,
+            fontSize: 14
+          }}
+        />
       </div>
+
+      <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Name</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Email</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Mobile</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Gender</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, color: "#374151", fontSize: 14 }}>Joined</th>
+              <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, color: "#374151", fontSize: 14 }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr key={user._id} style={{ borderBottom: "1px solid #f3f4f6", hover: { background: "#f9fafb" } }}>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: "#111827" }}>{user.name}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.email}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.mobile || "—"}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>{user.gender || "—"}</td>
+                <td style={{ padding: "12px 16px", fontSize: 14, color: "#6b7280" }}>
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </td>
+                <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                  <button
+                    onClick={() => setSelectedUser(user)}
+                    style={{
+                      background: "#3b82f6",
+                      color: "#fff",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      cursor: "pointer",
+                      marginRight: 8
+                    }}
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleDeleteUser(user._id, user.name)}
+                    style={{
+                      background: "#dc2626",
+                      color: "#fff",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: 4,
+                      fontSize: 12,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {filteredUsers.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px", color: "#6b7280" }}>
+            {searchTerm ? "No users found matching your search." : "No users registered yet."}
+          </div>
+        )}
+      </div>
+
+      {selectedUser && (
+        <UserProfileModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Admin Appointments Component ── */
+function AdminAppointments() {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("adminToken");
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/appointments/admin/all", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setAppointments(res.data))
+      .catch((err) => {
+        console.error("Failed to load appointments", err);
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) {
+    return <div className="dash-section"><h2 className="dash-section-title">Appointments</h2><p>Loading appointments...</p></div>;
+  }
+
+  if (!appointments.length) {
+    return <div className="dash-section"><h2 className="dash-section-title">Appointments</h2><p>No appointments yet.</p></div>;
+  }
+
+  const statusColor = { pending: "#d97706", confirmed: "#059669", completed: "#10b981", cancelled: "#dc2626" };
+
+  return (
+    <div className="dash-section">
+      <h2 className="dash-section-title">All Appointments</h2>
+      <div className="dash-table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
+              {['Patient', 'Doctor', 'Date', 'Time', 'Problem', 'Status'].map((label) => (
+                <th key={label}>{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map((appointment, i) => (
+              <tr key={appointment._id} className={i % 2 === 0 ? "" : "alt"}>
+                <td>{appointment.patientId?.name || 'Unknown'}</td>
+                <td>{appointment.doctorId?.name || 'Unassigned'}</td>
+                <td>{appointment.date}</td>
+                <td>{appointment.time}</td>
+                <td>{appointment.problem || '—'}</td>
+                <td>
+                  <span className="status-badge" style={{ background: `${statusColor[appointment.status]}18`, color: statusColor[appointment.status] }}>
+                    {appointment.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── Manage Doctors panel ── */
+function ManageDoctors() {
+  const [enrollments, setEnrollments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const token = localStorage.getItem("adminToken");
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/admin/doctors", { headers })
+      .then((res) => setEnrollments(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updateStatus = (id, action) => {
+    axios.put(`http://localhost:5000/api/admin/doctors/${id}/${action}`, {}, { headers })
+      .then((res) => {
+        setEnrollments((prev) => prev.map((e) => e._id === id ? { ...e, approvalStatus: res.data.enrollment.approvalStatus } : e));
+        setSelectedDoctor((prev) => prev?._id === id ? { ...prev, approvalStatus: res.data.enrollment.approvalStatus } : prev);
+      })
+      .catch(console.error);
+  };
+
+  if (loading) return <p className="dash-empty">Loading doctors...</p>;
+  if (!enrollments.length) return <p className="dash-empty">No doctor enrollment requests yet.</p>;
+
+  const statusColor = { pending: "#d97706", approved: "#059669", rejected: "#dc2626" };
+
+  return (
+    <div className="dash-section">
+      {selectedDoctor && <DoctorProfileModal doctor={selectedDoctor} onClose={() => setSelectedDoctor(null)} />}
+      <h2 className="dash-section-title">Doctor Enrollment Requests</h2>
+      <div className="dash-table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
+              {["Name", "Email", "Specialization", "Status", "Actions"].map((h) => (
+                <th key={h}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {enrollments.map((e, i) => {
+              const name = `${e.firstName || ""} ${e.surname || ""}`.trim() || e.doctorId?.name || "—";
+              const email = e.email || e.doctorId?.email || "—";
+              return (
+                <tr key={e._id} className={i % 2 === 0 ? "" : "alt"}>
+                  <td className="bold">{name}</td>
+                  <td className="muted">{email}</td>
+                  <td>{e.specialization || "—"}</td>
+                  <td>
+                    <span className="status-badge" style={{ background: `${statusColor[e.approvalStatus]}18`, color: statusColor[e.approvalStatus] }}>
+                      {e.approvalStatus}
+                    </span>
+                  </td>
+                  <td className="actions-cell">
+                    <button className="btn-view" onClick={() => setSelectedDoctor(e)}>View</button>
+                    {e.approvalStatus !== "approved" && (
+                      <button className="btn-approve" onClick={() => updateStatus(e._id, "approve")}>Approve</button>
+                    )}
+                    {e.approvalStatus !== "rejected" && (
+                      <button className="btn-reject" onClick={() => updateStatus(e._id, "reject")}>Reject</button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Admin Dashboard ── */
+export default function AdminDashboard() {
+  const [user, setUser] = useState(null);
+  const [activeMenu, setActiveMenu] = useState("dashboard");
+  const [stats, setStats] = useState({ totalUsers: 0, totalDoctors: 0, activeUsers: 0 });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("adminUser") || "null");
+    if (!stored || !["admin", "superadmin"].includes(stored.role)) {
+      navigate("/admin-login");
+      return;
+    }
+    setUser(stored);
+  }, [navigate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    axios.get("http://localhost:5000/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => setStats((s) => ({ ...s, totalUsers: res.data.totalUsers || 0, totalDoctors: res.data.totalDoctors || 0 })))
+      .catch(() => {});
+    axios.get("http://localhost:5000/api/admin/active-users")
+      .then((res) => setStats((s) => ({ ...s, activeUsers: res.data.activeUsers || 0 })))
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    navigate("/admin-login");
+  };
+
+  const renderContent = () => {
+    if (activeMenu === "manage-doctors") return <ManageDoctors />;
+    if (activeMenu === "manage-users") return <ManageUsers />;
+    if (activeMenu === "appointments") return <AdminAppointments />;
+    if (activeMenu === "qna") return <QnAPage />;
+    return (
+      <div className="dash-section">
+        <h2 className="dash-section-title">Admin Dashboard</h2>
+        <div className="dash-cards">
+          {[
+            { label: "Total Users", value: stats.totalUsers },
+            { label: "Active Users", value: stats.activeUsers },
+            { label: "Approved Doctors", value: stats.totalDoctors },
+            { label: "Total Appointments", value: 0 },
+          ].map((c) => (
+            <div className="dash-card" key={c.label}>
+              <div className="dash-card-label">{c.label}</div>
+              <div className="dash-card-value">{c.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="dash-welcome">
+          <h3>Welcome, {user?.name} 👋</h3>
+          <p>Use the sidebar to manage doctors, users, and platform content.</p>
+        </div>
+      </div>
+    );
+  };
+
+  if (!user) return null;
+
+  const menuItems = [
+    { key: "dashboard", label: "Dashboard" },
+    { key: "manage-doctors", label: "Manage Doctors" },
+    { key: "manage-users", label: "Manage Users" },
+    { key: "appointments", label: "Appointments" },
+    { key: "qna", label: "Medical Questions" },
+    { key: "settings", label: "Settings" },
+  ];
+
+  return (
+    <div className="dash-wrapper">
+      {/* Sidebar */}
+      <aside className="dash-sidebar">
+        <div className="dash-sidebar-brand">
+          <div className="dash-brand-mark">H</div>
+          <span>HumaniCare</span>
+        </div>
+        <div className="dash-profile">
+          <div className="dash-avatar">{user.name?.[0]?.toUpperCase()}</div>
+          <div className="dash-profile-name">{user.name}</div>
+          <div className="dash-profile-email">{user.email}</div>
+          <span className="dash-role-badge">{user.role === "superadmin" ? "Super Admin" : "Admin"}</span>
+        </div>
+        <nav className="dash-nav">
+          {menuItems.map((m) => (
+            <button
+              key={m.key}
+              className={`dash-nav-item${activeMenu === m.key ? " active" : ""}`}
+              onClick={() => setActiveMenu(m.key)}
+            >
+              {m.label}
+            </button>
+          ))}
+          {user.role === "superadmin" && (
+            <button className="dash-nav-item" onClick={() => navigate("/superadmin-dashboard")}>
+              Manage Admins
+            </button>
+          )}
+        </nav>
+        <button className="dash-logout" onClick={handleLogout}>Logout</button>
+      </aside>
+
+      {/* Main */}
+      <main className="dash-main">
+        <header className="dash-topbar">
+          <div className="dash-topbar-title">Humancare Admin</div>
+          <span className="dash-topbar-user">Welcome, {user.name}</span>
+        </header>
+        <div className="dash-content">{renderContent()}</div>
+      </main>
     </div>
   );
 }

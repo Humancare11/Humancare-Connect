@@ -90,18 +90,18 @@ export default function Header() {
 
         {/* 🔥 AUTH BUTTONS */}
         <div className="auth-buttons">
-  {!isLoggedIn ? (
-    <div className="auth-combined">
-      <Link to="/login" className="auth-link">Login</Link>
-      <span className="divider">/</span>
-      <Link to="/register" className="auth-link">Register</Link>
-    </div>
-  ) : (
-    <Link to="/profile" className="profile-icon">
-      <FaUserCircle />
-    </Link>
-  )}
-</div>
+          {!isLoggedIn ? (
+            <div className="auth-combined">
+              <Link to="/login" className="auth-link">Login</Link>
+              <span className="divider">/</span>
+              <Link to="/register" className="auth-link">Register</Link>
+            </div>
+          ) : (
+            <Link to="/profile" className="profile-icon">
+              <FaUserCircle />
+            </Link>
+          )}
+        </div>
 
       </div>
     </header>

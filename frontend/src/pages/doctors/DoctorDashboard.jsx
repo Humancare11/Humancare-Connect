@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import socket from "../../socket";
+import AppointmentChat from "../../components/AppointmentChat";
 import "./Doctor.css";
 import Dashbord from "./Dashbord";
 import DoctorEnrollments from "./DoctorEnrollments";
@@ -19,6 +22,111 @@ const Ico = {
     </svg>
   ),
 };
+
+function DoctorAppointments({ doctorName }) {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const token = localStorage.getItem("doctorToken");
+
+  useEffect(() => {
+    if (!token) return;
+
+    axios
+      .get("http://localhost:5000/api/appointments/doctor", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setAppointments(res.data))
+      .catch((err) => {
+        console.error("Failed to load doctor appointments", err);
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const confirmAppointment = async (appointmentId) => {
+    try {
+      const res = await axios.put(
+        `http://localhost:5000/api/appointments/${appointmentId}/confirm`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setAppointments((prev) =>
+        prev.map((appointment) =>
+          appointment._id === appointmentId ? res.data.appointment : appointment
+        )
+      );
+      setSelectedAppointment((prev) =>
+        prev?._id === appointmentId ? res.data.appointment : prev
+      );
+    } catch (error) {
+      console.error("Failed to confirm appointment", error);
+      alert("Could not confirm appointment.");
+    }
+  };
+
+  if (loading) {
+    return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>Loading appointments...</p></div>;
+  }
+
+  if (!appointments.length) {
+    return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>No upcoming appointments.</p></div>;
+  }
+
+  return (
+    <div className="dd-card">
+      <h2 className="dd-card-title">Appointments</h2>
+      <div className="dash-table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
+              {['Patient', 'Date', 'Time', 'Problem', 'Status', 'Actions'].map((label) => (
+                <th key={label}>{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map((appointment) => (
+              <tr key={appointment._id} className="alt">
+                <td>{appointment.patientId?.name || 'Unknown'}</td>
+                <td>{appointment.date}</td>
+                <td>{appointment.time}</td>
+                <td>{appointment.problem || '—'}</td>
+                <td>{appointment.status}</td>
+                <td className="actions-cell">
+                  <button className="btn-view" onClick={() => setSelectedAppointment(appointment)}>
+                    View
+                  </button>
+                  {appointment.status === 'pending' ? (
+                    <button className="btn-approve" onClick={() => confirmAppointment(appointment._id)}>
+                      Confirm
+                    </button>
+                  ) : (
+                    <Link className="btn-view" to={`/video-call/${appointment._id}`}>
+                      Join Call
+                    </Link>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedAppointment && selectedAppointment.status === 'confirmed' && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Consultation</h3>
+          <AppointmentChat appointmentId={selectedAppointment._id} userName={doctorName} />
+          <Link to={`/video-call/${selectedAppointment._id}`} className="ap-btn" style={{ marginTop: 16, display: 'inline-block' }}>
+            Start Video Call
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
@@ -61,6 +169,15 @@ export default function DoctorDashboard() {
       });
   }, [navigate]);
 
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+    if (doctor?.id) {
+      socket.emit("user-online", { userId: doctor.id, role: "doctor" });
+    }
+  }, [doctor]);
+
   const logout = () => {
     localStorage.removeItem("currentDoctor");
     localStorage.removeItem("doctorToken");
@@ -92,7 +209,7 @@ export default function DoctorDashboard() {
       case "Enrollments":
         return <DoctorEnrollments onComplete={handleEnrollmentComplete} initialData={enrollmentData} doctorId={doctor.id} />;
       case "Appointments":
-        return <div className="dd-card"><h2 className="dd-card-title">Appointments</h2><p>No upcoming appointments.</p></div>;
+        return <DoctorAppointments doctorName={doctor.name} />;
       case "My Patients":
         return <div className="dd-card"><h2 className="dd-card-title">My Patients</h2><p>You have no patients yet.</p></div>;
       case "Messages":

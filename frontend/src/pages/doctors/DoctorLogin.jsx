@@ -1,50 +1,95 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import "./Doctor.css";
-
 const API_BASE = "/api";
 
-export default function DoctorLogin() {
+export default function DoctorAuthPage() {
   const navigate = useNavigate();
+
+  const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
+  // LOGIN FORM
+  const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
   });
 
-  const set = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  // REGISTER FORM
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  // ---------------- LOGIN INPUT ----------------
+  const handleLoginChange = (e) => {
+    setLoginForm({
+      ...loginForm,
+      [e.target.name]: e.target.value,
+    });
     setError("");
   };
 
-  const validate = () => {
-    if (!form.email.trim()) return "Email is required.";
-    if (!/\S+@\S+\.\S+/.test(form.email)) return "Enter a valid email.";
-    if (!form.password) return "Password is required.";
-    return "";
+  // ---------------- REGISTER INPUT ----------------
+  const handleRegisterChange = (e) => {
+    setRegisterForm({
+      ...registerForm,
+      [e.target.name]: e.target.value,
+    });
+    setError("");
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // ---------------- GOOGLE AUTH ----------------
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/google-doctor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.msg || data.message || "Google Sign-In failed.");
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
 
-    const err = validate();
-    if (err) {
-      setError(err);
-      return;
+      if (data.isNewUser) {
+        // New doctor account — go to dashboard where the enrollment form is available
+        navigate("/doctor-dashboard?newAccount=1");
+      } else {
+        navigate("/doctor-dashboard");
+      }
+    } catch (err) {
+      setError("Could not connect to server.");
     }
+    setLoading(false);
+  };
 
+  // ---------------- LOGIN SUBMIT ----------------
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
       const res = await fetch(`${API_BASE}/doctor/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
+          email: loginForm.email.trim().toLowerCase(),
+          password: loginForm.password,
         }),
       });
 
@@ -52,103 +97,261 @@ export default function DoctorLogin() {
 
       if (!res.ok) {
         setError(data.message || "Invalid email or password.");
+        setLoading(false);
         return;
       }
 
-      // Store JWT token and minimal doctor info for session
       localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
+      localStorage.setItem(
+        "currentDoctor",
+        JSON.stringify(data.doctor)
+      );
 
       navigate("/doctor-dashboard");
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Could not connect to server. Please try again.");
-    } finally {
-      setLoading(false);
+      setError("Could not connect to server.");
     }
+
+    setLoading(false);
+  };
+
+  // ---------------- REGISTER SUBMIT ----------------
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    if (
+      registerForm.password !==
+      registerForm.confirmPassword
+    ) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/doctor/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: registerForm.name.trim(),
+          email: registerForm.email.trim().toLowerCase(),
+          password: registerForm.password,
+          confirmPassword:
+            registerForm.confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(
+          data.message ||
+            "Registration failed. Please try again."
+        );
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem(
+        "currentDoctor",
+        JSON.stringify(data.doctor)
+      );
+
+      navigate("/doctor-dashboard");
+    } catch (err) {
+      setError("Could not connect to server.");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="dr-page">
-      <div className="dr-panel dr-panel--left">
-        <div className="dr-panel-inner">
-          <Link to="/" className="dr-brand">
-            <div className="dr-brand-mark">H</div>
-            <span className="dr-brand-name">HumaniCare</span>
-          </Link>
+    <div
+      className={`doctor-auth-wrapper ${
+        isRegister ? "panel-active" : ""
+      }`}
+    >
+      {/* REGISTER FORM */}
+      <div className="doctor-auth-form-box register-form-box">
+        <form onSubmit={handleRegisterSubmit}>
+          <h1>Doctor Register</h1>
 
-          <div className="dr-panel-hero">
-            <div className="dr-panel-icon">🩺</div>
-            <h2 className="dr-panel-title">
-              Welcome back,
-              <br />
-              Doctor
-            </h2>
-            <p className="dr-panel-sub">
-              Login to continue to your doctor dashboard.
-            </p>
+          <div className="doctor-social-links">
+            <a href="#"><FaFacebookF /></a>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Sign-In failed.")}
+              type="icon"
+              shape="circle"
+              size="large"
+            />
+            <a href="#"><FaLinkedinIn /></a>
           </div>
-        </div>
-      </div>
 
-      <div className="dr-panel dr-panel--right">
-        <div className="dr-form-wrap">
-          <div className="dr-form-header">
-            <h1 className="dr-form-title">Doctor Login</h1>
-            <p className="dr-form-sub">Enter your email and password</p>
-          </div>
+          <span>Create your professional account</span>
 
           {error && (
-            <div className="dr-error">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              {error}
-            </div>
+            <p className="doctor-error">{error}</p>
           )}
 
-          <form onSubmit={handleLogin} noValidate>
-            <div className="dr-fields">
-              <div className="dr-field">
-                <label>
-                  Email Address <span className="dr-req">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={set("email")}
-                  placeholder="doctor@example.com"
-                  autoFocus
-                  disabled={loading}
-                />
-              </div>
+          <input
+            type="text"
+            name="name"
+            placeholder="Dr. John Doe"
+            value={registerForm.name}
+            onChange={handleRegisterChange}
+            required
+          />
 
-              <div className="dr-field">
-                <label>
-                  Password <span className="dr-req">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={set("password")}
-                  placeholder="Enter your password"
-                  disabled={loading}
-                />
-              </div>
-            </div>
+          <input
+            type="email"
+            name="email"
+            placeholder="doctor@example.com"
+            value={registerForm.email}
+            onChange={handleRegisterChange}
+            required
+          />
 
-            <div className="dr-btn-row dr-btn-row--single">
-              <button type="submit" className="dr-btn-primary" disabled={loading}>
-                {loading ? "Logging in…" : "Login →"}
-              </button>
-            </div>
-          </form>
+          <input
+            type="password"
+            name="password"
+            placeholder="Create password"
+            value={registerForm.password}
+            onChange={handleRegisterChange}
+            required
+          />
 
-          <p className="dr-switch">
-            New doctor? <Link to="/doctor-register">Register here</Link>
-          </p>
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm password"
+            value={registerForm.confirmPassword}
+            onChange={handleRegisterChange}
+            required
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
+
+          <div className="doctor-mobile-switch">
+            <p>Already have an account?</p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(false);
+                setError("");
+              }}
+            >
+              Login
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* LOGIN FORM */}
+      <div className="doctor-auth-form-box login-form-box">
+        <form onSubmit={handleLoginSubmit}>
+          <h1>Doctor Login</h1>
+
+          <div className="doctor-social-links">
+            <a href="#"><FaFacebookF /></a>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Sign-In failed.")}
+              type="icon"
+              shape="circle"
+              size="large"
+            />
+            <a href="#"><FaLinkedinIn /></a>
+          </div>
+
+          <span>Login to your doctor dashboard</span>
+
+          {error && (
+            <p className="doctor-error">{error}</p>
+          )}
+
+          <input
+            type="email"
+            name="email"
+            placeholder="doctor@example.com"
+            value={loginForm.email}
+            onChange={handleLoginChange}
+            required
+          />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            value={loginForm.password}
+            onChange={handleLoginChange}
+            required
+          />
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <div className="doctor-mobile-switch">
+            <p>New doctor?</p>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(true);
+                setError("");
+              }}
+            >
+              Register
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* SLIDING PANEL */}
+      <div className="doctor-slide-panel-wrapper">
+        <div className="doctor-slide-panel">
+          {/* LEFT PANEL */}
+          <div className="doctor-panel-content doctor-panel-left">
+            <h1>Welcome Back Doctor!</h1>
+            <p>
+              Login to continue managing patients and
+              appointments.
+            </p>
+            <button
+              className="doctor-transparent-btn"
+              onClick={() => {
+                setIsRegister(false);
+                setError("");
+              }}
+            >
+              Login
+            </button>
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className="doctor-panel-content doctor-panel-right">
+            <h1>Join HumaniCare</h1>
+            <p>
+              Register now and become part of our trusted
+              doctor network.
+            </p>
+            <button
+              className="doctor-transparent-btn"
+              onClick={() => {
+                setIsRegister(true);
+                setError("");
+              }}
+            >
+              Register
+            </button>
+          </div>
         </div>
       </div>
     </div>

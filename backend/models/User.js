@@ -20,12 +20,18 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
+    },
+
+    googleId: {
+      type: String,
+      default: "",
     },
 
     role: {
       type: String,
-      enum: ["user", "admin", "doctor"],   // ✅ doctor added
+      enum: ["user", "admin", "superadmin", "doctor"],
       default: "user",
     },
 
@@ -35,10 +41,7 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    country: {
-      type: String,
-      default: "",
-    },
+   
 
     dob: {
       type: String,
@@ -51,66 +54,6 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
-    // ─── Doctor-only fields ───────────────────────────────────
-    specialty: {
-      type: String,
-      default: "",
-    },
-
-    degree: {
-      type: String,
-      default: "",
-    },
-
-    experience: {
-      type: String,         // e.g. "10" years
-      default: "",
-    },
-
-    licenseNumber: {
-      type: String,
-      default: "",
-    },
-
-    hospital: {
-      type: String,
-      default: "",
-    },
-
-    consultationFee: {
-      type: Number,
-      default: 0,
-    },
-
-    bio: {
-      type: String,
-      default: "",
-    },
-
-    phone: {
-      type: String,
-      default: "",
-    },
-
-    isVerified: {
-      type: Boolean,
-      default: false,       // admin can verify doctor later
-    },
-
-    rating: {
-      type: Number,
-      default: 0,
-    },
-
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
-
-    availableToday: {
-      type: Boolean,
-      default: false,
-    },
   },
   {
     timestamps: true,       // createdAt, updatedAt auto add

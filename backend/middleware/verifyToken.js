@@ -27,4 +27,20 @@ const doctorOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { verifyToken, doctorOnly };
+// Only allow admins (regular + superadmin can access admin routes)
+const adminOnly = (req, res, next) => {
+  if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+    return res.status(403).json({ msg: "Access denied. Admins only." });
+  }
+  next();
+};
+
+// Only allow superadmin
+const superAdminOnly = (req, res, next) => {
+  if (req.user?.role !== "superadmin") {
+    return res.status(403).json({ msg: "Access denied. Super Admins only." });
+  }
+  next();
+};
+
+module.exports = { verifyToken, doctorOnly, adminOnly, superAdminOnly };
