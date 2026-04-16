@@ -7,8 +7,8 @@
 
 /* ── Variables ── */
 :root {
-  --primary: #223A5E;
-  --primary-dark: #1B2F4B;
+  --primary: #223a5e;
+  --primary-dark: #1b2f4b;
   --primary-light: #ebf4ff;
   --accent: #4299e1;
   --text-dark: #1a202c;
@@ -22,7 +22,7 @@
   --radius-img: 16px;
   --radius-btn: 50px;
   --transition: 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-  --font: 'Poppins', sans-serif;
+  --font: "Poppins", sans-serif;
 }
 
 /* ── Reset ── */
@@ -56,13 +56,13 @@
 }
 
 .ms-hero::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
 }
 
 .ms-hero::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -122,23 +122,30 @@
 
 /* Alternate backgrounds */
 .ha-service-block:nth-child(even) {
-  background: var(--bg-alt);
+  /* background: var(--bg-alt); */
+  background: #ffffff;
 }
 
 .ha-service-block:nth-child(odd) {
-  background: var(--bg-section);
+  /* background: var(--bg-section); */
+  background: #f5f7fb;
 }
 
 /* Separator line between blocks */
-.ha-service-block+.ha-service-block::before {
-  content: '';
+.ha-service-block + .ha-service-block::before {
+  content: "";
   position: absolute;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 80px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border-light),
+    transparent
+  );
 }
 
 /* Inner container */
@@ -156,7 +163,7 @@
   direction: rtl;
 }
 
-.ha-service-block.reverse .ha-service-inner>* {
+.ha-service-block.reverse .ha-service-inner > * {
   direction: ltr;
 }
 
@@ -174,13 +181,15 @@
 
 /* Decorative corner accent */
 .ha-img-wrap::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg,
-      rgba(43, 108, 176, 0.1) 0%,
-      transparent 50%);
+  background: linear-gradient(
+    135deg,
+    rgba(43, 108, 176, 0.1) 0%,
+    transparent 50%
+  );
   z-index: 1;
   pointer-events: none;
   transition: opacity var(--transition);
@@ -257,7 +266,7 @@
 }
 
 .ha-content-label::before {
-  content: '';
+  content: "";
   width: 28px;
   height: 2px;
   background: linear-gradient(90deg, var(--primary), var(--accent));
@@ -342,14 +351,20 @@
   align-self: flex-start;
   position: relative;
   overflow: hidden;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .ha-cta-btn::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark) 0%,
+    var(--primary) 100%
+  );
   opacity: 0;
   transition: opacity var(--transition);
 }
@@ -400,7 +415,9 @@
 .ha-animate {
   opacity: 0;
   transform: translateY(40px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .ha-animate.is-visible {
@@ -459,7 +476,9 @@
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .ha-footer-strip-btn:hover {

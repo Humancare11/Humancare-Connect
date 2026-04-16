@@ -136,7 +136,7 @@ const SERVICES = [
     label: "Teleconsultation",
     title: "Online Doctor Consultation",
     description:
-      "Speak face-to-face with a qualified doctor via video or chat in minutes. Get expert advice, second opinions, and personalised follow-up care — no appointment needed.",
+      "Speak face-to-face with a qualified doctor via video or chat in minutes. Get expert advice, second opinions, and Personalized follow-up care — no appointment needed.",
     features: [
       "Connect with specialists in under 5 minutes",
       "Secure video, audio, or chat sessions",

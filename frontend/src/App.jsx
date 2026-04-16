@@ -31,6 +31,8 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 
+import useLenis from "./hooks/useLenis";
+
 function AppLayout() {
   const location = useLocation();
 
@@ -81,8 +83,6 @@ function AppLayout() {
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-        
-
         {/* Admin routes */}
         <Route
           path="/admin"
@@ -108,6 +108,7 @@ function AppLayout() {
 }
 
 function App() {
+  useLenis();
   return (
     <BrowserRouter>
       <AppLayout />

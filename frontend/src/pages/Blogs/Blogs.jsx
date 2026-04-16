@@ -38,7 +38,7 @@ const blogs = [
     id: 5,
     title: "Diabetes Management: New Approaches for 2025",
     description:
-      "From continuous glucose monitors to personalised nutrition plans, explore the latest tools helping diabetics live fuller lives.",
+      "From continuous glucose monitors to Personalized nutrition plans, explore the latest tools helping diabetics live fuller lives.",
     image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&q=80",
     category: "Chronic Care",
   },

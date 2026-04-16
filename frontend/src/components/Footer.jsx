@@ -56,7 +56,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2025 Humancare Technologies Inc. All rights reserved.</span>
+        <span>© 2026 Humancare Technologies Inc. All rights reserved.</span>
         <span>Made with care in the United States 🇺🇸</span>
       </div>
     </footer>

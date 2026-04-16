@@ -8,7 +8,7 @@ const CARDS = [
     delay: "0s",
     tag: "Cost Savings",
     title: "Reduce Insurance & Healthcare Costs",
-    short: "Cut overhead. Optimise spend.",
+    short: "Cut overhead. Optimize spend.",
     body: "By enabling early intervention and preventing escalation, Humancare helps organisations significantly lower insurance premiums, reduce hospitalisation frequency, and eliminate costly reactive care — delivering measurable ROI within the first year.",
     photo: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=70",
   },

@@ -38,7 +38,7 @@ const WHO_WE_SERVE = [
 ];
 
 const WHY_US = [
-  { title: "Personalised Support", desc: "Every case is different. We assign dedicated coordinators who understand your situation, not a generic call centre agent reading from a script." },
+  { title: "Personalized Support", desc: "Every case is different. We assign dedicated coordinators who understand your situation, not a generic call centre agent reading from a script." },
   { title: "Fast Response", desc: "We move quickly. Whether it's an emergency or a scheduled procedure, we respond with urgency because delays in healthcare are never acceptable." },
   { title: "Trusted Network", desc: "Our relationships with hospitals, specialists, labs, and insurers are built on years of partnership — giving you access to quality care you can rely on." },
   { title: "End-to-End Coordination", desc: "We don't hand you a list and walk away. We manage everything — appointments, documentation, transport, follow-up — from start to finish." },
@@ -115,7 +115,7 @@ export default function AboutUs() {
               Our Mission
             </div>
             <h3 className="au-mv-card__heading">
-              To simplify healthcare for everyone we serve — delivering fast, personalised, and end-to-end medical coordination that individuals and organisations can trust completely.
+              To simplify healthcare for everyone we serve — delivering fast, Personalized, and end-to-end medical coordination that individuals and organisations can trust completely.
             </h3>
             <p className="au-mv-card__body">
               We believe quality healthcare coordination shouldn't be a privilege. It should be available to anyone who needs it — regardless of complexity, location, or circumstance.

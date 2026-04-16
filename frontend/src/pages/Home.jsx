@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./home.css";
 import Sa from "../components/Sa";
 import Aa from "../components/Aa";
+import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
+import WordReveal from "../components/WordReveal";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,36 +11,46 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import { FaFileMedical, FaSyncAlt, FaCalendarAlt } from "react-icons/fa";
+import {
+  FiSmartphone,
+  FiUserCheck,
+  FiClock,
+  FiVideo,
+  FiFileText,
+  FiCheckCircle,
+} from "react-icons/fi";
+
+import { motion } from "framer-motion";
 
 const SCENE_VISUALS = [
   {
     bg: "linear-gradient(135deg, #E8F0FE 0%, #DCE6F2 100%)",
-    icon: "📱",
+    icon: <FiSmartphone />,
     label: "Phone",
   },
   {
     bg: "linear-gradient(135deg, #E8F5F3 0%, #DCE6F2 100%)",
-    icon: "👨‍⚕️",
+    icon: <FiUserCheck />,
     label: "Doctor",
   },
   {
     bg: "linear-gradient(135deg, #FEF3E2 0%, #F4F7FB 100%)",
-    icon: "⏱️",
+    icon: <FiClock />,
     label: "Timer",
   },
   {
     bg: "linear-gradient(135deg, #E8F0FE 0%, #E8F5F3 100%)",
-    icon: "🎥",
+    icon: <FiVideo />,
     label: "Video",
   },
   {
     bg: "linear-gradient(135deg, #E8F5F3 0%, #F4F7FB 100%)",
-    icon: "💊",
+    icon: <FiFileText />,
     label: "Rx",
   },
   {
     bg: "linear-gradient(135deg, #E8F5F3 0%, #FEF3E2 100%)",
-    icon: "✅",
+    icon: <FiCheckCircle />,
     label: "Done",
   },
 ];
@@ -90,7 +102,7 @@ const SCENES = [
     step: 4,
     badge: "Connected",
     title: "Video Consultation",
-    desc: "Face-to-face with your doctor over HIPAA-secured, HD video. Share symptoms, ask questions.",
+    desc: "Face to face with your doctor over HIPAA secured, HD video. Share symptoms, ask questions.",
     metricValue: "256-bit",
     metricLabel: "Encrypted",
     metricIcon: (
@@ -116,7 +128,7 @@ const SCENES = [
     step: 6,
     badge: "Done",
     title: "Visit Complete!",
-    desc: "Rate your experience, schedule follow-ups, and access visit notes — all from one dashboard.",
+    desc: "Rate your experience, schedule follow ups, and access visit notes, all from one dashboard.",
     metricValue: "4.9 ★",
     metricLabel: "Avg rating",
     metricIcon: (
@@ -128,33 +140,12 @@ const SCENES = [
 ];
 
 const STEP_ICONS = [
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <rect x="5" y="2" width="14" height="20" rx="3" />
-    <line x1="12" y1="18" x2="12.01" y2="18" />
-  </svg>,
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="m22 8-4 4-2-2" />
-  </svg>,
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>,
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <polygon points="23 7 16 12 23 17 23 7" />
-    <rect x="1" y="5" width="15" height="14" rx="2" />
-  </svg>,
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-  </svg>,
-  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
-  </svg>,
+  <FiSmartphone />, // Mobile device
+  <FiUserCheck />, // User + verification
+  <FiClock />, // Time / process
+  <FiVideo />, // Video call
+  <FiFileText />, // Document/report
+  <FiCheckCircle />, // Success/complete
 ];
 
 const DOT_LABELS = [
@@ -167,7 +158,8 @@ const DOT_LABELS = [
 ];
 const TOTAL_STEPS = 6;
 const STEP_DURATION = 4000;
-const CIRCUMFERENCE = 2 * Math.PI * 10;
+const CIRCUMFERENCE = 2 * Math.PI * 10; // For auto-timer (radius 10)
+const STEP_CIRCUMFERENCE = 2 * Math.PI * 20; // For step dots (radius 20)
 
 export default function HomePage() {
   // Testimonials data
@@ -507,7 +499,65 @@ export default function HomePage() {
     });
   };
 
-  const progressPct = (current / (TOTAL_STEPS - 1)) * 100;
+  // Continuous progress: includes completed steps + progress within current step
+  // Progress should reach 100% only when the last step completes
+  const currentStepProgress = 1 - timerOffset / CIRCUMFERENCE;
+  // Divide by TOTAL_STEPS so progress continues during the last step
+  let progressPct = ((current + currentStepProgress) / TOTAL_STEPS) * 100;
+  progressPct = Math.min(progressPct, 100); // Cap at 100%
+
+  const items = ["figma", "framer", "webflow", "raycast", "supabase", "clerk"];
+
+  const trackRef = useRef(null);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const buildSet = (copies) => {
+      track.innerHTML = "";
+      for (let c = 0; c < copies; c++) {
+        items.forEach((item) => {
+          const tag = document.createElement("span");
+          tag.className = "sb-tag";
+          tag.textContent = item;
+          track.appendChild(tag);
+        });
+        // optional separator
+        const sep = document.createElement("span");
+        sep.className = "sb-sep";
+        sep.textContent = "\u00A0"; // small gap
+        track.appendChild(sep);
+      }
+    };
+
+    const recalc = () => {
+      // 1) build a single set to measure width
+      buildSet(1);
+
+      requestAnimationFrame(() => {
+        const singleWidth = track.scrollWidth || 0; // width of one set
+        const containerWidth =
+          track.parentElement?.clientWidth || window.innerWidth;
+
+        // Determine how many copies we need so the scrolling content always exceeds the viewport
+        const minNeeded = Math.ceil(
+          (containerWidth * 2) / Math.max(singleWidth, 1),
+        );
+        const copies = Math.max(2, minNeeded);
+
+        buildSet(copies);
+
+        // expose width of one copy for the CSS animation to translate by
+        track.style.setProperty("--scroll-width", `${singleWidth}px`);
+      });
+    };
+
+    recalc();
+    window.addEventListener("resize", recalc);
+
+    return () => window.removeEventListener("resize", recalc);
+  }, [items]);
 
   return (
     <>
@@ -521,7 +571,7 @@ export default function HomePage() {
           </div>
 
           <h1>
-            Talk to a <span>licensed doctor</span>
+            Talk to a <span className="fancy-underline">licensed doctor</span>
             <br />
             in minutes.
           </h1>
@@ -620,13 +670,40 @@ export default function HomePage() {
               {DOT_LABELS.map((label, i) => {
                 const isActive = i === current;
                 const isCompleted = i < current;
+                // Calculate progress: convert timerOffset (0-CIRCUMFERENCE) to STEP_CIRCUMFERENCE range
+                const progress = isActive
+                  ? timerOffset / CIRCUMFERENCE
+                  : isCompleted
+                    ? 0
+                    : 1;
+                const progressOffset = progress * STEP_CIRCUMFERENCE;
                 return (
                   <div
                     key={i}
                     className={`step-dot${isActive ? " active" : ""}${isCompleted ? " completed" : ""}`}
                     onClick={() => jumpTo(i)}
                   >
-                    <div className="ring">{STEP_ICONS[i]}</div>
+                    <div className="ring">
+                      <svg className="progress-ring" viewBox="0 0 44 44">
+                        <circle
+                          className="progress-ring-bg"
+                          cx="22"
+                          cy="22"
+                          r="20"
+                        />
+                        <circle
+                          className="progress-ring-fill"
+                          cx="22"
+                          cy="22"
+                          r="20"
+                          style={{
+                            strokeDasharray: STEP_CIRCUMFERENCE,
+                            strokeDashoffset: progressOffset,
+                          }}
+                        />
+                      </svg>
+                      <div className="ring-icon">{STEP_ICONS[i]}</div>
+                    </div>
                     <span className="dot-label">{label}</span>
                   </div>
                 );
@@ -635,71 +712,85 @@ export default function HomePage() {
 
             {/* Scene Cards */}
             <div className="scene-viewport">
-              {SCENES.map((scene, i) => {
-                const isActive = i === current;
-                const isExitUp =
-                  i === (current - 1 + TOTAL_STEPS) % TOTAL_STEPS &&
-                  current !== 0;
-                return (
-                  <div
-                    key={i}
-                    className={`scene-card${isActive ? " active" : ""}${isExitUp ? " exit-up" : ""}`}
-                  >
+              <div className="scene-card">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="scene-video-bg"
+                >
+                  <source src={sceneVideo} type="video/mp4" />
+                </video>
+
+                {SCENES.map((scene, i) => {
+                  const isActive = i === current;
+                  const isExitUp =
+                    i === (current - 1 + TOTAL_STEPS) % TOTAL_STEPS &&
+                    current !== 0;
+
+                  return (
                     <div
-                      className="scene-visual"
-                      style={{ background: SCENE_VISUALS[i].bg }}
+                      key={i}
+                      className={`scene-content-container${
+                        isActive ? " active" : ""
+                      }${isExitUp ? " exit-up" : ""}`}
                     >
-                      <div className="scene-icon">{SCENE_VISUALS[i].icon}</div>
-                    </div>
-                    <div className="scene-content">
-                      <div className="scene-step-badge">
-                        <span className="num">{scene.step}</span>
-                        {scene.badge}
-                      </div>
-                      <div className="scene-title">{scene.title}</div>
-                      <div className="scene-desc">{scene.desc}</div>
-                      <div className="scene-metric">
-                        <div className="metric-icon">{scene.metricIcon}</div>
-                        <div className="metric-text">
-                          <span className="metric-value">
-                            {scene.metricValue}
-                          </span>
-                          <span className="metric-label">
-                            {scene.metricLabel}
-                          </span>
+                      <div className="scene-content">
+                        <div className="scene-step-badge">
+                          <span className="num">{scene.step}</span>
+                          {scene.badge}
+                        </div>
+
+                        {/* ✅ WORD REVEAL APPLIED HERE */}
+                        <WordReveal
+                          text={scene.title}
+                          className="scene-title"
+                          active={isActive}
+                        />
+
+                        <WordReveal
+                          text={scene.desc}
+                          className="scene-desc"
+                          active={isActive}
+                        />
+
+                        <div className="scene-metric">
+                          <div className="metric-icon">{scene.metricIcon}</div>
+                          <div className="metric-text">
+                            <span className="metric-value">
+                              {scene.metricValue}
+                            </span>
+                            <span className="metric-label">
+                              {scene.metricLabel}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="auto-timer">
-              <div className="timer-ring">
-                <svg viewBox="0 0 24 24">
-                  <circle className="bg" cx="12" cy="12" r="10" />
-                  <circle
-                    className="fg"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    style={{ strokeDashoffset: timerOffset }}
-                  />
-                </svg>
+                  );
+                })}
               </div>
-              <span className="timer-text">
-                {paused ? "Paused" : "Auto-playing"}
-              </span>
-              <span className="auto-badge" onClick={togglePause}>
-                {paused ? "Resume" : "Pause"}
-              </span>
             </div>
           </div>
         </div>
+
+        <div className="sb-bar">
+          <div className="sb-track" ref={trackRef} />
+        </div>
       </section>
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
-
+      {/* <section>
+        <div className="scroll-container">
+          <div className="scroll-track">
+            {[...items, ...items].map((item, index) => (
+              <div className="scroll-item" key={index}>
+                ⭐ {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section> */}
       <Sa />
 
       {/* ══════════════════════════════════════════════

@@ -616,7 +616,7 @@ export default function CorporateHub() {
         {/* Header */}
         <div className="hc-hub-head">
           <p className="hc-hub-eyebrow">Corporate Solutions</p>
-          <h2 className="hc-hub-title">Everything your organisation needs</h2>
+          <h2 className="hc-hub-title">Everything your organization needs</h2>
           <p className="hc-hub-sub">
             Click any service to bring it to focus. Built for enterprises that
             take employee health seriously.
