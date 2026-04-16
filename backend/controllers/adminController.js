@@ -1,14 +1,16 @@
 const User = require("../models/User");
 const Enrollment = require("../models/Enrollment");
 const Doctor = require("../models/Doctor");
+const Appointment = require("../models/Appointment");
 
 const getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: "user" });
     const activeUsers = await User.countDocuments({ role: "user" }); // For now, same as total users
     const totalDoctors = await Enrollment.countDocuments({ approvalStatus: "approved" });
+    const totalAppointments = await Appointment.countDocuments();
 
-    res.status(200).json({ totalUsers, activeUsers, totalDoctors });
+    res.status(200).json({ totalUsers, activeUsers, totalDoctors, totalAppointments });
   } catch (error) {
     console.error("Admin stats error:", error);
     res.status(500).json({ msg: "Failed to fetch admin stats" });

@@ -2,6 +2,10 @@
 const bcrypt = require("bcryptjs");
 const jwt    = require("jsonwebtoken");
 const User   = require("../models/User");
+const Doctor = require("../models/Doctor");
+const { OAuth2Client } = require("google-auth-library");
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // ── helper: generate JWT ──────────────────────────────────────
 const generateToken = (user) =>
@@ -18,6 +22,7 @@ const safeUser = (user) => ({
   email:           user.email,
   role:            user.role,
   mobile:          user.mobile,
+  dob:             user.dob,
   gender:          user.gender,
   // doctor fields
   specialty:       user.specialty,
@@ -37,7 +42,7 @@ const safeUser = (user) => ({
 // ════════════════════════════════════════════
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobile, dob, gender } = req.body;
 
     if (!name || !email || !password)
       return res.status(400).json({ msg: "Name, email and password are required." });
@@ -53,6 +58,9 @@ const register = async (req, res) => {
       email,
       password: hashed,
       role: "user",
+      mobile: mobile || "",
+      dob:    dob    || "",
+      gender: gender || "",
     });
 
     return res.status(201).json({
@@ -223,4 +231,201 @@ const adminLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, doctorRegister, doctorLogin, adminLogin };
+// ════════════════════════════════════════════
+//  6. UPDATE USER PROFILE
+// ════════════════════════════════════════════
+const updateProfile = async (req, res) => {
+  try {
+    const { name, email, mobile, dob, gender } = req.body;
+    const userId = req.user.id;
+
+    if (!name || !email)
+      return res.status(400).json({ msg: "Name and email are required." });
+
+    // Check if new email is already taken by another user
+    const existing = await User.findOne({ email, _id: { $ne: userId } });
+    if (existing)
+      return res.status(400).json({ msg: "Email is already in use by another account." });
+
+    const updated = await User.findByIdAndUpdate(
+      userId,
+      { name, email, mobile: mobile || "", dob: dob || "", gender: gender || "" },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated)
+      return res.status(404).json({ msg: "User not found." });
+
+    return res.json({
+      msg:  "Profile updated successfully.",
+      user: safeUser(updated),
+    });
+  } catch (err) {
+    console.error("updateProfile error:", err);
+    return res.status(500).json({ msg: "Server error. Please try again." });
+  }
+};
+
+// ════════════════════════════════════════════
+//  7. GOOGLE AUTH — USER
+// ════════════════════════════════════════════
+// Step 1 (no extra fields):  verify Google credential.
+//   - existing user  → log in immediately
+//   - new user       → return { isNewUser: true, googleName, googleEmail } so the
+//                      frontend can collect the missing profile fields
+// Step 2 (extra fields supplied):  create the full account and log in.
+const googleAuthUser = async (req, res) => {
+  try {
+    const { credential, mobile, dob, gender } = req.body;
+    if (!credential) return res.status(400).json({ msg: "Google credential is required." });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name } = payload;
+
+    // ── Existing account? ──────────────────────────────
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+    if (user) {
+      if (user.role === "doctor")
+        return res.status(403).json({ msg: "Please use the Doctor Login page." });
+      // Link googleId if the account was originally created with email/password
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+      return res.json({
+        msg:   "Login successful.",
+        token: generateToken(user),
+        user:  safeUser(user),
+      });
+    }
+
+    // ── New account ────────────────────────────────────
+    // If the caller hasn't supplied the profile fields yet, ask for them
+    if (!mobile || !dob || !gender) {
+      return res.status(200).json({
+        isNewUser:   true,
+        googleName:  name,
+        googleEmail: email,
+      });
+    }
+
+    // All fields present → create the complete account
+    user = await User.create({
+      name,
+      email,
+      googleId,
+      role:   "user",
+      mobile,
+      dob,
+      gender,
+    });
+
+    return res.status(201).json({
+      msg:   "Registration successful.",
+      token: generateToken(user),
+      user:  safeUser(user),
+    });
+  } catch (err) {
+    console.error("googleAuthUser error:", err);
+    return res.status(500).json({ msg: "Google Sign-In failed. Please try again." });
+  }
+};
+
+// ════════════════════════════════════════════
+//  8. GOOGLE AUTH — DOCTOR
+// ════════════════════════════════════════════
+// The Doctor model stores only basic identity (name, email, googleId, isEnrolled).
+// Specialty / degree / license etc. live in the Enrollment model and are collected
+// via the enrollment form on the dashboard — so we always create the Doctor record
+// and return isNewUser: true to let the frontend redirect new doctors to enroll.
+const googleAuthDoctor = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ msg: "Google credential is required." });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name } = payload;
+
+    // ── Existing doctor? ───────────────────────────────
+    let doctor = await Doctor.findOne({ $or: [{ googleId }, { email }] });
+    const isNewUser = !doctor;
+
+    if (doctor) {
+      // Link googleId if the account was originally created with email/password
+      if (!doctor.googleId) {
+        doctor.googleId = googleId;
+        await doctor.save();
+      }
+    } else {
+      // New doctor — create basic account; enrollment form collects specialty/degree/etc.
+      doctor = await Doctor.create({ name, email, googleId });
+    }
+
+    const token = jwt.sign(
+      { id: doctor._id, email: doctor.email, role: "doctor" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(isNewUser ? 201 : 200).json({
+      message:  isNewUser ? "Registration successful." : "Login successful.",
+      isNewUser,
+      token,
+      doctor: {
+        id:         doctor._id,
+        name:       doctor.name,
+        email:      doctor.email,
+        isEnrolled: doctor.isEnrolled,
+      },
+    });
+  } catch (err) {
+    console.error("googleAuthDoctor error:", err);
+    return res.status(500).json({ msg: "Google Sign-In failed. Please try again." });
+  }
+};
+
+// ════════════════════════════════════════════
+//  9. CHANGE PASSWORD
+// ════════════════════════════════════════════
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ msg: "Current password and new password are required." });
+
+    if (newPassword.length < 6)
+      return res.status(400).json({ msg: "New password must be at least 6 characters." });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found." });
+
+    // Google-only accounts have no password set
+    if (!user.password)
+      return res.status(400).json({ msg: "Your account uses Google Sign-In. Password cannot be changed here." });
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match)
+      return res.status(400).json({ msg: "Current password is incorrect." });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return res.json({ msg: "Password changed successfully." });
+  } catch (err) {
+    console.error("changePassword error:", err);
+    return res.status(500).json({ msg: "Server error. Please try again." });
+  }
+};
+
+module.exports = { register, login, doctorRegister, doctorLogin, adminLogin, updateProfile, googleAuthUser, googleAuthDoctor, changePassword };

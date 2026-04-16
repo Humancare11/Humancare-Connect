@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FaFacebookF,
-  FaGoogle,
-  FaLinkedinIn,
-} from "react-icons/fa";
+import { GoogleLogin } from "@react-oauth/google";
+import { FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import "./Doctor.css";
 const API_BASE = "/api";
 
@@ -45,6 +42,37 @@ export default function DoctorAuthPage() {
       [e.target.name]: e.target.value,
     });
     setError("");
+  };
+
+  // ---------------- GOOGLE AUTH ----------------
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/google-doctor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.msg || data.message || "Google Sign-In failed.");
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem("doctorToken", data.token);
+      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
+
+      if (data.isNewUser) {
+        // New doctor account — go to dashboard where the enrollment form is available
+        navigate("/doctor-dashboard?newAccount=1");
+      } else {
+        navigate("/doctor-dashboard");
+      }
+    } catch (err) {
+      setError("Could not connect to server.");
+    }
+    setLoading(false);
   };
 
   // ---------------- LOGIN SUBMIT ----------------
@@ -155,7 +183,13 @@ export default function DoctorAuthPage() {
 
           <div className="doctor-social-links">
             <a href="#"><FaFacebookF /></a>
-            <a href="#"><FaGoogle /></a>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Sign-In failed.")}
+              type="icon"
+              shape="circle"
+              size="large"
+            />
             <a href="#"><FaLinkedinIn /></a>
           </div>
 
@@ -227,7 +261,13 @@ export default function DoctorAuthPage() {
 
           <div className="doctor-social-links">
             <a href="#"><FaFacebookF /></a>
-            <a href="#"><FaGoogle /></a>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Sign-In failed.")}
+              type="icon"
+              shape="circle"
+              size="large"
+            />
             <a href="#"><FaLinkedinIn /></a>
           </div>
 

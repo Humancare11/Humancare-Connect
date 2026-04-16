@@ -6,7 +6,7 @@ const Enrollment = require("../models/Enrollment");
 
 // JWT helper
 const signToken = (id, email) =>
-  jwt.sign({ id, email }, process.env.JWT_SECRET, {
+  jwt.sign({ id, email, role: "doctor" }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 

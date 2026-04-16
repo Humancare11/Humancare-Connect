@@ -198,6 +198,68 @@ function ManageUsers() {
   );
 }
 
+/* ── Admin Appointments Component ── */
+function AdminAppointments() {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("adminToken");
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/appointments/admin/all", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setAppointments(res.data))
+      .catch((err) => {
+        console.error("Failed to load appointments", err);
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) {
+    return <div className="dash-section"><h2 className="dash-section-title">Appointments</h2><p>Loading appointments...</p></div>;
+  }
+
+  if (!appointments.length) {
+    return <div className="dash-section"><h2 className="dash-section-title">Appointments</h2><p>No appointments yet.</p></div>;
+  }
+
+  const statusColor = { pending: "#d97706", confirmed: "#059669", completed: "#10b981", cancelled: "#dc2626" };
+
+  return (
+    <div className="dash-section">
+      <h2 className="dash-section-title">All Appointments</h2>
+      <div className="dash-table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
+              {['Patient', 'Doctor', 'Date', 'Time', 'Problem', 'Status'].map((label) => (
+                <th key={label}>{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {appointments.map((appointment, i) => (
+              <tr key={appointment._id} className={i % 2 === 0 ? "" : "alt"}>
+                <td>{appointment.patientId?.name || 'Unknown'}</td>
+                <td>{appointment.doctorId?.name || 'Unassigned'}</td>
+                <td>{appointment.date}</td>
+                <td>{appointment.time}</td>
+                <td>{appointment.problem || '—'}</td>
+                <td>
+                  <span className="status-badge" style={{ background: `${statusColor[appointment.status]}18`, color: statusColor[appointment.status] }}>
+                    {appointment.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* ── Manage Doctors panel ── */
 function ManageDoctors() {
   const [enrollments, setEnrollments] = useState([]);
@@ -308,6 +370,7 @@ export default function AdminDashboard() {
   const renderContent = () => {
     if (activeMenu === "manage-doctors") return <ManageDoctors />;
     if (activeMenu === "manage-users") return <ManageUsers />;
+    if (activeMenu === "appointments") return <AdminAppointments />;
     if (activeMenu === "qna") return <QnAPage />;
     return (
       <div className="dash-section">
