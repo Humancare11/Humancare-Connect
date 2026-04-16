@@ -27,9 +27,7 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 
-<<<<<<< HEAD
 import useLenis from "./hooks/useLenis";
-=======
 // User imports
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
@@ -44,6 +42,7 @@ import ChangePassword from "./pages/user/ChangePassword";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
+import Homee from "./pages/Homee";
 
 // Private Route component for admin authentication
 function PrivateRoute({ children, allowedRoles }) {
@@ -60,7 +59,6 @@ function PrivateRoute({ children, allowedRoles }) {
 
   return children;
 }
->>>>>>> 84e6d1500998fa9c2500dcf35cdbe51f17d8d887
 
 function AppLayout() {
   const location = useLocation();
@@ -105,6 +103,7 @@ function AppLayout() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
+        <Route path="/homee" element={<Homee />} />
 
         {/* User Routes */}
         <Route
@@ -171,16 +170,13 @@ function AppLayout() {
         <Route path="/doctor-login" element={<DoctorLogin />} />
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-<<<<<<< HEAD
         {/* Admin routes */}
-=======
         {/* Video Call Route (Header/Footer Hidden) */}
         <Route path="/video-call/:appointmentId" element={<VideoCall />} />
 
         {/* Admin Routes */}
         <Route path="/adminauth" element={<AdminAuth />} />
 
->>>>>>> 84e6d1500998fa9c2500dcf35cdbe51f17d8d887
         <Route
           path="/admin-dashboard"
           element={
