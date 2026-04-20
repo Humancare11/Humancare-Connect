@@ -58,8 +58,8 @@ export default function AuthPage() {
         // New Google user — collect missing profile fields before creating account
         setGooglePending({
           credential: credentialResponse.credential,
-          name:       res.data.googleName,
-          email:      res.data.googleEmail,
+          name: res.data.googleName,
+          email: res.data.googleEmail,
         });
         setIsRegister(true); // flip to register panel so the completion form is visible
         return;
@@ -76,15 +76,15 @@ export default function AuthPage() {
     e.preventDefault();
 
     if (!googleProfile.mobile) return alert("Enter mobile number");
-    if (!googleProfile.dob)    return alert("Select Date of Birth");
+    if (!googleProfile.dob) return alert("Select Date of Birth");
     if (!googleProfile.gender) return alert("Select Gender");
 
     try {
       const res = await axios.post("/api/auth/google", {
         credential: googlePending.credential,
-        mobile:     googleProfile.mobile,
-        dob:        googleProfile.dob,
-        gender:     googleProfile.gender,
+        mobile: googleProfile.mobile,
+        dob: googleProfile.dob,
+        gender: googleProfile.gender,
       });
 
       loginSuccess(res.data, navigate);
@@ -99,7 +99,7 @@ export default function AuthPage() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
         loginForm
       );
 
@@ -114,16 +114,16 @@ export default function AuthPage() {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    if (!registerForm.terms)              return alert("Accept Terms & Conditions");
+    if (!registerForm.terms) return alert("Accept Terms & Conditions");
     if (registerForm.password.length < 6) return alert("Password must be at least 6 characters");
-    if (!registerForm.mobile)             return alert("Enter mobile number");
-    if (!registerForm.dob)                return alert("Select Date of Birth");
-    if (!registerForm.gender)             return alert("Select Gender");
+    if (!registerForm.mobile) return alert("Enter mobile number");
+    if (!registerForm.dob) return alert("Select Date of Birth");
+    if (!registerForm.gender) return alert("Select Gender");
 
     const { terms, ...data } = registerForm;
 
     try {
-      await axios.post("http://localhost:5000/api/auth/register", data);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, data);
       alert("Registered Successfully ✅");
       setIsRegister(false);
     } catch (err) {
@@ -144,7 +144,7 @@ export default function AuthPage() {
                 setting up your account.
               </p>
 
-              <input type="text"  value={googlePending.name}  disabled style={{ opacity: 0.6 }} />
+              <input type="text" value={googlePending.name} disabled style={{ opacity: 0.6 }} />
               <input type="email" value={googlePending.email} disabled style={{ opacity: 0.6 }} />
 
               <PhoneInput

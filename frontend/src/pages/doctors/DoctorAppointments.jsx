@@ -14,7 +14,7 @@ export default function DoctorAppointments() {
     if (!token) return;
 
     axios
-      .get("http://localhost:5000/api/appointments/doctor", {
+      .get(`${import.meta.env.VITE_API_URL}/api/appointments/doctor`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setAppointments(res.data))
@@ -27,7 +27,7 @@ export default function DoctorAppointments() {
   const confirmAppointment = async (appointmentId) => {
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/appointments/${appointmentId}/confirm`,
+        `${import.meta.env.VITE_API_URL}/api/appointments/${appointmentId}/confirm`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

@@ -31,11 +31,15 @@ const startServer = async () => {
   }
 };
 
-// Middleware
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+// Middleware - CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
-}));
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve uploaded files
@@ -45,13 +49,13 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use("/uploads", express.static(uploadsDir));
 
 // Routes
-app.use("/api/auth",         require("./routes/auth"));
-app.use("/api/admin",        require("./routes/admin"));
-app.use("/api/superadmin",   require("./routes/superadmin"));
-app.use("/api/qna",          require("./routes/qna"));
-app.use("/api/doctor",       require("./routes/doctorAuth"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/superadmin", require("./routes/superadmin"));
+app.use("/api/qna", require("./routes/qna"));
+app.use("/api/doctor", require("./routes/doctorAuth"));
 app.use("/api/appointments", require("./routes/appointments"));
-app.use("/api/upload",       require("./routes/upload"));
+app.use("/api/upload", require("./routes/upload"));
 
 app.get("/api/health", (req, res) => {
   res.send("API Running...");
@@ -77,12 +81,16 @@ if (process.env.NODE_ENV === "production") {
 // HTTP server
 const server = http.createServer(app);
 
-// Socket.IO setup
+// Socket.IO setup with proper CORS
+const socketCorsOptions = {
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  methods: ["GET", "POST"],
+  credentials: true,
+  transports: ["websocket", "polling"]
+};
+
 const io = new Server(server, {
-  cors: {
-    origin: "*", // In production, restrict this to your frontend URL
-    methods: ["GET", "POST"],
-  },
+  cors: socketCorsOptions,
 });
 
 // routes ke andar io use karne ke liye
@@ -148,8 +156,8 @@ io.on("connection", (socket) => {
       appointmentId,
       senderId,
       senderName,
-      text:     text     || "",
-      fileUrl:  fileUrl  || null,
+      text: text || "",
+      fileUrl: fileUrl || null,
       fileName: fileName || null,
       fileType: fileType || null,
       createdAt: new Date().toISOString(),

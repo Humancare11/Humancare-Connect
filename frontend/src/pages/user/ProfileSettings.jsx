@@ -45,7 +45,7 @@ export default function ProfileSettings() {
     setSaved(false);
     try {
       const token = localStorage.getItem("token");
-      await axios.put("http://localhost:5000/api/auth/update-profile", formData, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/auth/update-profile`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const updatedUser = { ...user, ...formData };

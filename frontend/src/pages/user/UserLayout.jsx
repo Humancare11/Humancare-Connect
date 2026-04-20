@@ -25,12 +25,15 @@ export default function UserLayout({ children }) {
 
   const menuItems = [
     { path: "/user/dashboard",         label: "Dashboard",          icon: "🏠" },
+
     { path: "/user/appointments",      label: "Appointments",       icon: "📅" },
     { path: "/user/medical-questions", label: "Medical Questions",  icon: "❓" },
-    { path: "/user/favourite-doctors", label: "Favourite Doctors",  icon: "❤️" },
+    // { path: "/user/favourite-doctors", label: "Favourite Doctors",  icon: "❤️" },
     { path: "/user/lab-appointments",  label: "Lab Appointments",   icon: "🧪" },
+
     { path: "/user/profile-settings",  label: "Profile Settings",   icon: "⚙️" },
-    { path: "/user/change-password",   label: "Change Password",    icon: "🔒" },
+                { path: "/user/change-password",   label: "Change Password",    icon: "🔒" },
+
   ];
 
   // Current page label for topbar

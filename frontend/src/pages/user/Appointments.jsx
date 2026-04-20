@@ -22,7 +22,7 @@ export default function Appointments() {
     }
 
     axios
-      .get("http://localhost:5000/api/appointments/mine", {
+      .get(`${import.meta.env.VITE_API_URL}/api/appointments/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setAppointments(res.data))
@@ -116,8 +116,8 @@ export default function Appointments() {
               {activeTab === "pending"
                 ? "You have no appointments awaiting confirmation."
                 : activeTab === "confirmed"
-                ? "No confirmed appointments right now."
-                : "Your past consultations will show up here."}
+                  ? "No confirmed appointments right now."
+                  : "Your past consultations will show up here."}
             </p>
             {activeTab !== "completed" && (
               <Link to="/find-a-doctor" className="appt-empty-cta">

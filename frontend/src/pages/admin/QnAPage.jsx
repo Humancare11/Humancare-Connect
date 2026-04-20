@@ -3,19 +3,19 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "./QnAPage.css";
 
-const API = "http://localhost:5000/api/qna";
+const API = `${import.meta.env.VITE_API_URL}/api/qna`;
 
 const CATEGORY_META = {
   General: { bg: "#EEF2FF", text: "#4338CA" },
-  Heart:   { bg: "#FEF2F2", text: "#DC2626" },
-  Skin:    { bg: "#FFF7ED", text: "#C2410C" },
-  Neuro:   { bg: "#F5F3FF", text: "#7C3AED" },
-  Ortho:   { bg: "#F0FDF4", text: "#16A34A" },
-  Dental:  { bg: "#ECFDF5", text: "#059669" },
-  Eyes:    { bg: "#EFF6FF", text: "#2563EB" },
-  Dizzy:   { bg: "#FEF9C3", text: "#B45309" },
-  Mental:  { bg: "#FDF4FF", text: "#A21CAF" },
-  Gut:     { bg: "#F0FDF4", text: "#15803D" },
+  Heart: { bg: "#FEF2F2", text: "#DC2626" },
+  Skin: { bg: "#FFF7ED", text: "#C2410C" },
+  Neuro: { bg: "#F5F3FF", text: "#7C3AED" },
+  Ortho: { bg: "#F0FDF4", text: "#16A34A" },
+  Dental: { bg: "#ECFDF5", text: "#059669" },
+  Eyes: { bg: "#EFF6FF", text: "#2563EB" },
+  Dizzy: { bg: "#FEF9C3", text: "#B45309" },
+  Mental: { bg: "#FDF4FF", text: "#A21CAF" },
+  Gut: { bg: "#F0FDF4", text: "#15803D" },
 };
 
 const FILTERS = ["All", "Pending", "Answered"];
@@ -61,8 +61,8 @@ function AnswerForm({ question, onSubmit, onCancel }) {
   const [answerText, setAnswerText] = useState(question.answer || "");
   const [doctorName, setDoctorName] = useState(question.doctor?.name || "");
   const [doctorSpec, setDoctorSpec] = useState(question.doctor?.specialization || "");
-  const [loading,    setLoading]    = useState(false);
-  const [err,        setErr]        = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
 
   const handleAIDraft = async () => {
     setLoading(true); setErr("");
@@ -129,13 +129,13 @@ function AnswerForm({ question, onSubmit, onCancel }) {
 
 /* ══ Main QnAPage ══ */
 export default function QnAPage() {
-  const [questions,   setQuestions]   = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [filter,      setFilter]      = useState("All");
-  const [search,      setSearch]      = useState("");
-  const [expandedId,  setExpandedId]  = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
   const [answeringId, setAnsweringId] = useState(null);
-  const [successId,   setSuccessId]   = useState(null);
+  const [successId, setSuccessId] = useState(null);
 
   const token = localStorage.getItem("adminToken");
   const headers = { Authorization: `Bearer ${token}` };
@@ -166,14 +166,14 @@ export default function QnAPage() {
     }
   };
 
-  const pendingCount  = questions.filter((q) => !q.answered).length;
-  const answeredCount = questions.filter((q) =>  q.answered).length;
+  const pendingCount = questions.filter((q) => !q.answered).length;
+  const answeredCount = questions.filter((q) => q.answered).length;
 
   const filtered = questions.filter((q) => {
     const matchFilter =
       filter === "All" ||
-      (filter === "Pending"  && !q.answered) ||
-      (filter === "Answered" &&  q.answered);
+      (filter === "Pending" && !q.answered) ||
+      (filter === "Answered" && q.answered);
     const matchSearch =
       !search.trim() ||
       q.question.toLowerCase().includes(search.toLowerCase()) ||
@@ -235,10 +235,10 @@ export default function QnAPage() {
         )}
 
         {filtered.map((q, i) => {
-          const col         = CATEGORY_META[q.category] || CATEGORY_META.General;
-          const isExpanded  = expandedId  === q._id;
+          const col = CATEGORY_META[q.category] || CATEGORY_META.General;
+          const isExpanded = expandedId === q._id;
           const isAnswering = answeringId === q._id;
-          const showSuccess = successId   === q._id;
+          const showSuccess = successId === q._id;
 
           return (
             <div

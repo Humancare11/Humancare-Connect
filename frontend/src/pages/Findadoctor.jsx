@@ -139,7 +139,7 @@ export default function DoctorFinder() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/doctor/approved")
+      .get(`${import.meta.env.VITE_API_URL}/api/doctor/approved`)
       .then((res) => setDynamicDoctors([...res.data, ...allDoctors]))
       .catch(() => setDynamicDoctors(allDoctors));
   }, []);
@@ -215,7 +215,8 @@ export default function DoctorFinder() {
   );
 
   const filteredDoctors = useMemo(() => {
-return dynamicDoctors.filter((doc) => {      if (appliedSearchSpecialty) {
+    return dynamicDoctors.filter((doc) => {
+      if (appliedSearchSpecialty) {
         const q = appliedSearchSpecialty.toLowerCase();
         if (
           !doc.specialty.toLowerCase().includes(q) &&
@@ -246,11 +247,11 @@ return dynamicDoctors.filter((doc) => {      if (appliedSearchSpecialty) {
     });
   }, [
     dynamicDoctors,
-  appliedSearchSpecialty,
-  appliedSearchLocation,
-  appliedSpecialities,
-  appliedGender,
-  appliedLanguages,
+    appliedSearchSpecialty,
+    appliedSearchLocation,
+    appliedSpecialities,
+    appliedGender,
+    appliedLanguages,
   ]);
 
   const totalPages = Math.max(
@@ -520,7 +521,7 @@ return dynamicDoctors.filter((doc) => {      if (appliedSearchSpecialty) {
                   <div className="fd-card-info">
                     <div className="fd-name-row">
                       <span className="fd-name">{doc.name}</span>
-{doc.source !== "enrollment" && <VerifiedIcon />}                    </div>
+                      {doc.source !== "enrollment" && <VerifiedIcon />}                    </div>
                     <div className="fd-degree">{doc.degree}</div>
                     <div className="fd-meta">
                       <span className="fd-rating">

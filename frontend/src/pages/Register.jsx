@@ -41,7 +41,7 @@ export default function Register() {
     const { terms, ...data } = form;
 
     try {
-      await axios.post("http://localhost:5000/api/auth/register", data);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, data);
       alert("Registered Successfully ✅");
       navigate("/login");
     } catch (err) {

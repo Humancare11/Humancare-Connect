@@ -86,7 +86,7 @@ export default function Dashbord() {
     if (!token) return;
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/appointments/doctor", {
+      .get(`${import.meta.env.VITE_API_URL}/api/appointments/doctor`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((r) => setAppointments(r.data))
@@ -101,7 +101,7 @@ export default function Dashbord() {
     setConfirming(id);
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/appointments/${id}/confirm`,
+        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/confirm`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -118,7 +118,7 @@ export default function Dashbord() {
     setCancellingId(id);
     try {
       await axios.put(
-        `http://localhost:5000/api/appointments/${id}/cancel`,
+        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -335,7 +335,7 @@ export default function Dashbord() {
         {/* ── Right Column ── */}
         <div className="db2-right">
 
-  
+
 
           {/* Quick Actions */}
           <div className="db2-panel">

@@ -57,7 +57,7 @@ function ManageUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/users", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(res.data);
@@ -79,7 +79,7 @@ function ManageUsers() {
     }
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(users.filter(user => user._id !== userId));
@@ -206,7 +206,7 @@ function AdminAppointments() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/appointments/admin/all", {
+      .get(`${import.meta.env.VITE_API_URL}/api/appointments/admin/all`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setAppointments(res.data))
@@ -269,14 +269,14 @@ function ManageDoctors() {
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/admin/doctors", { headers })
+    axios.get(`${import.meta.env.VITE_API_URL}/api/admin/doctors`, { headers })
       .then((res) => setEnrollments(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const updateStatus = (id, action) => {
-    axios.put(`http://localhost:5000/api/admin/doctors/${id}/${action}`, {}, { headers })
+    axios.put(`${import.meta.env.VITE_API_URL}/api/admin/doctors/${id}/${action}`, {}, { headers })
       .then((res) => {
         setEnrollments((prev) => prev.map((e) => e._id === id ? { ...e, approvalStatus: res.data.enrollment.approvalStatus } : e));
         setSelectedDoctor((prev) => prev?._id === id ? { ...prev, approvalStatus: res.data.enrollment.approvalStatus } : prev);
@@ -353,12 +353,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
-    axios.get("http://localhost:5000/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${import.meta.env.VITE_API_URL}/api/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setStats((s) => ({ ...s, totalUsers: res.data.totalUsers || 0, totalDoctors: res.data.totalDoctors || 0 })))
-      .catch(() => {});
-    axios.get("http://localhost:5000/api/admin/active-users")
+      .catch(() => { });
+    axios.get(`${import.meta.env.VITE_API_URL}/api/admin/active-users`)
       .then((res) => setStats((s) => ({ ...s, activeUsers: res.data.activeUsers || 0 })))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleLogout = () => {
