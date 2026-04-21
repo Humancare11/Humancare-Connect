@@ -16,7 +16,7 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
     axios
-      .get("http://localhost:5000/api/appointments/mine", {
+      .get(`${import.meta.env.VITE_API_URL}/api/appointments/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setAppointments(res.data))
@@ -24,7 +24,7 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const pendingCount   = appointments.filter((a) => a.status === "pending").length;
+  const pendingCount = appointments.filter((a) => a.status === "pending").length;
   const confirmedCount = appointments.filter((a) => a.status === "confirmed").length;
   const completedCount = appointments.filter((a) => a.status === "completed").length;
 
@@ -47,7 +47,7 @@ export default function Dashboard() {
 
       <div className="hc-dash__header">
         <div className="hc-dash__header-text">
-          <p className="hc-dash__eyebrow">HumaniCare</p>
+          <p className="hc-dash__eyebrow">Humanncare</p>
           <h1 className="hc-dash__title">{getGreeting()}, {user?.name?.split(" ")[0] || "there"} 👋</h1>
           <p className="hc-dash__subtitle">Here's your health overview for today</p>
         </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
                     <td className="hc-dash__cell-muted">{appt.time || "—"}</td>
                     <td>
                       <span className={`hc-dash__badge hc-dash__badge--${appt.status}`}>
-                        {appt.status === "pending"   && "⏳ Pending"}
+                        {appt.status === "pending" && "⏳ Pending"}
                         {appt.status === "confirmed" && "✅ Confirmed"}
                         {appt.status === "completed" && "📋 Completed"}
                       </span>

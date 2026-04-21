@@ -11,7 +11,7 @@ export default function AskQuestion() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/qna");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/qna`);
       setQuestions(res.data);
     } catch (error) {
       console.error("Fetch questions error:", error);
@@ -43,7 +43,7 @@ export default function AskQuestion() {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5000/api/qna/ask",
+        `${import.meta.env.VITE_API_URL}/api/qna/ask`,
         {
           question: question.trim(),
           name: user?.name || "User",

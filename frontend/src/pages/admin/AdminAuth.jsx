@@ -48,7 +48,7 @@ export default function AdminAuthPage() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/admin-login",
+        `${import.meta.env.VITE_API_URL}/api/auth/admin-login`,
         adminForm
       );
 
@@ -69,7 +69,7 @@ export default function AdminAuthPage() {
     } catch (err) {
       setError(
         err.response?.data?.msg ||
-          "Admin login failed. Please try again."
+        "Admin login failed. Please try again."
       );
     }
 
@@ -84,7 +84,7 @@ export default function AdminAuthPage() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/admin-login",
+        `${import.meta.env.VITE_API_URL}/api/auth/admin-login`,
         superAdminForm
       );
 
@@ -105,7 +105,7 @@ export default function AdminAuthPage() {
     } catch (err) {
       setError(
         err.response?.data?.msg ||
-          "Super Admin login failed. Please try again."
+        "Super Admin login failed. Please try again."
       );
     }
 
@@ -114,9 +114,8 @@ export default function AdminAuthPage() {
 
   return (
     <div
-      className={`auth-wrapper ${
-        isSuperAdmin ? "panel-active" : ""
-      }`}
+      className={`auth-wrapper ${isSuperAdmin ? "panel-active" : ""
+        }`}
     >
       {/* SUPER ADMIN LOGIN */}
       <div className="auth-form-box register-form-box">

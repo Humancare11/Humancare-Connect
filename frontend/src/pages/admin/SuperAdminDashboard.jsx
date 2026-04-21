@@ -26,7 +26,7 @@ export default function SuperAdminDashboard() {
   }, [navigate]);
 
   const fetchAdmins = () => {
-    axios.get("http://localhost:5000/api/superadmin/admins", { headers })
+    axios.get(`${import.meta.env.VITE_API_URL}/api/superadmin/admins`, { headers })
       .then((res) => setAdmins(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -41,7 +41,7 @@ export default function SuperAdminDashboard() {
     setFormError(""); setFormSuccess("");
     setCreating(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/superadmin/admins", form, { headers });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/superadmin/admins`, form, { headers });
       setAdmins((prev) => [res.data.admin, ...prev]);
       setForm({ name: "", email: "", password: "" });
       setFormSuccess("Admin created successfully!");
@@ -55,7 +55,7 @@ export default function SuperAdminDashboard() {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Remove admin "${name}"? This cannot be undone.`)) return;
     try {
-      await axios.delete(`http://localhost:5000/api/superadmin/admins/${id}`, { headers });
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/superadmin/admins/${id}`, { headers });
       setAdmins((prev) => prev.filter((a) => a._id !== id));
     } catch (err) {
       alert(err.response?.data?.msg || "Failed to remove admin.");

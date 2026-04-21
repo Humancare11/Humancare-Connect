@@ -26,14 +26,26 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import BookAppointment from "./pages/BookAppointment";
 import VideoCall from "./pages/VideoCall";
+
 import socket from "./socket";
+import useLenis from "./hooks/useLenis";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
-import DoctorDashboard from "./pages/doctors/DoctorDashboard";
+import DoctorLayout from "./pages/doctors/DoctorLayout";
+import Dashbord from "./pages/doctors/Dashbord";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
+<<<<<<< HEAD
 import useLenis from "./hooks/useLenis";
 // User imports
+=======
+import DoctorAppointments from "./pages/doctors/DoctorAppointments";
+import DoctorPatients from "./pages/doctors/DoctorPatients";
+import DoctorMessages from "./pages/doctors/DoctorMessages";
+import DoctorAnalytics from "./pages/doctors/DoctorAnalytics";
+import DoctorSettings from "./pages/doctors/DoctorSettings";
+
+>>>>>>> 99881ee7964edcc47e1430b3304a61da6f7fda3b
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
 import Appointments from "./pages/user/Appointments";
@@ -43,15 +55,13 @@ import LabAppointments from "./pages/user/LabAppointments";
 import ProfileSettings from "./pages/user/ProfileSettings";
 import ChangePassword from "./pages/user/ChangePassword";
 
-// Admin imports
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
-import Homee from "./pages/Homee";
 
 import Home2 from "./pages/Home-2";
+import Test from "./pages/Test";
 
-// Private Route component for admin authentication
 function PrivateRoute({ children, allowedRoles }) {
   const token = localStorage.getItem("adminToken");
   const user = JSON.parse(localStorage.getItem("adminUser") || "null");
@@ -70,7 +80,6 @@ function PrivateRoute({ children, allowedRoles }) {
 function AppLayout() {
   const location = useLocation();
 
-  // Hide header/footer on these routes
   const hideLayout =
     location.pathname.startsWith("/doctor-dashboard") ||
     location.pathname.startsWith("/admin") ||
@@ -96,7 +105,6 @@ function AppLayout() {
       {!hideLayout && <Header />}
 
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/find-a-doctor" element={<Findadoctor />} />
@@ -110,9 +118,9 @@ function AppLayout() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/book-appointment" element={<BookAppointment />} />
-        <Route path="/homee" element={<Homee />} />
+        <Route path="/home-demo" element={<Home2 />} />
+        <Route path="/test" element={<Test />} />
 
-        {/* User Routes */}
         <Route
           path="/user/dashboard"
           element={
@@ -169,23 +177,74 @@ function AppLayout() {
             </UserLayout>
           }
         />
+
         <Route
           path="/profile"
           element={<Navigate to="/user/dashboard" replace />}
         />
 
-        {/* Doctor Routes */}
-        <Route path="/doctor-enrollments" element={<DoctorEnrollments />} />
         <Route path="/doctor-register" element={<DoctorRegister />} />
         <Route path="/doctor-login" element={<DoctorLogin />} />
-        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
 
-        {/* Admin routes */}
+        <Route
+          path="/doctor-dashboard"
+          element={
+            <DoctorLayout>
+              <Dashbord />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/enrollments"
+          element={
+            <DoctorLayout>
+              <DoctorEnrollments />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/appointments"
+          element={
+            <DoctorLayout>
+              <DoctorAppointments />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/patients"
+          element={
+            <DoctorLayout>
+              <DoctorPatients />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/messages"
+          element={
+            <DoctorLayout>
+              <DoctorMessages />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/analytics"
+          element={
+            <DoctorLayout>
+              <DoctorAnalytics />
+            </DoctorLayout>
+          }
+        />
+        <Route
+          path="/doctor-dashboard/settings"
+          element={
+            <DoctorLayout>
+              <DoctorSettings />
+            </DoctorLayout>
+          }
+        />
 
-        {/* Video Call Route (Header/Footer Hidden) */}
         <Route path="/video-call/:appointmentId" element={<VideoCall />} />
 
-        {/* Admin Routes */}
         <Route path="/adminauth" element={<AdminAuth />} />
 
         <Route
@@ -206,21 +265,23 @@ function AppLayout() {
           }
         />
 
+<<<<<<< HEAD
         <Route path="/home-demo" element={<Home2 />} />
       </Routes>
 
+=======
+>>>>>>> 99881ee7964edcc47e1430b3304a61da6f7fda3b
       {!hideLayout && <Footer />}
     </>
   );
 }
 
-function App() {
+export default function App() {
   useLenis();
+
   return (
     <BrowserRouter>
       <AppLayout />
     </BrowserRouter>
   );
 }
-
-export default App;

@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 import "./AskDoctor.css";
 
-const API = "http://localhost:5000/api/qna";
+const API = `${import.meta.env.VITE_API_URL}/api/qna`;
 
 const CATEGORIES = [
   "General", "Heart", "Skin", "Neuro", "Ortho",
@@ -12,18 +12,18 @@ const CATEGORIES = [
 
 const CATEGORY_META = {
   General: { bg: "#EEF2FF", text: "#4338CA" },
-  Heart:   { bg: "#FEF2F2", text: "#DC2626" },
-  Skin:    { bg: "#FFF7ED", text: "#C2410C" },
-  Neuro:   { bg: "#F5F3FF", text: "#7C3AED" },
-  Ortho:   { bg: "#F0FDF4", text: "#16A34A" },
-  Dental:  { bg: "#ECFDF5", text: "#059669" },
-  Eyes:    { bg: "#EFF6FF", text: "#2563EB" },
-  Dizzy:   { bg: "#FEF9C3", text: "#B45309" },
-  Mental:  { bg: "#FDF4FF", text: "#A21CAF" },
-  Gut:     { bg: "#F0FDF4", text: "#15803D" },
+  Heart: { bg: "#FEF2F2", text: "#DC2626" },
+  Skin: { bg: "#FFF7ED", text: "#C2410C" },
+  Neuro: { bg: "#F5F3FF", text: "#7C3AED" },
+  Ortho: { bg: "#F0FDF4", text: "#16A34A" },
+  Dental: { bg: "#ECFDF5", text: "#059669" },
+  Eyes: { bg: "#EFF6FF", text: "#2563EB" },
+  Dizzy: { bg: "#FEF9C3", text: "#B45309" },
+  Mental: { bg: "#FDF4FF", text: "#A21CAF" },
+  Gut: { bg: "#F0FDF4", text: "#15803D" },
 };
 
-const PER_PAGE  = 4;
+const PER_PAGE = 4;
 const MAX_CHARS = 2000;
 
 const formatDate = (d) =>
@@ -72,16 +72,16 @@ const IconChevRight = () => (
 );
 
 export default function AskDoctor() {
-  const [questions,    setQuestions]    = useState([]);
-  const [text,         setText]         = useState("");
-  const [file,         setFile]         = useState(null);
-  const [agreed,       setAgreed]       = useState(false);
-  const [errors,       setErrors]       = useState({});
-  const [category,     setCategory]     = useState("General");
-  const [submitted,    setSubmitted]    = useState(false);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const [expandedId,   setExpandedId]   = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [agreed, setAgreed] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [category, setCategory] = useState("General");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [expandedId, setExpandedId] = useState(null);
   const fileRef = useRef();
 
   // Fetch questions from MongoDB on load
@@ -98,7 +98,7 @@ export default function AskDoctor() {
   /* validation */
   const validate = () => {
     const e = {};
-    if (!text.trim())                 e.text = "Please enter your question.";
+    if (!text.trim()) e.text = "Please enter your question.";
     else if (text.length > MAX_CHARS) e.text = `Maximum ${MAX_CHARS} characters allowed.`;
     if (file && text.trim().split(/\s+/).filter(Boolean).length < 20)
       e.file = "Please describe your problem in at least 20 words before uploading a file.";
@@ -132,8 +132,8 @@ export default function AskDoctor() {
 
   /* pagination */
   const totalPages = Math.max(1, Math.ceil(questions.length / PER_PAGE));
-  const visible    = questions.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-  const goPage     = (p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); };
+  const visible = questions.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const goPage = (p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); };
   const pageNumbers = () => {
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const arr = [1];
@@ -277,7 +277,7 @@ export default function AskDoctor() {
 
           {/* trust bar */}
           <div className="ad-trust">
-            {[["🔒","100% Confidential"],["✅","Verified Doctors"],["⚡","Fast Response"]].map(([icon, label]) => (
+            {[["🔒", "100% Confidential"], ["✅", "Verified Doctors"], ["⚡", "Fast Response"]].map(([icon, label]) => (
               <div className="ad-trust-item" key={label}><span>{icon}</span>{label}</div>
             ))}
           </div>
@@ -296,7 +296,7 @@ export default function AskDoctor() {
             )}
 
             {visible.map((q, i) => {
-              const col      = CATEGORY_META[q.category] || CATEGORY_META.General;
+              const col = CATEGORY_META[q.category] || CATEGORY_META.General;
               const expanded = expandedId === q._id;
               return (
                 <div className="ad-qcard" key={q._id} style={{ animationDelay: `${i * 60}ms` }}>

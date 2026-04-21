@@ -861,9 +861,8 @@ export default function HomePage() {
                   return (
                     <div
                       key={i}
-                      className={`scene-content-container${
-                        isActive ? " active" : ""
-                      }${isExitUp ? " exit-up" : ""}`}
+                      className={`scene-content-container${isActive ? " active" : ""
+                        }${isExitUp ? " exit-up" : ""}`}
                     >
                       <div className="scene-content">
                         <div className="scene-step-badge">
@@ -1063,11 +1062,9 @@ export default function HomePage() {
                 <span className="aa-pill" ref={pillRef}></span>
                 <button
                   ref={(el) => (tabRefs.current[0] = el)}
-                  className={`aa-tab ${
-                    activeTab === "specialties" ? "aa-tab-active" : ""
-                  } ${hovered === 0 ? "aa-tab-hovered" : ""} ${
-                    hovered !== null && hovered !== 0 ? "aa-tab-inactive" : ""
-                  }`}
+                  className={`aa-tab ${activeTab === "specialties" ? "aa-tab-active" : ""
+                    } ${hovered === 0 ? "aa-tab-hovered" : ""} ${hovered !== null && hovered !== 0 ? "aa-tab-inactive" : ""
+                    }`}
                   onClick={() => handleTabChange("specialties")}
                   onMouseEnter={() => setHovered(0)}
                 >
@@ -1075,11 +1072,9 @@ export default function HomePage() {
                 </button>
                 <button
                   ref={(el) => (tabRefs.current[1] = el)}
-                  className={`aa-tab ${
-                    activeTab === "symptoms" ? "aa-tab-active" : ""
-                  } ${hovered === 1 ? "aa-tab-hovered" : ""} ${
-                    hovered !== null && hovered !== 1 ? "aa-tab-inactive" : ""
-                  }`}
+                  className={`aa-tab ${activeTab === "symptoms" ? "aa-tab-active" : ""
+                    } ${hovered === 1 ? "aa-tab-hovered" : ""} ${hovered !== null && hovered !== 1 ? "aa-tab-inactive" : ""
+                    }`}
                   onClick={() => handleTabChange("symptoms")}
                   onMouseEnter={() => setHovered(1)}
                 >

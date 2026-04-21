@@ -7,10 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node
 node_modules
 dist
-dist-ssr
-*.local
 
 # Environment variables - NEVER commit sensitive data
 .env
@@ -18,14 +17,23 @@ dist-ssr
 .env.*.local
 .env.development
 .env.test
+.env.production
+.env.production.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+# IDE
+.vscode
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+
+# Uploads (local)
+uploads/*
+!uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
