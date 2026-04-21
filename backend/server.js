@@ -32,11 +32,17 @@ const startServer = async () => {
 };
 
 // Middleware - CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
@@ -83,7 +89,7 @@ const server = http.createServer(app);
 
 // Socket.IO setup with proper CORS
 const socketCorsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: allowedOrigins,
   methods: ["GET", "POST"],
   credentials: true,
   transports: ["websocket", "polling"]
