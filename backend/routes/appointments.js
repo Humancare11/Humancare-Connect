@@ -6,6 +6,7 @@ const {
   getPatientAppointments,
   getDoctorAppointments,
   confirmAppointment,
+  cancelAppointment,
   getAllAppointments,
   getAppointmentById,
 } = require("../controllers/appointmentController");
@@ -15,6 +16,7 @@ router.get("/mine", verifyToken, getPatientAppointments);
 router.get("/doctor", verifyToken, getDoctorAppointments);
 router.get("/admin/all", verifyToken, adminOnly, getAllAppointments);
 router.put("/:id/confirm", verifyToken, confirmAppointment);
+router.put("/:id/cancel", verifyToken, cancelAppointment);
 router.get("/:id", verifyToken, getAppointmentById);
 
 module.exports = router;

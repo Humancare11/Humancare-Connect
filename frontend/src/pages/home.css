@@ -922,7 +922,6 @@ h4 {
     min-height: auto;
     padding: 100px 32px 50px;
     align-items: stretch;
-    border: 1px solid blue;
   }
   .hero-left {
     width: 100%;
@@ -997,7 +996,6 @@ h4 {
     min-height: auto;
     padding: 90px 24px 50px;
     align-items: stretch;
-    border: 2px solid orange;
   }
   .hero-left {
     width: 100%;

@@ -134,6 +134,47 @@ const confirmAppointment = async (req, res) => {
   }
 };
 
+const cancelAppointment = async (req, res) => {
+  try {
+    if (req.user.role !== "doctor") {
+      return res.status(403).json({ msg: "Access denied. Doctors only." });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ msg: "Appointment not found." });
+    }
+
+    if (appointment.doctorId.toString() !== req.user.id) {
+      return res.status(403).json({ msg: "You can only cancel your own appointments." });
+    }
+
+    if (appointment.status === "cancelled") {
+      return res.status(400).json({ msg: "Appointment is already cancelled." });
+    }
+
+    appointment.status = "cancelled";
+    await appointment.save();
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`patient_${appointment.patientId}`).emit("appointment-updated", {
+        appointmentId: appointment._id,
+        status: appointment.status,
+      });
+      io.to("admin_room").emit("appointment-updated", {
+        appointmentId: appointment._id,
+        status: appointment.status,
+      });
+    }
+
+    res.status(200).json({ msg: "Appointment cancelled.", appointment });
+  } catch (error) {
+    console.error("cancelAppointment error:", error);
+    res.status(500).json({ msg: "Failed to cancel appointment." });
+  }
+};
+
 const getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find()
@@ -180,6 +221,7 @@ module.exports = {
   getPatientAppointments,
   getDoctorAppointments,
   confirmAppointment,
+  cancelAppointment,
   getAllAppointments,
   getAppointmentById,
 };

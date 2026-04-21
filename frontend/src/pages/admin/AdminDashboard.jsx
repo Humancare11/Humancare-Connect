@@ -335,6 +335,99 @@ function ManageDoctors() {
   );
 }
 
+/* ── Support Tickets Component ── */
+function SupportTickets() {
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [resolution, setResolution] = useState('');
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/tickets/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTickets(response.data);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resolveTicket = async (id) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/tickets/${id}/resolve`, {
+        resolution,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSelectedTicket(null);
+      setResolution('');
+      fetchTickets();
+    } catch (error) {
+      console.error('Error resolving ticket:', error);
+    }
+  };
+
+  if (loading) return <div className="dash-section"><p>Loading tickets...</p></div>;
+
+  return (
+    <div className="dash-section">
+      <h2 className="dash-section-title">Support Tickets</h2>
+      <div className="tickets-list">
+        {tickets.length === 0 ? (
+          <p>No tickets found.</p>
+        ) : (
+          tickets.map((ticket) => (
+            <div key={ticket._id} className="ticket-item">
+              <div className="ticket-header">
+                <h3>{ticket.title}</h3>
+                <span className={`ticket-status ${ticket.status}`}>{ticket.status}</span>
+              </div>
+              <p className="ticket-doctor">By: {ticket.createdBy.name} ({ticket.createdBy.email})</p>
+              <p className="ticket-description">{ticket.description}</p>
+              <p className="ticket-date">Created: {new Date(ticket.createdAt).toLocaleDateString()}</p>
+              {ticket.status === 'resolved' && ticket.resolution && (
+                <div className="ticket-resolution">
+                  <strong>Resolution:</strong> {ticket.resolution}
+                  <p>Resolved by: {ticket.resolvedBy?.name} on {new Date(ticket.updatedAt).toLocaleDateString()}</p>
+                </div>
+              )}
+              {ticket.status === 'open' && (
+                <button onClick={() => setSelectedTicket(ticket)}>Resolve</button>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+      {selectedTicket && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Resolve Ticket: {selectedTicket.title}</h3>
+            <textarea
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              placeholder="Enter resolution details..."
+              rows="5"
+            />
+            <div className="modal-actions">
+              <button onClick={() => resolveTicket(selectedTicket._id)}>Submit</button>
+              <button onClick={() => { setSelectedTicket(null); setResolution(''); }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main Admin Dashboard ── */
 export default function AdminDashboard() {
   const [user, setUser] = useState(null);
@@ -372,6 +465,7 @@ export default function AdminDashboard() {
     if (activeMenu === "manage-users") return <ManageUsers />;
     if (activeMenu === "appointments") return <AdminAppointments />;
     if (activeMenu === "qna") return <QnAPage />;
+    if (activeMenu === "tickets") return <SupportTickets />;
     return (
       <div className="dash-section">
         <h2 className="dash-section-title">Admin Dashboard</h2>
@@ -404,6 +498,7 @@ export default function AdminDashboard() {
     { key: "manage-users", label: "Manage Users" },
     { key: "appointments", label: "Appointments" },
     { key: "qna", label: "Medical Questions" },
+    { key: "tickets", label: "Support Tickets" },
     { key: "settings", label: "Settings" },
   ];
 

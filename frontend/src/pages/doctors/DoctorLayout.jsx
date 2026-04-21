@@ -9,6 +9,7 @@ const menuItems = [
   { path: "/doctor-dashboard/appointments", label: "Appointments", icon: "appointments" },
   { path: "/doctor-dashboard/patients",     label: "My Patients",  icon: "patients" },
   { path: "/doctor-dashboard/messages",     label: "Messages",     icon: "messages" },
+  { path: "/doctor-dashboard/raise-ticket", label: "Raise Ticket", icon: "ticket" },
   // { path: "/doctor-dashboard/analytics",    label: "Analytics",    icon: "analytics" },
   // { path: "/doctor-dashboard/settings",     label: "Settings",     icon: "settings" },
 ];
@@ -45,6 +46,12 @@ const NavIcon = ({ name }) => {
     messages: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    ),
+    ticket: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 10h20l-2 8H4l-2-8z"/><path d="M6 2v4"/><path d="M18 2v4"/>
+        <path d="M6 10v8"/><path d="M18 10v8"/><path d="M10 6h4"/>
       </svg>
     ),
     analytics: (
