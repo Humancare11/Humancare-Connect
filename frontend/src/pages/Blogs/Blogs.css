@@ -1,48 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap");
 
 :root {
-  --bg: #F4F7FB;
-  --section: #DCE6F2;
-  --primary: #223A5E;
-  --primary-hover: #1B2F4B;
-  --text: #0B1F3A;
-  --teal: #0C8B7A;
-  --teal-lt: #E6F5F3;
-  --gold: #C97B1A;
-  --gold-lt: #FEF3E2;
-  --muted: #6B7280;
-  --border: rgba(34, 58, 94, 0.10);
-  --card: #FFFFFF;
+  --bg: #f4f7fb;
+  --section: #dce6f2;
+  --primary: #223a5e;
+  --primary-hover: #1b2f4b;
+  --text: #0b1f3a;
+  --teal: #0c8b7a;
+  --teal-lt: #e6f5f3;
+  --gold: #c97b1a;
+  --gold-lt: #fef3e2;
+  --muted: #6b7280;
+  --border: rgba(34, 58, 94, 0.1);
+  --card: #ffffff;
   --radius: 16px;
   --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background: var(--bg);
   color: var(--text);
-  overflow-x: hidden;
 }
 
-h1, h2, h3, h4 {
-  font-family: 'Satoshi', sans-serif;
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Satoshi", sans-serif;
 }
 
 .blog-page {
   min-height: 100vh;
 }
- .blog-hero {
+.blog-hero {
   background: var(--section);
   padding-top: 142px;
   padding-bottom: 60px;
@@ -51,13 +51,13 @@ h1, h2, h3, h4 {
 }
 
 .blog-hero::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
 }
 
 .blog-hero::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -108,7 +108,6 @@ h1, h2, h3, h4 {
   }
 }
 
-
 .blog-grid-section {
   max-width: 1200px;
   margin: 0 auto;
@@ -146,7 +145,9 @@ h1, h2, h3, h4 {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.32s var(--ease), box-shadow 0.32s var(--ease);
+  transition:
+    transform 0.32s var(--ease),
+    box-shadow 0.32s var(--ease);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(34, 58, 94, 0.05);
 }
@@ -236,7 +237,7 @@ h1, h2, h3, h4 {
     color 0.25s var(--ease),
     transform 0.2s var(--ease),
     box-shadow 0.25s var(--ease);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .card-btn svg {
@@ -276,7 +277,7 @@ h1, h2, h3, h4 {
   color: var(--text);
   font-size: 14px;
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   transition:
     background 0.22s var(--ease),

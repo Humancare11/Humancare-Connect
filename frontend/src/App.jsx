@@ -33,7 +33,6 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorDashboard from "./pages/doctors/DoctorDashboard";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
 import useLenis from "./hooks/useLenis";
-import useLenis from "./hooks/useLenis";
 // User imports
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
@@ -206,9 +205,9 @@ function AppLayout() {
             </PrivateRoute>
           }
         />
-      </Routes>
 
-      <Route path="/home-demo" element={<Home2 />} />
+        <Route path="/home-demo" element={<Home2 />} />
+      </Routes>
 
       {!hideLayout && <Footer />}
     </>

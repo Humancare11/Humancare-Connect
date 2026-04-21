@@ -9,7 +9,7 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 
-const RADIUS = 20;
+const RADIUS = 18;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const DURATION = 3000; // 3 seconds per step
 
@@ -25,6 +25,7 @@ const DEFAULT_STEPS = [
 export default function StepProgress({
   steps = DEFAULT_STEPS,
   duration = DURATION,
+  onProgress,
 }) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -66,21 +67,41 @@ export default function StepProgress({
       }
 
       if (!startRef.current) startRef.current = timestamp;
+
       const elapsed = timestamp - startRef.current;
       const pct = Math.min(elapsed / duration, 1);
+
       progressRef.current = pct;
+
+      // ✅ Update circle UI
       updateCircles();
 
+      // ✅ Sync progress line (TOTAL progress across all steps)
+      if (onProgress) {
+        const totalProgress = (current + pct) / steps.length;
+        onProgress(totalProgress);
+      }
+
       if (pct >= 1) {
-        // advance
         startRef.current = timestamp;
-        setCurrent((prev) => (prev + 1) % steps.length);
+
+        setCurrent((prev) => {
+          const next = (prev + 1) % steps.length;
+
+          // ✅ Reset progress line when loop restarts
+          if (next === 0 && onProgress) {
+            onProgress(0);
+          }
+
+          return next;
+        });
+
         progressRef.current = 0;
       }
 
       rafRef.current = requestAnimationFrame(tick);
     },
-    [duration, paused, steps.length, updateCircles],
+    [duration, paused, steps.length, updateCircles, current, onProgress],
   );
 
   useEffect(() => {
@@ -127,23 +148,23 @@ export default function StepProgress({
                 height="44"
                 viewBox="0 0 44 44"
               >
-                <g transform="translate(2 2)">
-                  <circle
-                    className="ring-bg"
-                    cx="22"
-                    cy="22"
-                    r={RADIUS}
-                    fill="none"
-                  />
-                  <circle
-                    className="ring-fill"
-                    cx="22"
-                    cy="22"
-                    r={RADIUS}
-                    ref={(el) => setCircleRef(el, i)}
-                  />
-                </g>
+                <circle
+                  className="ring-bg"
+                  cx="22"
+                  cy="22"
+                  r={18}
+                  fill="none"
+                />
+                <circle
+                  className="ring-fill"
+                  cx="22"
+                  cy="22"
+                  r={18}
+                  fill="none"
+                  ref={(el) => setCircleRef(el, i)}
+                />
               </svg>
+
               <div className="ring-icon">{s.icon}</div>
             </div>
             <div className="step-label">{s.label}</div>

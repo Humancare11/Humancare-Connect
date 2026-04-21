@@ -1,20 +1,69 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import "./header.css";
-import { Link } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa"; // ✅ ADD ICON
-
-
+import { useEffect } from "react";
+import "./Header.css";
 
 export default function Header() {
-  const pillRef = useRef(null);
-  const itemRefs = useRef([]);
-  const location = useLocation();
-  const navigate = useNavigate();
+  useEffect(() => {
+    /* Nav pill hover */
+    const pill = document.querySelector(".nav-pill");
+    const items = document.querySelectorAll(".nav-menu .nav-item");
+    items.forEach((item) => {
+      const onEnter = () => {
+        if (!pill) return;
+        pill.style.width = item.offsetWidth + "px";
+        pill.style.left = item.offsetLeft + "px";
+      };
+      item.addEventListener("mouseenter", onEnter);
+      item._onEnter = onEnter;
+    });
+    const navMenu = document.querySelector(".nav-menu");
+    const onNavLeave = () => {
+      if (pill) pill.style.width = "0px";
+    };
+    navMenu?.addEventListener("mouseleave", onNavLeave);
 
-  const [hovered, setHovered] = useState(null);
-  const [active, setActive] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+    /* Scroll: shrink header + progress bar */
+    const handleScroll = () => {
+      const header = document.getElementById("header");
+      header?.classList.toggle("shrink", window.scrollY > 50);
+      const pct =
+        (window.scrollY / (document.body.scrollHeight - window.innerHeight)) *
+        100;
+      const prog = document.getElementById("prog");
+      if (prog) prog.style.width = pct + "%";
+    };
+    window.addEventListener("scroll", handleScroll);
+
+    /* Hamburger menu */
+    const hamburger = document.getElementById("hamburger");
+    const mobileMenu = document.getElementById("mobileMenu");
+    const toggleMenu = () => {
+      if (!hamburger || !mobileMenu) return;
+      hamburger.classList.toggle("open");
+      mobileMenu.classList.toggle("open");
+    };
+    hamburger?.addEventListener("click", toggleMenu);
+    mobileMenu?.querySelectorAll("a").forEach((a) => {
+      const onMenuClick = () => {
+        hamburger?.classList.remove("open");
+        mobileMenu?.classList.remove("open");
+      };
+      a.addEventListener("click", onMenuClick);
+      a._onMenuClick = onMenuClick;
+    });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      navMenu?.removeEventListener("mouseleave", onNavLeave);
+      items.forEach((item) => {
+        if (item._onEnter)
+          item.removeEventListener("mouseenter", item._onEnter);
+      });
+      hamburger?.removeEventListener("click", toggleMenu);
+      mobileMenu?.querySelectorAll("a").forEach((a) => {
+        if (a._onMenuClick) a.removeEventListener("click", a._onMenuClick);
+      });
+    };
+  }, []);
 
   const navItems = [
     { label: "Find a Doctor", link: "/find-a-doctor" },
@@ -24,85 +73,36 @@ export default function Header() {
     { label: "Blogs", link: "/blogs" },
   ];
 
-  // ✅ Check login
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, [location]);
-
-  // ✅ AUTO ACTIVE BASED ON URL
-  useEffect(() => {
-    const index = navItems.findIndex(
-      (item) => item.link === location.pathname
-    );
-    if (index !== -1) {
-      setActive(index);
-    }
-  }, [location.pathname]);
-
-  const currentIndex = hovered !== null ? hovered : active;
-
-  useEffect(() => {
-    const pill = pillRef.current;
-    const currentItem = itemRefs.current[currentIndex];
-
-    if (pill && currentItem) {
-      pill.style.width = currentItem.offsetWidth + "px";
-      pill.style.left = currentItem.offsetLeft + "px";
-    }
-  }, [currentIndex]);
-
-  // ✅ Logout function
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    navigate("/");
-  };
-
   return (
-    <header className="glass-header">
+    <header className="glass-header" id="header">
       <div className="nav-container">
-
-        <a href="/">
-          <div className="logo">Humancare</div>
-        </a>
-
-        <nav
-          className="nav-menu"
-          onMouseLeave={() => setHovered(null)}
-        >
-          <span className="pill" ref={pillRef}></span>
-
+        <div className="logo">Humancare</div>
+        <nav className="nav-menu">
+          <span className="nav-pill"></span>
           {navItems.map((item, index) => (
-            <a
-              key={index}
-              href={item.link}
-              ref={(el) => (itemRefs.current[index] = el)}
-              className={`nav-item ${currentIndex === index ? "active" : ""
-                }`}
-              onMouseEnter={() => setHovered(index)}
-              onClick={() => setActive(index)}
-            >
+            <a href={item.link} className="nav-item" key={index}>
               {item.label}
             </a>
           ))}
         </nav>
-
-        {/* 🔥 AUTH BUTTONS */}
-        <div className="auth-buttons">
-          {!isLoggedIn ? (
-            <div className="auth-combined">
-              <Link to="/login" className="auth-link">Login</Link>
-              <span className="divider">/</span>
-              <Link to="/register" className="auth-link">Register</Link>
-            </div>
-          ) : (
-            <Link to="/profile" className="profile-icon">
-              <FaUserCircle />
-            </Link>
-          )}
+        <a href="#" className="nav-cta">
+          <span>Book Appointment</span>
+        </a>
+        <div className="hamburger" id="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
-
+        <div className="mobile-menu" id="mobileMenu">
+          {navItems.map((item, index) => (
+            <a href={item.link} className="nav-item" key={index}>
+              {item.label}
+            </a>
+          ))}
+          <a href="#" className="nav-cta">
+            Book Appointment
+          </a>
+        </div>
       </div>
     </header>
   );

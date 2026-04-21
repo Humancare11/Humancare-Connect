@@ -9,41 +9,6 @@ import {
   FaBalanceScale,
 } from "react-icons/fa";
 
-const smallCards = [
-  {
-    id: "mental-health",
-    icon: FaBrain,
-    title: "Mental Health",
-    description:
-      "Therapy, psychiatry, anxiety & depression treatment with licensed therapists and psychiatrists.",
-    cta: "Get support →",
-  },
-  {
-    id: "general-consultation",
-    icon: FaStethoscope,
-    title: "General Consultation",
-    description:
-      "Sick visits, wellness checks, infections, minor injuries — same-day access to a doctor for whatever is on your mind.",
-    cta: "See a doctor →",
-  },
-  {
-    id: "sexual-health",
-    icon: FaHeart,
-    title: "Sexual Health",
-    description:
-      "Confidential, judgment-free care for STI testing, ED, birth control, UTIs, and more.",
-    cta: "Learn more →",
-  },
-  {
-    id: "chronic-care",
-    icon: FaHeartbeat,
-    title: "Chronic Care",
-    description:
-      "Ongoing support for diabetes, hypertension, thyroid, and asthma with a dedicated care team.",
-    cta: "Manage condition →",
-  },
-];
-
 export default function ServicesSection() {
   return (
     <section className="services-section-wrapper">
@@ -62,14 +27,13 @@ export default function ServicesSection() {
 
         {/* Bento Grid */}
         <div className="services-bento-grid">
-          {/* Large Product Card - Top Left */}
+          {/* Large Card — Prescription Refills */}
           <div className="services-card-item services-bento-large">
-            <span className="services-feature-badge">MOST REQUESTED</span>
-            <div className="services-icon-box">
+            <div className="services-icon-box"> 
               <FaPills />
+              <span className="services-feature-badge">MOST REQUESTED</span>
             </div>
             <div className="services-content-split">
-              {/* Left Side - Title and Description */}
               <div className="services-content-left">
                 <h3 className="services-card-title">Prescription Refills</h3>
                 <p className="services-card-description">
@@ -78,8 +42,6 @@ export default function ServicesSection() {
                   Works even if you're between doctors.
                 </p>
               </div>
-
-              {/* Right Side - Stats */}
               <div className="services-content-right">
                 <div className="services-stat-mini">
                   <span className="services-stat-value-text">2 hrs</span>
@@ -91,15 +53,14 @@ export default function ServicesSection() {
                 </div>
               </div>
             </div>
-
             <a href="#" className="services-card-cta-link">
               Request refill →
             </a>
           </div>
 
-          {/* Weight Loss - Top Right (Tall) */}
+          {/* Weight Loss */}
           <div className="services-card-item services-bento-small-weightloss">
-            <div className="services-icon-box services-icon-box--gold">
+            <div className="services-icon-box">
               <FaBalanceScale />
             </div>
             <h3 className="services-card-title">Weight Loss Programs</h3>
@@ -114,14 +75,14 @@ export default function ServicesSection() {
               <div className="services-weight-stat-row">
                 <span className="services-weight-stat-number">15 lbs</span>
                 <span className="services-weight-stat-period">/ 3 months</span>
+                <a href="#" className="services-card-cta-link">
+                  Start program →
+                </a>
               </div>
             </div>
-            <a href="#" className="services-card-cta-link">
-              Start program →
-            </a>
           </div>
 
-          {/* Mental Health - Middle Left (Tall) */}
+          {/* Mental Health — Tall */}
           <div className="services-card-item services-bento-smal-1">
             <div className="services-icon-box">
               <FaBrain />
@@ -136,10 +97,7 @@ export default function ServicesSection() {
             </a>
           </div>
 
-          {/* Chronic Care - Middle Right */}
-          
-
-          {/* General Consultation - Bottom Left */}
+          {/* General Consultation */}
           <div className="services-card-item services-bento-small">
             <div className="services-icon-box">
               <FaStethoscope />
@@ -154,8 +112,8 @@ export default function ServicesSection() {
             </a>
           </div>
 
-          {/* Sexual Health - Bottom Right */}
-          <div className="services-card-item services-bento-small">
+          {/* Sexual Health */}
+          <div className="services-card-item services-bento-small-0">
             <div className="services-icon-box">
               <FaHeart />
             </div>
@@ -168,6 +126,8 @@ export default function ServicesSection() {
               Learn more →
             </a>
           </div>
+
+          {/* Chronic Care */}
           <div className="services-card-item services-bento-wide">
             <div className="services-icon-box">
               <FaHeartbeat />

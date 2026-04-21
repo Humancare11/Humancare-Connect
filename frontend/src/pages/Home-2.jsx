@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import "./Home-2.css";
+// import "./Home-22.css";
 import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
 import WordReveal from "../components/WordReveal";
 

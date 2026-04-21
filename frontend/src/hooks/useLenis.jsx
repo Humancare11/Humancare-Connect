@@ -8,9 +8,14 @@ export default function useLenis() {
     if (typeof window === "undefined") return;
 
     const lenis = new Lenis({
-      lerp: 0.07, // slightly higher to remove lag
+      duration: 1.2, // ✅ use duration, easier to tune
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // expo ease
+      orientation: "vertical",
+      gestureOrientation: "vertical",
       smoothWheel: true,
-      smoothTouch: false, // 🔥 important: avoid lag on desktop
+      smoothTouch: false,
+      wheelMultiplier: 1, // increase if scroll feels too slow
+      touchMultiplier: 2,
     });
 
     function raf(time) {
@@ -18,12 +23,14 @@ export default function useLenis() {
       requestAnimationFrame(raf);
     }
 
-    requestAnimationFrame(raf);
-
+    const animId = requestAnimationFrame(raf);
     lenisRef.current = lenis;
 
     return () => {
+      cancelAnimationFrame(animId); // ✅ properly cancel on unmount
       lenis.destroy();
     };
   }, []);
+
+  return lenisRef; // ✅ return ref in case you need lenis instance
 }

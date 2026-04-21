@@ -21,40 +21,12 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 
-import { motion } from "framer-motion";
+// framer-motion not used in this file
 
-const SCENE_VISUALS = [
-  {
-    bg: "linear-gradient(135deg, #E8F0FE 0%, #DCE6F2 100%)",
-    icon: <FiSmartphone />,
-    label: "Phone",
-  },
-  {
-    bg: "linear-gradient(135deg, #E8F5F3 0%, #DCE6F2 100%)",
-    icon: <FiUserCheck />,
-    label: "Doctor",
-  },
-  {
-    bg: "linear-gradient(135deg, #FEF3E2 0%, #F4F7FB 100%)",
-    icon: <FiClock />,
-    label: "Timer",
-  },
-  {
-    bg: "linear-gradient(135deg, #E8F0FE 0%, #E8F5F3 100%)",
-    icon: <FiVideo />,
-    label: "Video",
-  },
-  {
-    bg: "linear-gradient(135deg, #E8F5F3 0%, #F4F7FB 100%)",
-    icon: <FiFileText />,
-    label: "Rx",
-  },
-  {
-    bg: "linear-gradient(135deg, #E8F5F3 0%, #FEF3E2 100%)",
-    icon: <FiCheckCircle />,
-    label: "Done",
-  },
-];
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 // ─── Scene data ───────────────────────────────────────────────────────────────
 const SCENES = [
@@ -221,6 +193,47 @@ export default function HomePage() {
     },
   ];
 
+  const features = [
+    {
+      icon: <FaFileMedical />,
+      title: "Acts as Your PCP",
+      desc: "Our providers manage ongoing health, maintain your records, and coordinate specialist referrals.",
+    },
+    {
+      icon: <FaSyncAlt />,
+      title: "Continuity of Care",
+      desc: "Build a relationship with the same doctor across visits. Your health history stays in one secure place.",
+    },
+    {
+      icon: <FaCalendarAlt />,
+      title: "365 Days a Year",
+      desc: "No more 3-week waits. Connect the same day — including evenings and weekends.",
+    },
+  ];
+
+  const steps = [
+    {
+      title: "Create your free account",
+      desc: "Under 2 minutes. No credit card required.",
+    },
+    {
+      title: "Complete a health intake",
+      desc: "Share your medical history and current medications.",
+    },
+    {
+      title: "Match with a provider",
+      desc: "We surface the best-fit doctor for your needs and state.",
+    },
+    {
+      title: "Start your video visit",
+      desc: "Meet face-to-face from anywhere, on any device.",
+    },
+    {
+      title: "Receive care instantly",
+      desc: "Prescription sent to your pharmacy within minutes.",
+    },
+  ];
+
   useEffect(() => {
     // Scroll reveal
     const ro = new IntersectionObserver(
@@ -235,212 +248,6 @@ export default function HomePage() {
 
     return () => {
       ro.disconnect();
-    };
-  }, []);
-
-  class Particle {
-    constructor(canvas) {
-      this.canvas = canvas;
-      this.init();
-    }
-
-    init() {
-      this.x = Math.random() * this.canvas.width;
-      this.y = Math.random() * this.canvas.height;
-      this.vx = 0;
-      this.vy = 0;
-      this.age = 0;
-      this.maxAge = Math.random() * 200 + 100;
-      this.color = Math.random() > 0.5 ? "#3B372E" : "#24221D";
-    }
-
-    update(mouse, noiseScale = 0.005) {
-      // Base Flow Logic
-      let angle =
-        (Math.sin(this.x * noiseScale) + Math.cos(this.y * noiseScale)) *
-        Math.PI *
-        2;
-      this.vx = Math.cos(angle) * 1.2;
-      this.vy = Math.sin(angle) * 1.2;
-
-      // STRONG REPULSION LOGIC
-      let dx = this.x - mouse.x;
-      let dy = this.y - mouse.y;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      let forceRadius = 150;
-
-      if (distance < forceRadius) {
-        let force = (forceRadius - distance) / forceRadius;
-        let dirX = dx / distance;
-        let dirY = dy / distance;
-        this.vx += dirX * force * 5; // Push away force
-        this.vy += dirY * force * 5;
-      }
-
-      this.x += this.vx;
-      this.y += this.vy;
-      this.age++;
-
-      if (
-        this.x < 0 ||
-        this.x > this.canvas.width ||
-        this.y < 0 ||
-        this.y > this.canvas.height ||
-        this.age > this.maxAge
-      ) {
-        this.init();
-      }
-    }
-
-    draw(ctx) {
-      ctx.beginPath();
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = 1;
-      ctx.moveTo(this.x - this.vx, this.y - this.vy);
-      ctx.lineTo(this.x, this.y);
-      ctx.stroke();
-    }
-  }
-
-  class Hologram {
-    constructor(canvas, type) {
-      this.canvas = canvas;
-      this.type = type;
-      this.x = Math.random() * (canvas.width - 200) + 100;
-      this.y = Math.random() * (canvas.height - 200) + 100;
-      this.opacity = 0;
-      this.maxOpacity = 0.6;
-      this.scale = 0.5;
-      this.state = "fadein"; // fadein, float, fadeout
-      this.timer = 0;
-    }
-
-    draw(ctx) {
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.scale(this.scale, this.scale);
-      ctx.strokeStyle = `rgba(45, 212, 191, ${this.opacity})`;
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "#2dd4bf";
-
-      ctx.beginPath();
-      // if (this.type === "heart") this.drawHeart(ctx);
-      // if (this.type === "eye") this.drawEye(ctx);
-      // if (this.type === "cross") this.drawCross(ctx);
-      // if (this.type === "dna") this.drawDNA(ctx);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    drawHeart(ctx) {
-      ctx.moveTo(0, 0);
-      ctx.bezierCurveTo(-10, -10, -20, 0, 0, 20);
-      ctx.bezierCurveTo(20, 0, 10, -10, 0, 0);
-    }
-
-    drawEye(ctx) {
-      ctx.arc(0, 0, 15, 0, Math.PI * 2); // Outer
-      ctx.moveTo(-5, 0);
-      ctx.lineTo(5, 0); // Pupil
-    }
-
-    drawCross(ctx) {
-      ctx.moveTo(-10, 0);
-      ctx.lineTo(10, 0);
-      ctx.moveTo(0, -10);
-      ctx.lineTo(0, 10);
-    }
-
-    drawDNA(ctx) {
-      ctx.moveTo(-10, -10);
-      ctx.quadraticCurveTo(0, 0, 10, -10);
-      ctx.moveTo(-10, 10);
-      ctx.quadraticCurveTo(0, 0, 10, 10);
-    }
-
-    update() {
-      this.timer++;
-      if (this.state === "fadein") {
-        this.opacity += 0.01;
-        this.scale += 0.005;
-        if (this.opacity >= this.maxOpacity) this.state = "float";
-      } else if (this.state === "float") {
-        this.y += Math.sin(this.timer * 0.05) * 0.2;
-        if (this.timer > 200) this.state = "fadeout";
-      } else {
-        this.opacity -= 0.01;
-        if (this.opacity <= 0) return false;
-      }
-      return true;
-    }
-  }
-
-  const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return; // Add null check
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return; // Add context check
-
-    let particles = [];
-    let holograms = [];
-    let animationFrameId;
-    let spawnInterval;
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    const spawnHologram = () => {
-      const types = ["heart", "eye", "cross", "dna"];
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      holograms.push(new Hologram(canvas, randomType));
-    };
-
-    const handleMouseMove = (e) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-    };
-
-    const animate = () => {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.update(mouseRef.current);
-        p.draw(ctx);
-      });
-
-      holograms = holograms.filter((h) => {
-        const alive = h.update();
-        if (alive) h.draw(ctx);
-        return alive;
-      });
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", handleMouseMove);
-
-    for (let i = 0; i < 700; i++) {
-      particles.push(new Particle(canvas));
-    }
-
-    spawnInterval = setInterval(spawnHologram, 5000);
-    animate();
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      clearInterval(spawnInterval);
     };
   }, []);
 
@@ -466,6 +273,28 @@ export default function HomePage() {
     currentRef.current = current;
   }, [current]);
 
+  // External progress handler for StepProgress (fraction 0..1)
+  const handleProgress = useCallback((progress) => {
+    const frac = Math.min(Math.max(progress, 0), 1);
+    const pct = Math.round(frac * 10000) / 100; // keep 2 decimals
+    if (progressFillRef.current) {
+      progressFillRef.current.style.width = `${pct}%`;
+    }
+
+    // Derive current step and intra-step progress from the total fraction
+    const total = frac * TOTAL_STEPS;
+    const idx = Math.min(Math.floor(total), TOTAL_STEPS - 1);
+    const inStep = total - idx; // 0..1 progress inside the step
+
+    // Sync Home's timing refs so scene cards match the StepProgress component
+    if (currentRef.current !== idx) {
+      setCurrent(idx);
+      currentRef.current = idx;
+    }
+    elapsedRef.current = inStep * STEP_DURATION;
+    timerOffsetRef.current = CIRCUMFERENCE * (1 - inStep);
+  }, []);
+
   const updateVisuals = useCallback(() => {
     // update continuous track and rings from refs
     const currentIdx = currentRef.current;
@@ -474,8 +303,9 @@ export default function HomePage() {
     let progressPct = ((currentIdx + currentStepProgress) / TOTAL_STEPS) * 100;
     progressPct = Math.min(progressPct, 100);
 
-    if (progressFillRef.current) {
-      progressFillRef.current.style.width = `${progressPct}%`;
+    // update continuous progress via shared handler (expects 0..1)
+    if (typeof handleProgress === "function") {
+      handleProgress(progressPct / 100);
     }
 
     // update ring fills (small number of rings, fine to update each frame)
@@ -616,11 +446,114 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", recalc);
   }, [items]);
 
+  const wrapperRef = useRef(null);
+  const headerRef = useRef(null);
+  const featuresRef = useRef([]);
+  const btnRef = useRef(null);
+  const stepsRef = useRef([]);
+  const rightRef = useRef(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: wrapperRef.current,
+        start: "top top",
+        end: "+=220%",
+        pin: true,
+        pinSpacing: true,
+      });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: wrapperRef.current,
+          start: "top top",
+          end: "+=220%",
+          scrub: 1.2,
+        },
+      });
+
+      // 1. Header
+      tl.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 60 },
+        { opacity: 1, y: 0, duration: 1.2 },
+      );
+
+      // 2. Feature card 1
+      tl.fromTo(
+        featuresRef.current[0],
+        { opacity: 0, x: -70 },
+        { opacity: 1, x: 0, duration: 0.8 },
+        "+=0.2",
+      );
+
+      // 3. Feature card 2
+      tl.fromTo(
+        featuresRef.current[1],
+        { opacity: 0, x: -70 },
+        { opacity: 1, x: 0, duration: 0.8 },
+        "+=0.1",
+      );
+
+      // 4. Feature card 3
+      tl.fromTo(
+        featuresRef.current[2],
+        { opacity: 0, x: -70 },
+        { opacity: 1, x: 0, duration: 0.8 },
+        "+=0.1",
+      );
+
+      // 5. Button
+      tl.fromTo(
+        btnRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7 },
+        "+=0.1",
+      );
+
+      // 6. Entire right panel as one whole box — steps visible inside it
+      tl.fromTo(
+        rightRef.current,
+        { opacity: 0, y: 80, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 1.2, ease: "power3.out" },
+        "+=0.3",
+      );
+
+      // ✅ No stepsRef animation — they're visible inside rightRef
+    }, wrapperRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  // inside your component
+  const testimonialsRef = useRef(null);
+  const bgRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const section = testimonialsRef.current;
+      const bg = bgRef.current;
+      if (!section || !bg) return;
+
+      const rect = section.getBoundingClientRect();
+      const viewH = window.innerHeight;
+      const progress = (viewH - rect.top) / (viewH + rect.height);
+      const p = Math.max(0, Math.min(1, progress));
+      const offset = (p - 0.5) * 120;
+
+      bg.style.transform = `translateY(${offset}px)`;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
       <section className="hero">
-        {/* <canvas ref={canvasRef} className="hero-canvas"></canvas> */}
+        {/* hero canvas removed for production: decorative particles were disabled */}
         <div className="hero-left">
           <div className="hero-badge">
             <div className="badge-pulse"></div>
@@ -635,7 +568,7 @@ export default function HomePage() {
 
           <p>
             Book video consultations, get prescriptions, and receive follow-up
-            care from board-certified physicians — without leaving home.
+            care from board-certified physicians, without leaving home.
           </p>
 
           <div className="search-bar">
@@ -731,6 +664,7 @@ export default function HomePage() {
                   icon: STEP_ICONS[i],
                 }))}
                 duration={3000}
+                onProgress={handleProgress}
               />
             </div>
 
@@ -766,7 +700,6 @@ export default function HomePage() {
                           {scene.badge}
                         </div>
 
-                        {/* ✅ WORD REVEAL APPLIED HERE */}
                         <WordReveal
                           text={scene.title}
                           className="scene-title"
@@ -798,11 +731,12 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
-        <div className="sb-bar">
-          <div className="sb-track" ref={trackRef} />
-        </div>
       </section>
+
+      {/* ✅ sb-bar is now OUTSIDE <section className="hero"> */}
+      <div className="sb-bar">
+        <div className="sb-track" ref={trackRef} />
+      </div>
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
 
       <Sa />
@@ -814,118 +748,69 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════════
           DOCTORS
       ══════════════════════════════════════════════ */}
-      <section className="pcp-section-wrapper">
-        <div className="pcp-container">
-          {/* HEADER */}
-          <div className="pcp-header">
-            <span className="pcp-eyebrow">— NO PCP? NO PROBLEM.</span>
-
-            <h2 className="pcp-heading">
-              Don't have a primary care doctor?
-              <span>We've got you.</span>
-            </h2>
-
-            <p className="pcp-desc">
-              Millions of Americans lack access to a regular physician. MediLink
-              bridges that gap — giving you instant access to licensed providers
-              who can serve as your primary care team.
-            </p>
-          </div>
-
-          {/* LEFT - Features */}
-          <div className="pcp-left">
-            <div className="pcp-features">
-              <div className="pcp-feature">
-                <div className="pcp-icon">
-                  <FaFileMedical />
-                </div>
-                <div>
-                  <h4>Acts as Your PCP</h4>
-                  <p>
-                    Our providers manage ongoing health, maintain your records,
-                    and coordinate specialist referrals.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pcp-feature">
-                <div className="pcp-icon">
-                  <FaSyncAlt />
-                </div>
-                <div>
-                  <h4>Continuity of Care</h4>
-                  <p>
-                    Build a relationship with the same doctor across visits.
-                    Your health history stays in one secure place.
-                  </p>
-                </div>
-              </div>
-
-              <div className="pcp-feature">
-                <div className="pcp-icon">
-                  <FaCalendarAlt />
-                </div>
-                <div>
-                  <h4>365 Days a Year</h4>
-                  <p>
-                    No more 3-week waits. Connect the same day — including
-                    evenings and weekends.
-                  </p>
-                </div>
-              </div>
+      <section ref={wrapperRef} className="pcp-section-wrapper">
+        <div className="pcp-section">
+          <div className="pcp-container">
+            {/* HEADER */}
+            <div className="pcp-header" ref={headerRef}>
+              <span className="pcp-eyebrow">— NO PCP? NO PROBLEM.</span>
+              <h2 className="pcp-heading">
+                Don't have a primary care doctor?<span> We've got you.</span>
+              </h2>
+              <p className="pcp-desc">
+                Millions of Americans lack access to a regular physician.
+                MediLink bridges that gap — giving you instant access to
+                licensed providers who can serve as your primary care team.
+              </p>
             </div>
 
-            {/* <button className="pcp-btn">
-              Get a doctor today — free to start
-            </button> */}
-            <button className="pcp-btn">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-              Get a doctor today — free to start
-            </button>
-          </div>
-
-          {/* RIGHT */}
-          <div className="pcp-right">
-            <h3 className="pcp-right-title">Your first visit, step by step</h3>
-
-            <div className="pcp-steps">
-              {[1, 2, 3, 4, 5].map((step, i) => {
-                const data = [
-                  [
-                    "Create your free account",
-                    "Under 2 minutes. No credit card required.",
-                  ],
-                  [
-                    "Complete a health intake",
-                    "Share your medical history and current medications.",
-                  ],
-                  [
-                    "Match with a provider",
-                    "We surface the best-fit doctor for your needs and state.",
-                  ],
-                  [
-                    "Start your video visit",
-                    "Meet face-to-face from anywhere, on any device.",
-                  ],
-                  [
-                    "Receive care instantly",
-                    "Prescription sent to your pharmacy within minutes.",
-                  ],
-                ];
-
-                return (
-                  <div className="pcp-step" key={i}>
-                    <div className="pcp-step-circle">{step}</div>
+            {/* LEFT — Features */}
+            <div className="pcp-left">
+              <div className="pcp-features">
+                {features.map((f, i) => (
+                  <div
+                    className="pcp-feature"
+                    key={i}
+                    ref={(el) => (featuresRef.current[i] = el)}
+                  >
+                    <div className="pcp-icon">{f.icon}</div>
                     <div>
-                      <h4>{data[i][0]}</h4>
-                      <p>{data[i][1]}</p>
+                      <h4>{f.title}</h4>
+                      <p>{f.desc}</p>
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+
+              <button className="pcp-btn" ref={btnRef}>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                Get a doctor today — free to start
+              </button>
+            </div>
+
+            {/* RIGHT — Steps */}
+            <div className="pcp-right" ref={rightRef}>
+              <h3 className="pcp-right-title">
+                Your first visit, step by step
+              </h3>
+              <div className="pcp-steps">
+                {steps.map((step, i) => (
+                  <div
+                    className="pcp-step"
+                    key={i}
+                    // ✅ no ref here anymore
+                  >
+                    <div className="pcp-step-circle">{i + 1}</div>
+                    <div>
+                      <h4>{step.title}</h4>
+                      <p>{step.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -940,7 +825,7 @@ export default function HomePage() {
               <div className="stat-card-main">
                 <div className="sc-label">Patient outcome improvement</div>
                 <div className="sc-big">
-                  94<span style={{ fontSize: "24px" }}>%</span>
+                  94<span className="sc-percent">%</span>
                 </div>
                 <div className="sc-sub">After 3 months on Humancare</div>
                 <div className="sc-divider"></div>
@@ -949,40 +834,28 @@ export default function HomePage() {
                   <strong>98.2%</strong>
                 </div>
                 <div className="sc-prog">
-                  <div className="sc-fill" style={{ width: "98%" }}></div>
+                  <div className="sc-fill visit-completion"></div>
                 </div>
                 <div className="sc-row">
                   <span>Prescription accuracy</span>
                   <strong>99.7%</strong>
                 </div>
                 <div className="sc-prog">
-                  <div
-                    className="sc-fill"
-                    style={{
-                      width: "99.7%",
-                      background:
-                        "linear-gradient(90deg,var(--teal),var(--gold))",
-                    }}
-                  ></div>
+                  <div className="sc-fill prescription-accuracy"></div>
                 </div>
               </div>
+
               <div className="stat-float sf1">
                 <div className="sf-label">Patients served</div>
-                <div className="sf-val" style={{ color: "var(--primary)" }}>
-                  2.4M+
-                </div>
+                <div className="sf-val">2.4M+</div>
               </div>
               <div className="stat-float sf2">
                 <div className="sf-label">Avg. response</div>
-                <div className="sf-val" style={{ color: "var(--teal)" }}>
-                  &lt;4 min
-                </div>
+                <div className="sf-val">&lt;4 min</div>
               </div>
               <div className="stat-float sf3">
                 <div className="sf-label">Rating</div>
-                <div className="sf-val" style={{ color: "var(--gold)" }}>
-                  4.9 ★
-                </div>
+                <div className="sf-val">4.9 ★</div>
               </div>
             </div>
 
@@ -993,7 +866,6 @@ export default function HomePage() {
               </h2>
               <div className="why-list">
                 <div className="why-item reveal">
-                  {/* <div className="why-icon">🔒</div> */}
                   <div>
                     <div className="why-item-title">
                       HIPAA &amp; SOC 2 Certified
@@ -1006,7 +878,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="why-item reveal">
-                  {/* <div className="why-icon">✅</div> */}
                   <div>
                     <div className="why-item-title">
                       Board-Certified Physicians Only
@@ -1019,7 +890,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="why-item reveal">
-                  {/* <div className="why-icon">💳</div> */}
                   <div>
                     <div className="why-item-title">
                       Transparent, Flat-Fee Pricing
@@ -1032,7 +902,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="why-item reveal">
-                  {/* <div className="why-icon">📞</div> */}
                   <div>
                     <div className="why-item-title">24 / 7 Human Support</div>
                     <div className="why-item-desc">
@@ -1055,7 +924,7 @@ export default function HomePage() {
         <div className="section-eyebrow">Patient Stories</div>
         <h2 className="section-title">Real people, real outcomes.</h2>
         <Swiper
-          modules={[Pagination]}
+          modules={[Pagination, Autoplay]}
           spaceBetween={20}
           loop={true}
           autoplay={{
