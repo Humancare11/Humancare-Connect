@@ -9,8 +9,8 @@ const menuItems = [
   { path: "/doctor-dashboard/appointments", label: "Appointments", icon: "appointments" },
   { path: "/doctor-dashboard/patients",     label: "My Patients",  icon: "patients" },
   { path: "/doctor-dashboard/messages",     label: "Messages",     icon: "messages" },
-  { path: "/doctor-dashboard/analytics",    label: "Analytics",    icon: "analytics" },
-  { path: "/doctor-dashboard/settings",     label: "Settings",     icon: "settings" },
+  // { path: "/doctor-dashboard/analytics",    label: "Analytics",    icon: "analytics" },
+  // { path: "/doctor-dashboard/settings",     label: "Settings",     icon: "settings" },
 ];
 
 const NavIcon = ({ name }) => {

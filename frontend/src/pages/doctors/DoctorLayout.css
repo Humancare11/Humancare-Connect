@@ -57,7 +57,9 @@
   padding: 28px 20px 20px;
   flex-shrink: 0;
 }
-
+.dl-content{
+  padding: 0 !important;
+}
 .dl-brand-mark {
   width: 34px;
   height: 34px;
@@ -445,7 +447,7 @@
 /* ── Content area ── */
 .dl-content {
   flex: 1;
-  padding: 28px 32px;
+  /* padding: 28px 32px; */
   overflow-y: auto;
 }
 
@@ -522,7 +524,7 @@
     display: none;
   }
   .dl-content {
-    padding: 20px 18px;
+    /* padding: 20px 18px; */
   }
   .dl-topbar {
     padding: 0 18px;
@@ -533,7 +535,7 @@
   .dl-greeting-name {
     font-size: 13.5px;
   }
-  .dl-content {
+  /* .dl-content {
     padding: 16px 14px;
-  }
+  } */
 }
