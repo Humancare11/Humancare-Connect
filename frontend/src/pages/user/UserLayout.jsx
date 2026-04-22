@@ -30,9 +30,11 @@ export default function UserLayout({ children }) {
     { path: "/user/medical-questions", label: "Medical Questions",  icon: "❓" },
     // { path: "/user/favourite-doctors", label: "Favourite Doctors",  icon: "❤️" },
     { path: "/user/lab-appointments",  label: "Lab Appointments",   icon: "🧪" },
+    { path: "/user/my-records",        label: "My Records",         icon: "📋" },
 
+    { path: "/user/raise-ticket",      label: "Raise a Ticket",     icon: "🎫" },
     { path: "/user/profile-settings",  label: "Profile Settings",   icon: "⚙️" },
-                { path: "/user/change-password",   label: "Change Password",    icon: "🔒" },
+    { path: "/user/change-password",   label: "Change Password",    icon: "🔒" },
 
   ];
 

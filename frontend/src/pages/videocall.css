@@ -479,6 +479,27 @@
 }
 .hc-vc__ctrl-btn--back { width: 68px; color: #4a6174; }
 
+.hc-vc__ctrl-btn--screen-on {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.5);
+  color: #a5b4fc;
+}
+.hc-vc__ctrl-btn--screen-on:hover:not(:disabled) {
+  background: rgba(99,102,241,0.28);
+}
+
+.hc-vc__ctrl-btn--complete {
+  width: 80px;
+  background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.4);
+  color: #6ee7b7;
+}
+.hc-vc__ctrl-btn--complete:hover:not(:disabled) {
+  background: rgba(16,185,129,0.28);
+  border-color: rgba(16,185,129,0.7);
+  color: #a7f3d0;
+}
+
 /* ---------- Error Banner ---------- */
 .hc-vc__error-banner {
   position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%);

@@ -6,6 +6,7 @@ const {
   getPatientAppointments,
   getDoctorAppointments,
   confirmAppointment,
+  completeAppointment,
   cancelAppointment,
   getAllAppointments,
   getAppointmentById,
@@ -16,6 +17,7 @@ router.get("/mine", verifyToken, getPatientAppointments);
 router.get("/doctor", verifyToken, getDoctorAppointments);
 router.get("/admin/all", verifyToken, adminOnly, getAllAppointments);
 router.put("/:id/confirm", verifyToken, confirmAppointment);
+router.put("/:id/complete", verifyToken, completeAppointment);
 router.put("/:id/cancel", verifyToken, cancelAppointment);
 router.get("/:id", verifyToken, getAppointmentById);
 

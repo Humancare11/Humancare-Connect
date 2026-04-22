@@ -7,16 +7,30 @@ const questionSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
-    name: { type: String, default: "Anonymous", trim: true },
-    category: { type: String, default: "General", trim: true },
-    question: { type: String, required: true, trim: true },
+    name:     { type: String, default: "Anonymous", trim: true },
+    category: { type: String, default: "General",   trim: true },
+    question: { type: String, required: true,        trim: true },
 
-    // Admin fills these when answering
+    // Workflow status
+    status: {
+      type: String,
+      enum: ["pending", "assigned", "answered", "approved"],
+      default: "pending",
+    },
+
+    // Set by admin when assigning to a doctor
+    assignedDoctorId:   { type: mongoose.Schema.Types.ObjectId, ref: "Doctor", default: null },
+    assignedDoctorName: { type: String, default: "" },
+    assignedDoctorSpec: { type: String, default: "" },
+
+    // Set by doctor when answering
     answer: { type: String, default: "" },
     doctor: {
       name:           { type: String, default: "" },
       specialization: { type: String, default: "" },
     },
+
+    // Legacy field — true only when status === "approved"
     answered: { type: Boolean, default: false },
   },
   { timestamps: true }

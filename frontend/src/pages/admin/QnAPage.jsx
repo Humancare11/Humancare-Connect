@@ -1,324 +1,468 @@
-// src/pages/admin/QnAPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import "./QnAPage.css";
 
 const API = `${import.meta.env.VITE_API_URL}/api/qna`;
+const ADMIN_API = `${import.meta.env.VITE_API_URL}/api`;
+
+const STATUS_META = {
+  pending:  { label: "Pending",       color: "#d97706", bg: "#fef3c7", border: "#fcd34d" },
+  assigned: { label: "Assigned",      color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+  answered: { label: "Under Review",  color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe" },
+  approved: { label: "Approved",      color: "#059669", bg: "#ecfdf5", border: "#6ee7b7" },
+};
 
 const CATEGORY_META = {
   General: { bg: "#EEF2FF", text: "#4338CA" },
-  Heart: { bg: "#FEF2F2", text: "#DC2626" },
-  Skin: { bg: "#FFF7ED", text: "#C2410C" },
-  Neuro: { bg: "#F5F3FF", text: "#7C3AED" },
-  Ortho: { bg: "#F0FDF4", text: "#16A34A" },
-  Dental: { bg: "#ECFDF5", text: "#059669" },
-  Eyes: { bg: "#EFF6FF", text: "#2563EB" },
-  Dizzy: { bg: "#FEF9C3", text: "#B45309" },
-  Mental: { bg: "#FDF4FF", text: "#A21CAF" },
-  Gut: { bg: "#F0FDF4", text: "#15803D" },
+  Heart:   { bg: "#FEF2F2", text: "#DC2626" },
+  Skin:    { bg: "#FFF7ED", text: "#C2410C" },
+  Neuro:   { bg: "#F5F3FF", text: "#7C3AED" },
+  Ortho:   { bg: "#F0FDF4", text: "#16A34A" },
+  Dental:  { bg: "#ECFDF5", text: "#059669" },
+  Eyes:    { bg: "#EFF6FF", text: "#2563EB" },
+  Dizzy:   { bg: "#FEF9C3", text: "#B45309" },
+  Mental:  { bg: "#FDF4FF", text: "#A21CAF" },
+  Gut:     { bg: "#F0FDF4", text: "#15803D" },
 };
 
-const FILTERS = ["All", "Pending", "Answered"];
+const fmt = (d) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
-const formatDate = (d) =>
-  new Date(d).toLocaleDateString("en-IN", {
-    day: "numeric", month: "short", year: "numeric",
-  });
+/* ── field label input reused in modals ── */
+function ModalField({ label, required, children }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 7 }}>
+        {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
 
-/* ── icons ── */
-const IconCal = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="4" width="18" height="18" rx="2" />
-    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-const IconUser = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-  </svg>
-);
-const IconSearch = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-const IconCheck = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const IconEdit = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const Spinner = () => <span className="qna-spinner" />;
+const inputStyle = {
+  width: "100%", padding: "10px 14px", border: "1.5px solid #e2e8f0",
+  borderRadius: 10, fontSize: 14, fontFamily: "inherit", outline: "none",
+  background: "#fff", color: "#0f172a", boxSizing: "border-box",
+};
 
-/* ── AnswerForm ── */
-function AnswerForm({ question, onSubmit, onCancel }) {
-  const [answerText, setAnswerText] = useState(question.answer || "");
-  const [doctorName, setDoctorName] = useState(question.doctor?.name || "");
-  const [doctorSpec, setDoctorSpec] = useState(question.doctor?.specialization || "");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+/* ── Assign Modal ── */
+function AssignModal({ question, token, onClose, onAssigned }) {
+  const [doctors,    setDoctors]    = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [doctorId,   setDoctorId]   = useState("");
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorSpec, setDoctorSpec] = useState("");
+  const [saving,     setSaving]     = useState(false);
+  const [error,      setError]      = useState("");
 
-  const handleAIDraft = async () => {
-    setLoading(true); setErr("");
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system:
-            "You are a helpful medical assistant drafting answers for doctors to review. " +
-            "Write a clear, empathetic response in 3–5 sentences. " +
-            "End with a recommendation to consult a doctor in person. " +
-            "Do not provide a definitive diagnosis.",
-          messages: [{ role: "user", content: `Category: ${question.category}\nPatient question: ${question.question}` }],
-        }),
-      });
-      const data = await resp.json();
-      const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-      if (text) setAnswerText(text);
-      else setErr("Could not generate draft. Please type manually.");
-    } catch {
-      setErr("Network error. Please type your answer manually.");
+  useEffect(() => {
+    axios.get(`${ADMIN_API}/admin/doctors`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => setDoctors(res.data.filter(d => d.approvalStatus === "approved")))
+      .catch(() => setDoctors([]))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const selectDoctor = (e) => {
+    const enrollmentId = e.target.value;
+    if (!enrollmentId) { setDoctorId(""); setDoctorName(""); setDoctorSpec(""); return; }
+    const d = doctors.find(d => d._id === enrollmentId);
+    if (d) {
+      setDoctorId(d.doctorId?._id || d._id);
+      setDoctorName(`${d.firstName || ""} ${d.surname || ""}`.trim() || d.doctorId?.name || "");
+      setDoctorSpec(d.specialization || "");
     }
-    setLoading(false);
   };
 
-  const handleSubmit = () => {
-    if (!answerText.trim()) { setErr("Answer cannot be empty."); return; }
-    onSubmit(answerText, doctorName, doctorSpec);
+  const submit = async () => {
+    if (!doctorName.trim()) { setError("Doctor name is required."); return; }
+    setSaving(true); setError("");
+    try {
+      const res = await axios.put(
+        `${API}/${question._id}/assign`,
+        { doctorId: doctorId || null, doctorName, doctorSpec },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onAssigned(res.data);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Failed to assign.");
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="qna-answer-form">
-      <div className="qna-answer-form-title"><IconEdit /> Write Answer</div>
-      <div className="qna-doctor-inputs">
-        <div className="qna-input-group">
-          <label>Doctor Name</label>
-          <input type="text" value={doctorName} onChange={(e) => setDoctorName(e.target.value)} placeholder="e.g. Dr. Priya Mehta" />
+    <div className="adp-overlay" onClick={onClose}>
+      <div className="adp-modal" onClick={e => e.stopPropagation()}>
+        <div className="adp-modal-header">
+          <h3 className="adp-modal-title">Assign to Doctor</h3>
+          <button className="adp-modal-close" onClick={onClose}>✕</button>
         </div>
-        <div className="qna-input-group">
-          <label>Specialization</label>
-          <input type="text" value={doctorSpec} onChange={(e) => setDoctorSpec(e.target.value)} placeholder="e.g. Cardiologist" />
+        <div className="adp-modal-body">
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5 }}>Question</div>
+            <div style={{ fontSize: 14, color: "#0f172a", lineHeight: 1.6 }}>
+              "{question.question.slice(0, 120)}{question.question.length > 120 ? "…" : ""}"
+            </div>
+          </div>
+
+          {error && (
+            <div style={{ padding: "9px 13px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, color: "#dc2626", fontSize: 13, marginBottom: 14 }}>
+              {error}
+            </div>
+          )}
+
+          <ModalField label="Select Enrolled Doctor">
+            {loading ? (
+              <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Loading doctors…</p>
+            ) : (
+              <select
+                value={doctors.find(d => (d.doctorId?._id || d._id) === doctorId)?._id || ""}
+                onChange={selectDoctor}
+                style={{ ...inputStyle }}
+              >
+                <option value="">— Pick from enrolled doctors —</option>
+                {doctors.map(d => {
+                  const name = `${d.firstName || ""} ${d.surname || ""}`.trim() || d.doctorId?.name || "Unknown";
+                  return <option key={d._id} value={d._id}>{name}{d.specialization ? ` (${d.specialization})` : ""}</option>;
+                })}
+              </select>
+            )}
+          </ModalField>
+
+          <ModalField label="Doctor Name" required>
+            <input style={inputStyle} value={doctorName} onChange={e => setDoctorName(e.target.value)} placeholder="e.g. Dr. Priya Mehta" />
+          </ModalField>
+
+          <ModalField label="Specialization">
+            <input style={inputStyle} value={doctorSpec} onChange={e => setDoctorSpec(e.target.value)} placeholder="e.g. Cardiologist" />
+          </ModalField>
         </div>
-      </div>
-      <textarea
-        className="qna-answer-textarea" rows={5} value={answerText}
-        onChange={(e) => { setAnswerText(e.target.value); setErr(""); }}
-        placeholder="Type the medical answer here, or click 'AI Draft' to generate a starting point…"
-      />
-      {loading && <div className="qna-ai-loading"><Spinner /> Generating AI-assisted draft…</div>}
-      {err && <div className="qna-form-err">{err}</div>}
-      <div className="qna-form-actions">
-        <button className="qna-submit-ans-btn" onClick={handleSubmit}><IconCheck /> Submit Answer</button>
-        <button className="qna-ai-btn" onClick={handleAIDraft} disabled={loading}>
-          {loading ? <><Spinner /> Generating…</> : "✦ AI Draft"}
-        </button>
-        <button className="qna-cancel-btn" onClick={onCancel}>Cancel</button>
+        <div className="adp-modal-footer">
+          <button className="adp-btn adp-btn--ghost" onClick={onClose}>Cancel</button>
+          <button className="adp-btn adp-btn--resolve" onClick={submit} disabled={saving} style={{ opacity: saving ? .6 : 1 }}>
+            {saving ? "Assigning…" : "Assign Doctor"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ══ Main QnAPage ══ */
-export default function QnAPage() {
-  const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("All");
-  const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState(null);
-  const [answeringId, setAnsweringId] = useState(null);
-  const [successId, setSuccessId] = useState(null);
+/* ── Approve Modal ── */
+function ApproveModal({ question, token, onClose, onApproved }) {
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState("");
 
+  const submit = async () => {
+    setSaving(true); setError("");
+    try {
+      const res = await axios.put(
+        `${API}/${question._id}/approve`, {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onApproved(res.data);
+    } catch (err) {
+      setError(err.response?.data?.msg || "Failed to approve.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="adp-overlay" onClick={onClose}>
+      <div className="adp-modal" onClick={e => e.stopPropagation()}>
+        <div className="adp-modal-header">
+          <h3 className="adp-modal-title">Approve &amp; Publish Answer</h3>
+          <button className="adp-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="adp-modal-body">
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 5 }}>Question</div>
+            <div style={{ fontSize: 14, color: "#0f172a", lineHeight: 1.6 }}>
+              "{question.question.slice(0, 120)}{question.question.length > 120 ? "…" : ""}"
+            </div>
+          </div>
+
+          {question.assignedDoctorName && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: "#2563eb", flexShrink: 0 }}>
+                {(question.assignedDoctorName[0] || "D").toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>{question.assignedDoctorName}</div>
+                {question.assignedDoctorSpec && <div style={{ fontSize: 12, color: "#64748b" }}>{question.assignedDoctorSpec}</div>}
+              </div>
+            </div>
+          )}
+
+          <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 8 }}>Doctor's Answer</div>
+            <p style={{ fontSize: 14, color: "#1e293b", lineHeight: 1.7, margin: 0 }}>{question.answer}</p>
+          </div>
+
+          {error && (
+            <div style={{ padding: "9px 13px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, color: "#dc2626", fontSize: 13, marginBottom: 12 }}>
+              {error}
+            </div>
+          )}
+
+          <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+            Approving will publish this answer publicly and notify the patient.
+          </p>
+        </div>
+        <div className="adp-modal-footer">
+          <button className="adp-btn adp-btn--ghost" onClick={onClose}>Cancel</button>
+          <button
+            className="adp-btn adp-btn--approve"
+            onClick={submit}
+            disabled={saving}
+            style={{ opacity: saving ? .6 : 1, padding: "8px 20px", fontSize: 13 }}
+          >
+            {saving ? "Publishing…" : "✓ Approve & Publish"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main ── */
+const FILTERS = ["all", "pending", "assigned", "answered", "approved"];
+
+export default function QnAPage() {
   const token = localStorage.getItem("adminToken");
   const headers = { Authorization: `Bearer ${token}` };
 
+  const [questions,  setQuestions]  = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [filter,     setFilter]     = useState("all");
+  const [search,     setSearch]     = useState("");
+  const [expandedId, setExpandedId] = useState(null);
+  const [assignFor,  setAssignFor]  = useState(null);
+  const [approveFor, setApproveFor] = useState(null);
+  const [toast,      setToast]      = useState(null);
+
+  const showToast = (msg, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 4000); };
+
   const fetchQuestions = useCallback(() => {
-    axios.get(API, { headers })
-      .then((res) => setQuestions(res.data))
-      .catch((err) => console.error("fetch questions error:", err))
+    setLoading(true);
+    axios.get(`${API}/admin/all`, { headers })
+      .then(res => setQuestions(res.data))
+      .catch(err => console.error("fetch error:", err))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
 
-  const handleSubmitAnswer = async (id, answerText, doctorName, doctorSpec) => {
-    try {
-      const res = await axios.put(
-        `${API}/${id}/answer`,
-        { answer: answerText, doctorName, doctorSpec },
-        { headers }
-      );
-      setQuestions((prev) => prev.map((q) => q._id === id ? res.data : q));
-      setAnsweringId(null);
-      setSuccessId(id);
-      setTimeout(() => setSuccessId(null), 4000);
-    } catch (err) {
-      console.error("submit answer error:", err);
-      alert(err.response?.data?.msg || "Failed to submit answer.");
-    }
+  const updateQ = (updated) => setQuestions(prev => prev.map(q => q._id === updated._id ? updated : q));
+
+  const handleAssigned = (updated) => {
+    updateQ(updated);
+    setAssignFor(null);
+    showToast(`Question assigned to ${updated.assignedDoctorName}.`);
   };
 
-  const pendingCount = questions.filter((q) => !q.answered).length;
-  const answeredCount = questions.filter((q) => q.answered).length;
+  const handleApproved = (updated) => {
+    updateQ(updated);
+    setApproveFor(null);
+    showToast("Answer approved and published!");
+  };
 
-  const filtered = questions.filter((q) => {
-    const matchFilter =
-      filter === "All" ||
-      (filter === "Pending" && !q.answered) ||
-      (filter === "Answered" && q.answered);
-    const matchSearch =
-      !search.trim() ||
+  const counts = FILTERS.reduce((acc, f) => {
+    acc[f] = f === "all" ? questions.length : questions.filter(q => q.status === f).length;
+    return acc;
+  }, {});
+
+  const filtered = questions.filter(q => {
+    const matchFilter = filter === "all" || q.status === filter;
+    const matchSearch = !search.trim() ||
       q.question.toLowerCase().includes(search.toLowerCase()) ||
+      (q.user?.name || "").toLowerCase().includes(search.toLowerCase()) ||
       q.category.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
-  if (loading) return <p style={{ padding: 24, color: "#6b7280" }}>Loading questions…</p>;
+  const statCards = [
+    { label: "Total",        value: counts.all,      cls: "",                filterKey: "all",      icon: "💬" },
+    { label: "Pending",      value: counts.pending,  cls: "adp-stat--amber", filterKey: "pending",  icon: "⏳" },
+    { label: "Assigned",     value: counts.assigned, cls: "adp-stat--blue",  filterKey: "assigned", icon: "👨‍⚕️" },
+    { label: "Under Review", value: counts.answered, cls: "adp-stat--purple",filterKey: "answered", icon: "🔍" },
+    { label: "Live",         value: counts.approved, cls: "adp-stat--green", filterKey: "approved", icon: "🌐" },
+  ];
 
   return (
-    <div className="qna-page">
-      {/* header */}
-      <div className="qna-page-header">
-        <div className="qna-header-inner">
-          <div>
-            <h1>QnA Admin Panel</h1>
-            <p>Review patient questions and submit doctor responses.</p>
-          </div>
-          <div className="qna-stats">
-            <div className="qna-stat-card">
-              <div className="qna-stat-val">{questions.length}</div>
-              <div className="qna-stat-label">Total</div>
-            </div>
-            <div className="qna-stat-card pending">
-              <div className="qna-stat-val">{pendingCount}</div>
-              <div className="qna-stat-label">Pending</div>
-            </div>
-            <div className="qna-stat-card answered">
-              <div className="qna-stat-val">{answeredCount}</div>
-              <div className="qna-stat-label">Answered</div>
-            </div>
-          </div>
+    <div>
+      {toast && (
+        <div className={`adp-toast ${toast.ok ? "adp-toast--ok" : "adp-toast--err"}`}>
+          <span>{toast.ok ? "✓" : "!"}</span> {toast.msg}
         </div>
+      )}
+
+      <div className="adp-header">
+        <span className="adp-eyebrow">Admin Panel</span>
+        <h1 className="adp-title">Medical Q&amp;A</h1>
+        <p className="adp-sub">Manage patient questions through the full pipeline: assign → answer → approve.</p>
       </div>
 
-      {/* controls */}
-      <div className="qna-controls">
-        <div className="qna-search-wrap">
-          <IconSearch />
-          <input type="text" placeholder="Search questions or categories…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <div className="qna-filters">
-          {FILTERS.map((f) => (
-            <button key={f} className={`qna-filter-pill${filter === f ? " active" : ""}`} onClick={() => setFilter(f)}>
-              {f}
-              {f === "Pending" && pendingCount > 0 && <span className="qna-filter-count">{pendingCount}</span>}
-            </button>
-          ))}
-        </div>
+      <div className="adp-stats">
+        {statCards.map(s => (
+          <div
+            key={s.label}
+            className={`adp-stat ${s.cls}`}
+            style={{ cursor: "pointer" }}
+            onClick={() => setFilter(s.filterKey)}
+          >
+            <div className="adp-stat-icon">{s.icon}</div>
+            <div className="adp-stat-value">{s.value}</div>
+            <div className="adp-stat-label">{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* list */}
-      <div className="qna-list">
-        {filtered.length === 0 && (
-          <div className="qna-empty">
-            <div className="qna-empty-icon">📭</div>
-            <p>No questions found for this filter.</p>
+      <div className="adp-card">
+        <div className="adp-card-header" style={{ flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: 10 }}>
+            <h2 className="adp-card-title">Questions ({filtered.length})</h2>
+            <div className="adp-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                placeholder="Search questions, users, categories…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-        )}
 
-        {filtered.map((q, i) => {
-          const col = CATEGORY_META[q.category] || CATEGORY_META.General;
-          const isExpanded = expandedId === q._id;
-          const isAnswering = answeringId === q._id;
-          const showSuccess = successId === q._id;
+          <div className="adp-tabs">
+            {FILTERS.map(f => (
+              <button key={f} className={`adp-tab ${filter === f ? "active" : ""}`} onClick={() => setFilter(f)}>
+                {f === "all" ? "All" : f === "answered" ? "Under Review" : f.charAt(0).toUpperCase() + f.slice(1)}
+                <span className="adp-tab-count">{counts[f]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-          return (
-            <div
-              className={`qna-q-card${q.answered ? " is-answered" : ""}`}
-              key={q._id}
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              {/* top row */}
-              <div className="qna-card-top">
-                <div className="qna-card-left">
-                  <span className="qna-cat-badge" style={{ background: col.bg, color: col.text }}>{q.category}</span>
-                  <span className={`qna-status-badge ${q.answered ? "answered" : "pending"}`}>
-                    {q.answered ? "✓ Answered" : "⏳ Pending"}
-                  </span>
-                </div>
-                <div className="qna-card-right">
-                  <span className="qna-date"><IconCal /> {formatDate(q.createdAt)}</span>
-                </div>
-              </div>
+        <div style={{ padding: "16px 20px" }}>
+          {loading ? (
+            <div className="adp-loading"><div className="adp-spinner" /><p>Loading questions…</p></div>
+          ) : filtered.length === 0 ? (
+            <div className="adp-empty">
+              <div className="adp-empty-icon">📭</div>
+              <h3>No questions found</h3>
+              <p>No questions match your current filter.</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {filtered.map(q => {
+                const col = CATEGORY_META[q.category] || CATEGORY_META.General;
+                const sm  = STATUS_META[q.status]    || STATUS_META.pending;
+                const isEx = expandedId === q._id;
 
-              {/* question text */}
-              <div className="qna-q-text" onClick={() => setExpandedId(isExpanded ? null : q._id)}>
-                {isExpanded ? q.question : q.question.slice(0, 180) + (q.question.length > 180 ? "…" : "")}
-                {q.question.length > 180 && (
-                  <span className="qna-toggle-text">{isExpanded ? " Show less" : " Read more"}</span>
-                )}
-              </div>
-
-              {/* existing answer */}
-              {q.answered && q.answer && !isAnswering && (
-                <div className="qna-existing-answer">
-                  {q.doctor?.name && (
-                    <div className="qna-answered-by">
-                      <div className="qna-doc-avatar" style={{ background: col.bg, color: col.text }}>
-                        {q.doctor.name.split(" ").pop()[0]}
-                      </div>
-                      <div>
-                        <div className="qna-doc-name"><IconUser /> {q.doctor.name}</div>
-                        <div className="qna-doc-spec">{q.doctor.specialization}</div>
-                      </div>
-                    </div>
-                  )}
-                  <div className="qna-answer-body">
-                    <div className="qna-answer-label">Doctor's Answer</div>
-                    <p>{q.answer}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* success flash */}
-              {showSuccess && (
-                <div className="qna-success-flash">
-                  <IconCheck /> Answer saved to MongoDB and now visible on the patient page.
-                </div>
-              )}
-
-              {/* answer form */}
-              {isAnswering && (
-                <AnswerForm
-                  question={q}
-                  onSubmit={(ans, name, spec) => handleSubmitAnswer(q._id, ans, name, spec)}
-                  onCancel={() => setAnsweringId(null)}
-                />
-              )}
-
-              {/* actions */}
-              {!isAnswering && (
-                <div className="qna-card-actions">
-                  <button
-                    className={`qna-answer-btn${q.answered ? " edit" : ""}`}
-                    onClick={() => setAnsweringId(q._id)}
+                return (
+                  <div
+                    key={q._id}
+                    style={{
+                      background: "#fff",
+                      border: "1.5px solid #e2e8f0",
+                      borderLeft: `4px solid ${sm.color}`,
+                      borderRadius: 12,
+                      padding: "18px 20px",
+                    }}
                   >
-                    {q.answered ? <><IconEdit /> Edit Answer</> : "Answer this question →"}
-                  </button>
-                </div>
-              )}
+                    {/* Header row */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: col.bg, color: col.text }}>{q.category}</span>
+                        <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: sm.bg, color: sm.color, border: `1px solid ${sm.border}` }}>{sm.label}</span>
+                        {q.user?.name && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#64748b" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+                            {q.user.name}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" }}>{fmt(q.createdAt)}</span>
+                    </div>
+
+                    {/* Question text */}
+                    <div
+                      style={{ fontSize: 14, lineHeight: 1.75, color: "#1e293b", marginBottom: 12, cursor: q.question.length > 200 ? "pointer" : "default" }}
+                      onClick={() => q.question.length > 200 && setExpandedId(isEx ? null : q._id)}
+                    >
+                      {isEx ? q.question : q.question.slice(0, 200) + (q.question.length > 200 ? "…" : "")}
+                      {q.question.length > 200 && (
+                        <span style={{ color: "#19c9a3", fontWeight: 700, fontSize: 12, marginLeft: 6 }}>
+                          {isEx ? "Show less" : "Read more"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Assigned doctor chip */}
+                    {q.assignedDoctorName && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, marginBottom: 12, fontSize: 13 }}>
+                        <span style={{ fontSize: 15 }}>👨‍⚕️</span>
+                        <span style={{ fontWeight: 600, color: "#1d4ed8" }}>{q.assignedDoctorName}</span>
+                        {q.assignedDoctorSpec && <span style={{ color: "#64748b" }}>— {q.assignedDoctorSpec}</span>}
+                      </div>
+                    )}
+
+                    {/* Answer block */}
+                    {q.answer && (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "12px 16px", marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 6 }}>
+                          Doctor's Answer
+                        </div>
+                        <p style={{ fontSize: 13.5, color: "#1e293b", lineHeight: 1.7, margin: 0 }}>{q.answer}</p>
+                      </div>
+                    )}
+
+                    {/* Action row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 12, borderTop: "1px solid #f1f5f9", flexWrap: "wrap" }}>
+                      {q.status === "pending" && (
+                        <button className="adp-btn adp-btn--resolve" onClick={() => setAssignFor(q)}>
+                          👨‍⚕️ Assign to Doctor
+                        </button>
+                      )}
+                      {q.status === "assigned" && (
+                        <button className="adp-btn adp-btn--ghost" onClick={() => setAssignFor(q)}>
+                          ↺ Re-assign Doctor
+                        </button>
+                      )}
+                      {q.status === "answered" && (
+                        <>
+                          <button
+                            className="adp-btn adp-btn--approve"
+                            onClick={() => setApproveFor(q)}
+                            style={{ padding: "7px 16px", fontSize: 12.5 }}
+                          >
+                            ✓ Approve &amp; Publish
+                          </button>
+                          <button className="adp-btn adp-btn--ghost" onClick={() => setAssignFor(q)}>
+                            ↺ Re-assign
+                          </button>
+                        </>
+                      )}
+                      {q.status === "approved" && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          fontSize: 12, fontWeight: 700, color: "#059669",
+                          background: "#ecfdf5", border: "1px solid #6ee7b7",
+                          padding: "5px 14px", borderRadius: 20,
+                        }}>
+                          🌐 Live — visible to users
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
+
+      {assignFor  && <AssignModal  question={assignFor}  token={token} onClose={() => setAssignFor(null)}  onAssigned={handleAssigned} />}
+      {approveFor && <ApproveModal question={approveFor} token={token} onClose={() => setApproveFor(null)} onApproved={handleApproved} />}
     </div>
   );
 }

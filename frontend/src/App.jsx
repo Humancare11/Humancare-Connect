@@ -42,6 +42,7 @@ import DoctorAppointments from "./pages/doctors/DoctorAppointments";
 import DoctorPatients from "./pages/doctors/DoctorPatients";
 import DoctorMessages from "./pages/doctors/DoctorMessages";
 import RaiseTicket from "./pages/doctors/RaiseTicket";
+import DoctorQnA from "./pages/doctors/DoctorQnA";
 import DoctorAnalytics from "./pages/doctors/DoctorAnalytics";
 import DoctorSettings from "./pages/doctors/DoctorSettings";
 
@@ -53,8 +54,16 @@ import FavouriteDoctors from "./pages/user/FavouriteDoctors";
 import LabAppointments from "./pages/user/LabAppointments";
 import ProfileSettings from "./pages/user/ProfileSettings";
 import ChangePassword from "./pages/user/ChangePassword";
+import MyRecords from "./pages/user/MyRecords";
+import UserRaiseTicket from "./pages/user/RaiseTicket";
 
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLayout        from "./pages/admin/AdminLayout";
+import AdminDashboard     from "./pages/admin/AdminDashboard";
+import ManageDoctors      from "./pages/admin/ManageDoctors";
+import ManageUsers        from "./pages/admin/ManageUsers";
+import AdminAppointments  from "./pages/admin/AdminAppointments";
+import AdminQnA           from "./pages/admin/QnAPage";
+import AdminTickets       from "./pages/admin/SupportTickets";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
 
@@ -176,6 +185,22 @@ function AppLayout() {
             </UserLayout>
           }
         />
+        <Route
+          path="/user/my-records"
+          element={
+            <UserLayout>
+              <MyRecords />
+            </UserLayout>
+          }
+        />
+        <Route
+          path="/user/raise-ticket"
+          element={
+            <UserLayout>
+              <UserRaiseTicket />
+            </UserLayout>
+          }
+        />
 
         <Route
           path="/profile"
@@ -234,6 +259,14 @@ function AppLayout() {
           }
         />
         <Route
+          path="/doctor-dashboard/qna"
+          element={
+            <DoctorLayout>
+              <DoctorQnA />
+            </DoctorLayout>
+          }
+        />
+        <Route
           path="/doctor-dashboard/analytics"
           element={
             <DoctorLayout>
@@ -254,14 +287,12 @@ function AppLayout() {
 
         <Route path="/adminauth" element={<AdminAuth />} />
 
-        <Route
-          path="/admin-dashboard"
-          element={
-            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
-              <AdminDashboard />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/admin-dashboard" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminDashboard /></AdminLayout></PrivateRoute>} />
+        <Route path="/admin-dashboard/manage-doctors" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><ManageDoctors /></AdminLayout></PrivateRoute>} />
+        <Route path="/admin-dashboard/manage-users" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><ManageUsers /></AdminLayout></PrivateRoute>} />
+        <Route path="/admin-dashboard/appointments" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminAppointments /></AdminLayout></PrivateRoute>} />
+        <Route path="/admin-dashboard/qna" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminQnA /></AdminLayout></PrivateRoute>} />
+        <Route path="/admin-dashboard/tickets" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminTickets /></AdminLayout></PrivateRoute>} />
 
         <Route
           path="/superadmin-dashboard"

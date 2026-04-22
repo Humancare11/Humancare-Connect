@@ -72,6 +72,9 @@ const IconChevRight = () => (
 );
 
 export default function AskDoctor() {
+  const token      = localStorage.getItem("token");
+  const isLoggedIn = !!token;
+
   const [questions, setQuestions] = useState([]);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -109,21 +112,22 @@ export default function AskDoctor() {
   /* submit */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      setErrors({ text: "You must be logged in to ask a question." });
+      return;
+    }
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setSubmitting(true);
     try {
-      const res = await axios.post(`${API}/ask`, {
-        question: text,
-        category,
-        name: "Anonymous",
+      await axios.post(`${API}/ask`, { question: text, category }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      setQuestions((prev) => [res.data, ...prev]);
       setText(""); setFile(null); setAgreed(false);
       setErrors({}); setCategory("General"); setCurrentPage(1);
       setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 6000);
+      setTimeout(() => setSubmitted(false), 8000);
     } catch (err) {
       setErrors({ text: err.response?.data?.msg || "Failed to submit. Please try again." });
     }
@@ -170,10 +174,22 @@ export default function AskDoctor() {
                 <div>
                   <div className="ad-success-title">Question submitted successfully!</div>
                   <div className="ad-success-sub">
-                    We will review your question and respond within 2 hours.
-                    You can see it listed below.
+                    Your question has been received. A verified doctor will answer it within <strong>12 hours</strong>.
+                    Track the status in your <a href="/user/medical-questions" style={{ color: "#fff", textDecoration: "underline" }}>Medical Questions</a> dashboard.
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* login gate */}
+            {!isLoggedIn && (
+              <div style={{
+                background: "#fef3c7", border: "1px solid #fcd34d",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+                fontSize: 14, color: "#92400e", display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 18 }}>🔒</span>
+                <span>You must <a href="/login" style={{ color: "#b45309", fontWeight: 600 }}>log in</a> to ask a question.</span>
               </div>
             )}
 
@@ -269,8 +285,8 @@ export default function AskDoctor() {
                 {errors.agreed && <span className="ad-err-msg">{errors.agreed}</span>}
               </div>
 
-              <button type="submit" className="ad-submit-btn" disabled={submitting}>
-                {submitting ? "Submitting…" : "Ask Doctor Now →"}
+              <button type="submit" className="ad-submit-btn" disabled={submitting || !isLoggedIn}>
+                {submitting ? "Submitting…" : !isLoggedIn ? "Log in to Ask →" : "Ask Doctor Now →"}
               </button>
             </form>
           </div>

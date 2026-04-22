@@ -1,7 +1,8 @@
 // controllers/ticketController.js
-const Ticket = require("../models/Ticket");
-const Doctor = require("../models/Doctor");
-const User = require("../models/User");
+const Ticket     = require("../models/Ticket");
+const UserTicket = require("../models/UserTicket");
+const Doctor     = require("../models/Doctor");
+const User       = require("../models/User");
 
 // Create a ticket (for doctors)
 const createTicket = async (req, res) => {
@@ -94,9 +95,80 @@ const resolveTicket = async (req, res) => {
   }
 };
 
+// Create a ticket (for users/patients)
+const createUserTicket = async (req, res) => {
+  try {
+    if (req.user.role !== "user") {
+      return res.status(403).json({ message: "Access denied. Patients only." });
+    }
+    const { title, description, category } = req.body;
+    if (!title || !description) {
+      return res.status(400).json({ message: "Title and description are required." });
+    }
+    const ticket = await UserTicket.create({
+      title,
+      description,
+      category: category || "other",
+      createdBy: req.user.id,
+    });
+    res.status(201).json({ message: "Ticket submitted successfully.", ticket });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Get tickets for the logged-in user/patient
+const getUserTickets = async (req, res) => {
+  try {
+    if (req.user.role !== "user") {
+      return res.status(403).json({ message: "Access denied. Patients only." });
+    }
+    const tickets = await UserTicket.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
+    res.json(tickets);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Get all user tickets (for admin)
+const getAllUserTickets = async (req, res) => {
+  try {
+    const tickets = await UserTicket.find({})
+      .populate("createdBy", "name email")
+      .populate("resolvedBy", "name email")
+      .sort({ createdAt: -1 });
+    res.json(tickets);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Resolve a user ticket (for admin)
+const resolveUserTicket = async (req, res) => {
+  try {
+    const ticket = await UserTicket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: "Ticket not found." });
+    ticket.status     = "resolved";
+    ticket.resolvedBy = req.user.id;
+    ticket.resolution = req.body.resolution || "";
+    await ticket.save();
+    res.json({ message: "Ticket resolved successfully.", ticket });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   createTicket,
   getDoctorTickets,
   getAllTickets,
   resolveTicket,
+  createUserTicket,
+  getUserTickets,
+  getAllUserTickets,
+  resolveUserTicket,
 };

@@ -63,6 +63,7 @@ app.use("/api/doctor", require("./routes/doctorAuth"));
 app.use("/api/appointments", require("./routes/appointments"));
 app.use("/api/upload", require("./routes/upload"));
 app.use("/api/tickets", require("./routes/tickets"));
+app.use("/api/medical", require("./routes/medical"));
 
 app.get("/api/health", (req, res) => {
   res.send("API Running...");
