@@ -1,23 +1,20 @@
 const express = require("express");
 const router  = express.Router();
-const { verifyToken } = require("../middleware/verifyToken");
+const { verifyUserToken, verifyDoctorToken } = require("../middleware/verifyToken");
 const {
-  getDoctorPatients,
-  getPatientHistory,
-  createPrescription,
-  createMedicalCertificate,
-  getMyPrescriptions,
-  getMyMedicalCertificates,
+  getDoctorPatients, getPatientHistory,
+  createPrescription, createMedicalCertificate,
+  getMyPrescriptions, getMyMedicalCertificates,
 } = require("../controllers/medicalController");
 
 // Doctor routes
-router.get("/patients",                   verifyToken, getDoctorPatients);
-router.get("/patients/:patientId/history", verifyToken, getPatientHistory);
-router.post("/prescriptions",             verifyToken, createPrescription);
-router.post("/certificates",              verifyToken, createMedicalCertificate);
+router.get("/patients",                    verifyDoctorToken, getDoctorPatients);
+router.get("/patients/:patientId/history", verifyDoctorToken, getPatientHistory);
+router.post("/prescriptions",              verifyDoctorToken, createPrescription);
+router.post("/certificates",               verifyDoctorToken, createMedicalCertificate);
 
 // Patient routes
-router.get("/my-prescriptions",  verifyToken, getMyPrescriptions);
-router.get("/my-certificates",   verifyToken, getMyMedicalCertificates);
+router.get("/my-prescriptions", verifyUserToken, getMyPrescriptions);
+router.get("/my-certificates",  verifyUserToken, getMyMedicalCertificates);
 
 module.exports = router;

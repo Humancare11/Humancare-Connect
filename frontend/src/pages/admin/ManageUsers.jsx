@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 function UserModal({ user, onClose, onDelete }) {
   if (!user) return null;
@@ -53,10 +51,8 @@ export default function ManageUsers() {
   const [search,   setSearch]   = useState("");
   const [toast,    setToast]    = useState(null);
 
-  const token = localStorage.getItem("adminToken");
-
   useEffect(() => {
-    axios.get(`${API}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/admin/users")
       .then(r => setUsers(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -67,7 +63,7 @@ export default function ManageUsers() {
   const handleDelete = async (userId, userName) => {
     if (!window.confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
     try {
-      await axios.delete(`${API}/api/admin/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await api.delete(`/api/admin/users/${userId}`);
       setUsers(prev => prev.filter(u => u._id !== userId));
       setSelected(null);
       showToast("User deleted.");

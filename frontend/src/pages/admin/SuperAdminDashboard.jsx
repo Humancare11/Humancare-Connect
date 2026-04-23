@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Dashboard.css";
+import api from "../../api";
+import { useAdmin } from "../../context/AdminContext";
 
 export default function SuperAdminDashboard() {
-  const [user, setUser] = useState(null);
+  const { admin: user, loading: authLoading, logout: contextLogout } = useAdmin();
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -13,20 +14,14 @@ export default function SuperAdminDashboard() {
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("adminToken");
-  const headers = { Authorization: `Bearer ${token}` };
-
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("adminUser") || "null");
-    if (!stored || stored.role !== "superadmin") {
-      navigate("/superadmin-login");
-      return;
+    if (!authLoading && (!user || user.role !== "superadmin")) {
+      navigate("/adminauth");
     }
-    setUser(stored);
-  }, [navigate]);
+  }, [user, authLoading, navigate]);
 
   const fetchAdmins = () => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/superadmin/admins`, { headers })
+    api.get("/api/superadmin/admins")
       .then((res) => setAdmins(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -41,7 +36,7 @@ export default function SuperAdminDashboard() {
     setFormError(""); setFormSuccess("");
     setCreating(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/superadmin/admins`, form, { headers });
+      const res = await api.post("/api/superadmin/admins", form);
       setAdmins((prev) => [res.data.admin, ...prev]);
       setForm({ name: "", email: "", password: "" });
       setFormSuccess("Admin created successfully!");
@@ -55,20 +50,19 @@ export default function SuperAdminDashboard() {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Remove admin "${name}"? This cannot be undone.`)) return;
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/superadmin/admins/${id}`, { headers });
+      await api.delete(`/api/superadmin/admins/${id}`);
       setAdmins((prev) => prev.filter((a) => a._id !== id));
     } catch (err) {
       alert(err.response?.data?.msg || "Failed to remove admin.");
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
-    navigate("/superadmin-login");
+  const handleLogout = async () => {
+    await contextLogout();
+    navigate("/adminauth");
   };
 
-  if (!user) return null;
+  if (authLoading || !user) return null;
 
   return (
     <div className="dash-wrapper">

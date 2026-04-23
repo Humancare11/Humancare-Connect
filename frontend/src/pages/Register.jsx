@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../api";
 import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import "./register.css";
@@ -41,7 +41,7 @@ export default function Register() {
     const { terms, ...data } = form;
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, data);
+      await api.post("/api/auth/register", data);
       alert("Registered Successfully ✅");
       navigate("/login");
     } catch (err) {

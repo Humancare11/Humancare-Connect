@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Doctor.css";
-
-const API_BASE = "/api";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 export default function DoctorRegister() {
   const navigate = useNavigate();
+  const { login } = useDoctorAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -43,32 +44,16 @@ export default function DoctorRegister() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
-          confirmPassword: form.confirmPassword,
-        }),
+      const res = await api.post("/api/doctor/register", {
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        confirmPassword: form.confirmPassword,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Registration failed. Please try again.");
-        return;
-      }
-
-      // Store JWT token and minimal doctor info for session
-      localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
-
+      login(res.data.doctor);
       navigate("/doctor-dashboard");
     } catch (err) {
-      console.error("Registration error:", err);
-      setError("Could not connect to server. Please try again.");
+      setError(err.response?.data?.message || "Could not connect to server. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ const jwt    = require("jsonwebtoken");
 const User   = require("../models/User");
 const Doctor = require("../models/Doctor");
 const { OAuth2Client } = require("google-auth-library");
+const { COOKIE_OPTS }  = require("../middleware/verifyToken");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -14,6 +15,13 @@ const generateToken = (user) =>
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
+
+// ── helper: pick cookie name by role ─────────────────────────
+const cookieName = (role) => {
+  if (role === "admin" || role === "superadmin") return "adminToken";
+  if (role === "doctor") return "doctorToken";
+  return "userToken";
+};
 
 // ── helper: safe user object (no password) ────────────────────
 const safeUser = (user) => ({
@@ -63,11 +71,9 @@ const register = async (req, res) => {
       gender: gender || "",
     });
 
-    return res.status(201).json({
-      msg:   "Registration successful.",
-      token: generateToken(user),
-      user:  safeUser(user),
-    });
+    const token = generateToken(user);
+    res.cookie("userToken", token, COOKIE_OPTS);
+    return res.status(201).json({ msg: "Registration successful.", user: safeUser(user) });
   } catch (err) {
     console.error("register error:", err);
     return res.status(500).json({ msg: "Server error. Please try again." });
@@ -100,11 +106,9 @@ const login = async (req, res) => {
     if (!match)
       return res.status(400).json({ msg: "Invalid email or password." });
 
-    return res.json({
-      msg:   "Login successful.",
-      token: generateToken(user),
-      user:  safeUser(user),
-    });
+    const token = generateToken(user);
+    res.cookie("userToken", token, COOKIE_OPTS);
+    return res.json({ msg: "Login successful.", user: safeUser(user) });
   } catch (err) {
     console.error("login error:", err);
     return res.status(500).json({ msg: "Server error. Please try again." });
@@ -220,11 +224,9 @@ const adminLogin = async (req, res) => {
     if (!match)
       return res.status(401).json({ msg: "Invalid email or password." });
 
-    return res.json({
-      msg: "Login successful.",
-      token: generateToken(user),
-      user: safeUser(user),
-    });
+    const token = generateToken(user);
+    res.cookie("adminToken", token, COOKIE_OPTS);
+    return res.json({ msg: "Login successful.", user: safeUser(user) });
   } catch (err) {
     console.error("adminLogin error:", err);
     return res.status(500).json({ msg: "Server error. Please try again." });
@@ -297,39 +299,20 @@ const googleAuthUser = async (req, res) => {
         user.googleId = googleId;
         await user.save();
       }
-      return res.json({
-        msg:   "Login successful.",
-        token: generateToken(user),
-        user:  safeUser(user),
-      });
+      const token = generateToken(user);
+      res.cookie("userToken", token, COOKIE_OPTS);
+      return res.json({ msg: "Login successful.", user: safeUser(user) });
     }
 
     // ── New account ────────────────────────────────────
-    // If the caller hasn't supplied the profile fields yet, ask for them
     if (!mobile || !dob || !gender) {
-      return res.status(200).json({
-        isNewUser:   true,
-        googleName:  name,
-        googleEmail: email,
-      });
+      return res.status(200).json({ isNewUser: true, googleName: name, googleEmail: email });
     }
 
-    // All fields present → create the complete account
-    user = await User.create({
-      name,
-      email,
-      googleId,
-      role:   "user",
-      mobile,
-      dob,
-      gender,
-    });
-
-    return res.status(201).json({
-      msg:   "Registration successful.",
-      token: generateToken(user),
-      user:  safeUser(user),
-    });
+    user = await User.create({ name, email, googleId, role: "user", mobile, dob, gender });
+    const newToken = generateToken(user);
+    res.cookie("userToken", newToken, COOKIE_OPTS);
+    return res.status(201).json({ msg: "Registration successful.", user: safeUser(user) });
   } catch (err) {
     console.error("googleAuthUser error:", err);
     return res.status(500).json({ msg: "Google Sign-In failed. Please try again." });
@@ -376,16 +359,11 @@ const googleAuthDoctor = async (req, res) => {
       { expiresIn: "7d" }
     );
 
+    res.cookie("doctorToken", token, COOKIE_OPTS);
     return res.status(isNewUser ? 201 : 200).json({
-      message:  isNewUser ? "Registration successful." : "Login successful.",
+      message: isNewUser ? "Registration successful." : "Login successful.",
       isNewUser,
-      token,
-      doctor: {
-        id:         doctor._id,
-        name:       doctor.name,
-        email:      doctor.email,
-        isEnrolled: doctor.isEnrolled,
-      },
+      doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });
   } catch (err) {
     console.error("googleAuthDoctor error:", err);
@@ -428,4 +406,48 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, doctorRegister, doctorLogin, adminLogin, updateProfile, googleAuthUser, googleAuthDoctor, changePassword };
+// ════════════════════════════════════════════
+//  10. /ME — return current user from cookie
+// ════════════════════════════════════════════
+const me = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ msg: "User not found." });
+    return res.json({ user: safeUser(user) });
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error." });
+  }
+};
+
+// ════════════════════════════════════════════
+//  11. /ADMIN-ME — return current admin from cookie
+// ════════════════════════════════════════════
+const adminMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user || !["admin", "superadmin"].includes(user.role))
+      return res.status(404).json({ msg: "Admin not found." });
+    return res.json({ user: safeUser(user) });
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error." });
+  }
+};
+
+// ════════════════════════════════════════════
+//  12. LOGOUT — clear cookies
+// ════════════════════════════════════════════
+const logout = (req, res) => {
+  res.clearCookie("userToken", COOKIE_OPTS);
+  res.json({ msg: "Logged out." });
+};
+
+const adminLogout = (req, res) => {
+  res.clearCookie("adminToken", COOKIE_OPTS);
+  res.json({ msg: "Logged out." });
+};
+
+module.exports = {
+  register, login, doctorRegister, doctorLogin, adminLogin,
+  updateProfile, googleAuthUser, googleAuthDoctor, changePassword,
+  me, adminMe, logout, adminLogout,
+};

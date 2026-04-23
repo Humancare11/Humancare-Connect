@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-
-const API = `${import.meta.env.VITE_API_URL}/api/qna`;
-const ADMIN_API = `${import.meta.env.VITE_API_URL}/api`;
+import api from "../../api";
 
 const STATUS_META = {
   pending:  { label: "Pending",       color: "#d97706", bg: "#fef3c7", border: "#fcd34d" },
@@ -45,7 +42,7 @@ const inputStyle = {
 };
 
 /* ── Assign Modal ── */
-function AssignModal({ question, token, onClose, onAssigned }) {
+function AssignModal({ question, onClose, onAssigned }) {
   const [doctors,    setDoctors]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [doctorId,   setDoctorId]   = useState("");
@@ -55,11 +52,11 @@ function AssignModal({ question, token, onClose, onAssigned }) {
   const [error,      setError]      = useState("");
 
   useEffect(() => {
-    axios.get(`${ADMIN_API}/admin/doctors`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/admin/doctors")
       .then(res => setDoctors(res.data.filter(d => d.approvalStatus === "approved")))
       .catch(() => setDoctors([]))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   const selectDoctor = (e) => {
     const enrollmentId = e.target.value;
@@ -76,11 +73,9 @@ function AssignModal({ question, token, onClose, onAssigned }) {
     if (!doctorName.trim()) { setError("Doctor name is required."); return; }
     setSaving(true); setError("");
     try {
-      const res = await axios.put(
-        `${API}/${question._id}/assign`,
-        { doctorId: doctorId || null, doctorName, doctorSpec },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/api/qna/${question._id}/assign`, {
+        doctorId: doctorId || null, doctorName, doctorSpec,
+      });
       onAssigned(res.data);
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to assign.");
@@ -147,17 +142,14 @@ function AssignModal({ question, token, onClose, onAssigned }) {
 }
 
 /* ── Approve Modal ── */
-function ApproveModal({ question, token, onClose, onApproved }) {
+function ApproveModal({ question, onClose, onApproved }) {
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState("");
 
   const submit = async () => {
     setSaving(true); setError("");
     try {
-      const res = await axios.put(
-        `${API}/${question._id}/approve`, {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/api/qna/${question._id}/approve`, {});
       onApproved(res.data);
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to approve.");
@@ -227,9 +219,6 @@ function ApproveModal({ question, token, onClose, onApproved }) {
 const FILTERS = ["all", "pending", "assigned", "answered", "approved"];
 
 export default function QnAPage() {
-  const token = localStorage.getItem("adminToken");
-  const headers = { Authorization: `Bearer ${token}` };
-
   const [questions,  setQuestions]  = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [filter,     setFilter]     = useState("all");
@@ -243,7 +232,7 @@ export default function QnAPage() {
 
   const fetchQuestions = useCallback(() => {
     setLoading(true);
-    axios.get(`${API}/admin/all`, { headers })
+    api.get("/api/qna/admin/all")
       .then(res => setQuestions(res.data))
       .catch(err => console.error("fetch error:", err))
       .finally(() => setLoading(false));
@@ -461,8 +450,8 @@ export default function QnAPage() {
         </div>
       </div>
 
-      {assignFor  && <AssignModal  question={assignFor}  token={token} onClose={() => setAssignFor(null)}  onAssigned={handleAssigned} />}
-      {approveFor && <ApproveModal question={approveFor} token={token} onClose={() => setApproveFor(null)} onApproved={handleApproved} />}
+      {assignFor  && <AssignModal  question={assignFor}  onClose={() => setAssignFor(null)}  onAssigned={handleAssigned} />}
+      {approveFor && <ApproveModal question={approveFor} onClose={() => setApproveFor(null)} onApproved={handleApproved} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import "./ChangePassword.css";
+import api from "../../api";
 
 export default function ChangePassword() {
   const [formData, setFormData] = useState({
@@ -63,12 +63,10 @@ export default function ChangePassword() {
     setLoading(true);
     setServerError("");
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        "/api/auth/change-password",
-        { currentPassword: formData.currentPassword, newPassword: formData.newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put("/api/auth/change-password", {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
       setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setSaved(true);
       setTimeout(() => setSaved(false), 4000);

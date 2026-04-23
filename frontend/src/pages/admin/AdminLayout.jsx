@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"; // useState still used for sideOpen
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import "./AdminDashboard.css";
+import { useAdmin } from "../../context/AdminContext";
 
 const NAV_ITEMS = [
   {
@@ -83,27 +84,23 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminLayout({ children }) {
-  const [user,     setUser]     = useState(null);
+  const { admin: user, loading, logout: contextLogout } = useAdmin();
   const [sideOpen, setSideOpen] = useState(false);
   const navigate  = useNavigate();
   const location  = useLocation();
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("adminUser") || "null");
-    if (!stored || !["admin", "superadmin"].includes(stored.role)) {
+    if (!loading && (!user || !["admin", "superadmin"].includes(user.role))) {
       navigate("/adminauth");
-      return;
     }
-    setUser(stored);
-  }, [navigate]);
+  }, [user, loading, navigate]);
 
-  const logout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
+  const logout = async () => {
+    await contextLogout();
     navigate("/adminauth");
   };
 
-  if (!user) return null;
+  if (loading || !user) return null;
 
   const initials = user.name
     ? user.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()

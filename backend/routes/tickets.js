@@ -1,30 +1,24 @@
 // routes/tickets.js
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 const {
-  createTicket,
-  getDoctorTickets,
-  getAllTickets,
-  resolveTicket,
-  createUserTicket,
-  getUserTickets,
-  getAllUserTickets,
-  resolveUserTicket,
+  createTicket, getDoctorTickets, getAllTickets, resolveTicket,
+  createUserTicket, getUserTickets, getAllUserTickets, resolveUserTicket,
 } = require("../controllers/ticketController");
-const { verifyToken, adminOnly } = require("../middleware/verifyToken");
+const { verifyUserToken, verifyDoctorToken, verifyAdminToken, adminOnly } = require("../middleware/verifyToken");
 
 // Doctor routes
-router.post("/create", verifyToken, createTicket);
-router.get("/my", verifyToken, getDoctorTickets);
+router.post("/create", verifyDoctorToken, createTicket);
+router.get("/my",      verifyDoctorToken, getDoctorTickets);
 
 // Patient/User routes
-router.post("/user/create", verifyToken, createUserTicket);
-router.get("/user/my", verifyToken, getUserTickets);
+router.post("/user/create", verifyUserToken, createUserTicket);
+router.get("/user/my",      verifyUserToken, getUserTickets);
 
 // Admin routes
-router.get("/all", verifyToken, adminOnly, getAllTickets);
-router.put("/:id/resolve", verifyToken, adminOnly, resolveTicket);
-router.get("/user/all", verifyToken, adminOnly, getAllUserTickets);
-router.put("/user/:id/resolve", verifyToken, adminOnly, resolveUserTicket);
+router.get("/all",           verifyAdminToken, adminOnly, getAllTickets);
+router.put("/:id/resolve",   verifyAdminToken, adminOnly, resolveTicket);
+router.get("/user/all",      verifyAdminToken, adminOnly, getAllUserTickets);
+router.put("/user/:id/resolve", verifyAdminToken, adminOnly, resolveUserTicket);
 
 module.exports = router;

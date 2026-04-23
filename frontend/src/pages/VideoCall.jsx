@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import socket from "../socket";
 import "./videocall.css";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
+import { useDoctorAuth } from "../context/DoctorAuthContext";
 
 const STUN_SERVERS = {
   iceServers: [
@@ -27,19 +29,13 @@ export default function VideoCall() {
   const navigate = useNavigate();
 
   // ── Identity ───────────────────────────────────────────────────
-  const isDoctor = useMemo(() => !!localStorage.getItem("doctorToken"), []);
-  const authToken = useMemo(
-    () => localStorage.getItem("doctorToken") || localStorage.getItem("token"),
-    []
-  );
+  const { doctor } = useDoctorAuth();
+  const { user } = useAuth();
+  const isDoctor = !!doctor;
   const currentUser = useMemo(() => {
-    if (localStorage.getItem("doctorToken")) {
-      const d = JSON.parse(localStorage.getItem("currentDoctor") || "{}");
-      return { id: d.id || "doctor", name: d.name || "Doctor" };
-    }
-    const u = JSON.parse(localStorage.getItem("user") || "{}");
-    return { id: u._id || "user", name: u.name || "Patient" };
-  }, []);
+    if (doctor) return { id: doctor._id || doctor.id || "doctor", name: doctor.name || "Doctor" };
+    return { id: user?._id || "user", name: user?.name || "Patient" };
+  }, [doctor, user]);
 
   // ── Appointment state ──────────────────────────────────────────
   const [appt, setAppt]           = useState(null);
@@ -91,22 +87,19 @@ export default function VideoCall() {
 
   // ── 1. Fetch appointment (gate + info panel) ───────────────────
   useEffect(() => {
-    if (!authToken || !appointmentId) {
+    if (!appointmentId) {
       setApptError("You must be logged in to join a call.");
       setApptLoading(false);
       return;
     }
-    axios
-      .get(`/api/appointments/${appointmentId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
+    api.get(`/api/appointments/${appointmentId}`)
       .then((res) => setAppt(res.data))
       .catch((err) => {
         const msg = err.response?.data?.msg || "Could not load appointment.";
         setApptError(msg);
       })
       .finally(() => setApptLoading(false));
-  }, [appointmentId, authToken]);
+  }, [appointmentId]);
 
   // ── 2. WebRTC + Socket (only when appointment is confirmed) ────
   useEffect(() => {
@@ -303,11 +296,7 @@ export default function VideoCall() {
     if (!isDoctor || completing) return;
     setCompleting(true);
     try {
-      await axios.put(
-        `/api/appointments/${appointmentId}/complete`,
-        {},
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
+      await api.put(`/api/appointments/${appointmentId}/complete`, {});
       socket.emit("leave-appointment-room", { appointmentId });
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
       screenStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -317,7 +306,7 @@ export default function VideoCall() {
       alert(err.response?.data?.msg || "Failed to complete consultation.");
       setCompleting(false);
     }
-  }, [isDoctor, completing, appointmentId, authToken, navigate]);
+  }, [isDoctor, completing, appointmentId, navigate]);
 
   // ── Chat ───────────────────────────────────────────────────────
   const toggleChat = useCallback(() => {
@@ -355,11 +344,8 @@ export default function VideoCall() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await axios.post("/api/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await api.post("/api/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       // Send file URL as a chat message through socket
       socket.emit("appointment-message", {

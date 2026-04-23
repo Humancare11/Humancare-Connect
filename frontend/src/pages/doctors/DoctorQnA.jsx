@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "./DoctorQnA.css";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 const CATEGORY_META = {
   General: { bg: "#EEF2FF", text: "#4338CA" },
@@ -127,9 +126,7 @@ function QuestionCard({ q, onAnswer }) {
 }
 
 export default function DoctorQnA() {
-  const token = localStorage.getItem("doctorToken");
-  const doctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
-
+  const { doctor } = useDoctorAuth();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -141,9 +138,7 @@ export default function DoctorQnA() {
   const fetchQuestions = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/api/qna/doctor/assigned`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/api/qna/doctor/assigned");
       setQuestions(res.data);
     } catch (err) {
       console.error("Failed to fetch assigned questions:", err);
@@ -159,15 +154,11 @@ export default function DoctorQnA() {
 
   const submitAnswer = async (qId, answer) => {
     try {
-      await axios.put(
-        `${API}/api/qna/${qId}/answer`,
-        {
-          answer,
-          doctorName: doctor?.name || "",
-          doctorSpec: doctor?.specialty || "",
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/qna/${qId}/answer`, {
+        answer,
+        doctorName: doctor?.name || "",
+        doctorSpec: doctor?.specialty || "",
+      });
       showToast("Answer submitted! Admin will review and publish it.", true);
       setSelected(null);
       fetchQuestions();

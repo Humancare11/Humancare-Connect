@@ -28,6 +28,8 @@ import BookAppointment from "./pages/BookAppointment";
 import VideoCall from "./pages/VideoCall";
 
 import socket from "./socket";
+import { useAuth }      from "./context/AuthContext";
+import { useAdmin }     from "./context/AdminContext";
 // import useLenis from "../hooks/useLenis";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
@@ -71,16 +73,11 @@ import Home2 from "./pages/Home-2";
 import Test from "./pages/Test";
 
 function PrivateRoute({ children, allowedRoles }) {
-  const token = localStorage.getItem("adminToken");
-  const user = JSON.parse(localStorage.getItem("adminUser") || "null");
+  const { admin, loading } = useAdmin();
 
-  if (!token || !user) {
-    return <Navigate to="/adminauth" replace />;
-  }
-
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/adminauth" replace />;
-  }
+  if (loading) return null;
+  if (!admin) return <Navigate to="/adminauth" replace />;
+  if (!allowedRoles.includes(admin.role)) return <Navigate to="/adminauth" replace />;
 
   return children;
 }
@@ -95,18 +92,14 @@ function AppLayout() {
     location.pathname.startsWith("/user") ||
     location.pathname.startsWith("/video-call");
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (storedUser?._id) {
+    if (user?._id) {
       if (!socket.connected) socket.connect();
-
-      socket.emit("user-online", {
-        userId: storedUser._id,
-        role: storedUser.role,
-      });
+      socket.emit("user-online", { userId: user._id, role: user.role });
     }
-  }, []);
+  }, [user]);
 
   return (
     <>

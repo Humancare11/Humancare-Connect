@@ -1,26 +1,17 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import socket from "../socket";
 import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import "./log.css";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
-// ─── helper: store auth data and emit socket ─────────────────────────────────
-function loginSuccess(data, navigate) {
-  localStorage.setItem("token", data.token);
-  localStorage.setItem("user", JSON.stringify(data.user));
-
-  if (!socket.connected) socket.connect();
-  socket.emit("user-online", { userId: data.user._id, role: data.user.role });
-  window.dispatchEvent(new Event("authChange"));
-  navigate("/");
-}
-
 export default function AuthPage() {
+  const { login } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
@@ -47,25 +38,31 @@ export default function AuthPage() {
     setRegisterForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
+  function afterLogin(user) {
+    login(user);
+    if (!socket.connected) socket.connect();
+    socket.emit("user-online", { userId: user._id, role: user.role });
+    navigate("/user/dashboard");
+  }
+
   // ---------------- GOOGLE AUTH ----------------
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await axios.post("/api/auth/google", {
+      const res = await api.post("/api/auth/google", {
         credential: credentialResponse.credential,
       });
 
       if (res.data.isNewUser) {
-        // New Google user — collect missing profile fields before creating account
         setGooglePending({
           credential: credentialResponse.credential,
           name: res.data.googleName,
           email: res.data.googleEmail,
         });
-        setIsRegister(true); // flip to register panel so the completion form is visible
+        setIsRegister(true);
         return;
       }
 
-      loginSuccess(res.data, navigate);
+      afterLogin(res.data.user);
     } catch (err) {
       alert(err.response?.data?.msg || "Google Sign-In failed ❌");
     }
@@ -80,14 +77,14 @@ export default function AuthPage() {
     if (!googleProfile.gender) return alert("Select Gender");
 
     try {
-      const res = await axios.post("/api/auth/google", {
+      const res = await api.post("/api/auth/google", {
         credential: googlePending.credential,
         mobile: googleProfile.mobile,
         dob: googleProfile.dob,
         gender: googleProfile.gender,
       });
 
-      loginSuccess(res.data, navigate);
+      afterLogin(res.data.user);
     } catch (err) {
       alert(err.response?.data?.msg || "Registration failed ❌");
     }
@@ -98,13 +95,8 @@ export default function AuthPage() {
     e.preventDefault();
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
-        loginForm
-      );
-
-      loginSuccess(res.data, navigate);
-      alert("Login Success ✅");
+      const res = await api.post("/api/auth/login", loginForm);
+      afterLogin(res.data.user);
     } catch (err) {
       alert(err.response?.data?.msg || "Login Failed ❌");
     }
@@ -123,7 +115,7 @@ export default function AuthPage() {
     const { terms, ...data } = registerForm;
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, data);
+      await api.post("/api/auth/register", data);
       alert("Registered Successfully ✅");
       setIsRegister(false);
     } catch (err) {

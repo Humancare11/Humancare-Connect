@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './RaiseTicket.css';
+import api from '../../api';
 
 const STATUS_META = {
   open:       { label: 'Open',       cls: 'rt-s-open'     },
@@ -29,12 +30,8 @@ const RaiseTicket = () => {
 
   const fetchTickets = async () => {
     try {
-      const token = localStorage.getItem('doctorToken');
-      const res = await fetch('/api/tickets/my', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setTickets(data);
+      const res = await api.get('/api/tickets/my');
+      setTickets(res.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -46,23 +43,13 @@ const RaiseTicket = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = localStorage.getItem('doctorToken');
-      const res = await fetch('/api/tickets/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title, description }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast('Ticket created successfully!', true);
-        setTitle('');
-        setDescription('');
-        fetchTickets();
-      } else {
-        showToast(data.message || 'Failed to create ticket.', false);
-      }
-    } catch {
-      showToast('An error occurred. Please try again.', false);
+      await api.post('/api/tickets/create', { title, description });
+      showToast('Ticket created successfully!', true);
+      setTitle('');
+      setDescription('');
+      fetchTickets();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'An error occurred. Please try again.', false);
     } finally {
       setLoading(false);
     }

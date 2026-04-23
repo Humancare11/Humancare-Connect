@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Dashboard.css";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 /* ─────────────────────────────────────────
    Helpers
@@ -99,8 +100,7 @@ function SvgIcon({ d, size = 16 }) {
 ───────────────────────────────────────── */
 export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const doctor = JSON.parse(localStorage.getItem("currentDoctor") || "null") || {};
-  const token = localStorage.getItem("doctorToken");
+  const { doctor = {} } = useDoctorAuth();
 
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,16 +117,12 @@ export default function DoctorDashboard() {
 
   /* Fetch */
   const fetchAppointments = useCallback(() => {
-    if (!token) return;
     setLoading(true);
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/appointments/doctor`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api.get("/api/appointments/doctor")
       .then((r) => setAppointments(r.data))
       .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
@@ -134,11 +130,7 @@ export default function DoctorDashboard() {
   const confirm = async (id) => {
     setConfirming(id);
     try {
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/confirm`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/api/appointments/${id}/confirm`, {});
       setAppointments((prev) => prev.map((a) => (a._id === id ? res.data.appointment : a)));
     } catch { /* silent */ }
     finally { setConfirming(null); }
@@ -149,11 +141,7 @@ export default function DoctorDashboard() {
     if (!window.confirm("Cancel this appointment?")) return;
     setCancellingId(id);
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/cancel`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/appointments/${id}/cancel`, {});
       setAppointments((prev) =>
         prev.map((a) => (a._id === id ? { ...a, status: "cancelled" } : a))
       );

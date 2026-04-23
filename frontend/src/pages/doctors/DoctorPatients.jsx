@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import "./DoctorPatients.css";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 function formatDate(d) {
   if (!d) return "—";
@@ -27,7 +25,7 @@ function Avatar({ name, size = 40 }) {
 
 // ── Prescription Modal ────────────────────────────────────────────────────────
 
-function PrescriptionModal({ patient, appointments, token, onClose, onSaved }) {
+function PrescriptionModal({ patient, appointments, onClose, onSaved }) {
   const [form, setForm] = useState({ ...EMPTY_RX, appointmentId: appointments[0]?._id || "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -51,10 +49,7 @@ function PrescriptionModal({ patient, appointments, token, onClose, onSaved }) {
     if (!form.appointmentId) { setError("Select an appointment."); return; }
     setSaving(true); setError("");
     try {
-      await axios.post(`${API}/api/medical/prescriptions`, {
-        ...form,
-        patientId: patient._id,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      await api.post("/api/medical/prescriptions", { ...form, patientId: patient._id });
       onSaved("prescription");
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to save prescription.");
@@ -118,7 +113,7 @@ function PrescriptionModal({ patient, appointments, token, onClose, onSaved }) {
 
 // ── Medical Certificate Modal ─────────────────────────────────────────────────
 
-function CertificateModal({ patient, appointments, token, onClose, onSaved }) {
+function CertificateModal({ patient, appointments, onClose, onSaved }) {
   const [form, setForm] = useState({ ...EMPTY_CERT, appointmentId: appointments[0]?._id || "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -131,10 +126,7 @@ function CertificateModal({ patient, appointments, token, onClose, onSaved }) {
     if (!form.appointmentId) { setError("Select an appointment."); return; }
     setSaving(true); setError("");
     try {
-      await axios.post(`${API}/api/medical/certificates`, {
-        ...form,
-        patientId: patient._id,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      await api.post("/api/medical/certificates", { ...form, patientId: patient._id });
       onSaved("certificate");
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to issue certificate.");
@@ -197,7 +189,7 @@ function CertificateModal({ patient, appointments, token, onClose, onSaved }) {
 
 // ── Patient Detail Panel ──────────────────────────────────────────────────────
 
-function PatientPanel({ entry, token, onClose }) {
+function PatientPanel({ entry, onClose }) {
   const { patient } = entry;
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -205,23 +197,18 @@ function PatientPanel({ entry, token, onClose }) {
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    axios.get(`${API}/api/medical/patients/${patient._id}/history`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    api.get(`/api/medical/patients/${patient._id}/history`)
       .then((r) => setHistory(r.data))
       .catch(() => setHistory({ appointments: [], prescriptions: [], certificates: [] }))
       .finally(() => setLoading(false));
-  }, [patient._id, token]);
+  }, [patient._id]);
 
   const handleSaved = (type) => {
     setModal(null);
     setToast(type === "rx" ? "Prescription saved!" : "Certificate issued!");
     setTimeout(() => setToast(""), 3000);
-    // Reload history
     setLoading(true);
-    axios.get(`${API}/api/medical/patients/${patient._id}/history`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    api.get(`/api/medical/patients/${patient._id}/history`)
       .then((r) => setHistory(r.data))
       .finally(() => setLoading(false));
   };
@@ -336,7 +323,6 @@ function PatientPanel({ entry, token, onClose }) {
         <PrescriptionModal
           patient={patient}
           appointments={completedAppts}
-          token={token}
           onClose={() => setModal(null)}
           onSaved={() => handleSaved("rx")}
         />
@@ -345,7 +331,6 @@ function PatientPanel({ entry, token, onClose }) {
         <CertificateModal
           patient={patient}
           appointments={completedAppts}
-          token={token}
           onClose={() => setModal(null)}
           onSaved={() => handleSaved("cert")}
         />
@@ -357,19 +342,17 @@ function PatientPanel({ entry, token, onClose }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function DoctorPatients() {
-  const token = localStorage.getItem("doctorToken");
   const [patients, setPatients] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    if (!token) return;
-    axios.get(`${API}/api/medical/patients`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/medical/patients")
       .then((r) => setPatients(r.data))
       .catch((err) => console.error("Failed to load patients", err))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   const filtered = patients.filter((e) =>
     e.patient?.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -448,7 +431,6 @@ export default function DoctorPatients() {
       {selected && (
         <PatientPanel
           entry={selected}
-          token={token}
           onClose={() => setSelected(null)}
         />
       )}

@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 const CATEGORY_LABELS = {
   appointment: "Appointment",
@@ -11,7 +9,7 @@ const CATEGORY_LABELS = {
   other:       "Other",
 };
 
-function ResolveModal({ ticket, resolveUrl, token, onClose, onResolved }) {
+function ResolveModal({ ticket, resolveUrl, onClose, onResolved }) {
   const [resolution, setResolution] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -19,7 +17,7 @@ function ResolveModal({ ticket, resolveUrl, token, onClose, onResolved }) {
     if (!resolution.trim()) return;
     setSaving(true);
     try {
-      await axios.put(`${API}${resolveUrl}`, { resolution }, { headers: { Authorization: `Bearer ${token}` } });
+      await api.put(resolveUrl, { resolution });
       onResolved();
     } catch (err) {
       console.error("Resolve error:", err);
@@ -136,15 +134,12 @@ export default function SupportTickets() {
   const [filter,         setFilter]         = useState("all");
   const [toast,          setToast]          = useState(null);
 
-  const token = localStorage.getItem("adminToken");
-  const headers = { Authorization: `Bearer ${token}` };
-
   const fetchAll = async () => {
     setLoading(true);
     try {
       const [drRes, ptRes] = await Promise.all([
-        axios.get(`${API}/api/tickets/all`,      { headers }),
-        axios.get(`${API}/api/tickets/user/all`, { headers }),
+        api.get("/api/tickets/all"),
+        api.get("/api/tickets/user/all"),
       ]);
       setDoctorTickets(drRes.data);
       setPatientTickets(ptRes.data);
@@ -192,7 +187,6 @@ export default function SupportTickets() {
       {resolving && (
         <ResolveModal
           ticket={resolving}
-          token={token}
           resolveUrl={resolveType === "patient" ? `/api/tickets/user/${resolving._id}/resolve` : `/api/tickets/${resolving._id}/resolve`}
           onClose={() => { setResolving(null); setResolveType(null); }}
           onResolved={afterResolved}

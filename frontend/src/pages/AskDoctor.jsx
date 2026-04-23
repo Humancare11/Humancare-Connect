@@ -1,9 +1,8 @@
 // src/pages/AskDoctor.jsx
 import { useState, useRef, useEffect, useCallback } from "react";
-import axios from "axios";
 import "./AskDoctor.css";
-
-const API = `${import.meta.env.VITE_API_URL}/api/qna`;
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const CATEGORIES = [
   "General", "Heart", "Skin", "Neuro", "Ortho",
@@ -72,8 +71,8 @@ const IconChevRight = () => (
 );
 
 export default function AskDoctor() {
-  const token      = localStorage.getItem("token");
-  const isLoggedIn = !!token;
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const [questions, setQuestions] = useState([]);
   const [text, setText] = useState("");
@@ -89,7 +88,7 @@ export default function AskDoctor() {
 
   // Fetch questions from MongoDB on load
   const fetchQuestions = useCallback(() => {
-    axios.get(API)
+    api.get("/api/qna")
       .then((res) => setQuestions(res.data))
       .catch((err) => console.error("Failed to fetch questions:", err));
   }, []);
@@ -121,9 +120,7 @@ export default function AskDoctor() {
 
     setSubmitting(true);
     try {
-      await axios.post(`${API}/ask`, { question: text, category }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post("/api/qna/ask", { question: text, category });
       setText(""); setFile(null); setAgreed(false);
       setErrors({}); setCategory("General"); setCurrentPage(1);
       setSubmitted(true);

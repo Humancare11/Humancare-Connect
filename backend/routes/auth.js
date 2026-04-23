@@ -3,35 +3,34 @@ const express = require("express");
 const router  = express.Router();
 
 const {
-  register,
-  login,
-  doctorRegister,
-  doctorLogin,
-  adminLogin,
-  updateProfile,
-  googleAuthUser,
-  googleAuthDoctor,
-  changePassword,
+  register, login, doctorRegister, doctorLogin, adminLogin,
+  updateProfile, googleAuthUser, googleAuthDoctor, changePassword,
+  me, adminMe, logout, adminLogout,
 } = require("../controllers/authController");
 
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware                     = require("../middleware/authMiddleware");
+const { verifyUserToken, verifyAdminToken } = require("../middleware/verifyToken");
 
-// ── User routes ──────────────────────────────────
+// ── User auth ─────────────────────────────────────────────────────────────────
 router.post("/register", register);
 router.post("/login",    login);
+router.post("/logout",   logout);
+router.get("/me",        verifyUserToken, me);
 
-// ── Doctor routes ─────────────────────────────────
-router.post("/doctor-register", doctorRegister);
-router.post("/doctor-login",    doctorLogin);
-
-// ── Google OAuth ──────────────────────────────────────────────────
+// ── Google OAuth ──────────────────────────────────────────────────────────────
 router.post("/google",        googleAuthUser);
 router.post("/google-doctor", googleAuthDoctor);
 
-// ── Admin / SuperAdmin login ──────────────────────────────────────
-router.post("/admin-login", adminLogin);
+// ── Admin auth ────────────────────────────────────────────────────────────────
+router.post("/admin-login",  adminLogin);
+router.post("/admin-logout", adminLogout);
+router.get("/admin-me",      verifyAdminToken, adminMe);
 
-// ── Protected user routes ─────────────────────────────────────────
+// ── Doctor auth (legacy via authController — for older clients) ───────────────
+router.post("/doctor-register", doctorRegister);
+router.post("/doctor-login",    doctorLogin);
+
+// ── Protected user routes ─────────────────────────────────────────────────────
 router.put("/update-profile",  authMiddleware, updateProfile);
 router.put("/change-password", authMiddleware, changePassword);
 

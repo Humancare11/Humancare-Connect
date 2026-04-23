@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import axios from "axios";
 import "./Findadoctor.css";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const specialities = [
   "Adolescent Medicine",
@@ -135,18 +136,17 @@ const ChevronRight = () => (
 
 export default function DoctorFinder() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/doctor/approved`)
+    api.get("/api/doctor/approved")
       .then((res) => setDynamicDoctors([...res.data, ...allDoctors]))
       .catch(() => setDynamicDoctors(allDoctors));
   }, []);
-  const handleBook = (doc) => {
-    const token = localStorage.getItem("token");
 
-    if (!token) {
+  const handleBook = (doc) => {
+    if (!user) {
       navigate("/login");
     } else {
       navigate("/book-appointment", { state: { doctor: doc } });

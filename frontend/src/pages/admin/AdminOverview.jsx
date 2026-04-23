@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
+import { useAdmin } from "../../context/AdminContext";
 
 export default function AdminOverview() {
   const navigate = useNavigate();
+  const { admin: user } = useAdmin();
   const [stats, setStats] = useState({ totalUsers: 0, totalDoctors: 0, totalAppointments: 0 });
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    axios.get(`${API}/api/admin/stats`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/admin/stats")
       .then(r => setStats({
         totalUsers: r.data.totalUsers || 0,
         totalDoctors: r.data.totalDoctors || 0,
@@ -18,8 +17,6 @@ export default function AdminOverview() {
       }))
       .catch(() => { });
   }, []);
-
-  const user = JSON.parse(localStorage.getItem("adminUser") || "null");
 
   const statCards = [
     { label: "Total Users", value: stats.totalUsers, icon: "👥", cls: "adp-stat--blue", path: "/admin-dashboard/manage-users" },

@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import "./Doctor.css";
-const API_BASE = "/api";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 export default function DoctorAuthPage() {
   const navigate = useNavigate();
+  const { login } = useDoctorAuth();
 
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
@@ -44,33 +46,22 @@ export default function DoctorAuthPage() {
     setError("");
   };
 
+  function afterLogin(doctor, isNewUser = false) {
+    login(doctor);
+    navigate(isNewUser ? "/doctor-dashboard?newAccount=1" : "/doctor-dashboard");
+  }
+
   // ---------------- GOOGLE AUTH ----------------
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/auth/google-doctor`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
+      const res = await api.post("/api/auth/google-doctor", {
+        credential: credentialResponse.credential,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.msg || data.message || "Google Sign-In failed.");
-        setLoading(false);
-        return;
-      }
-      localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem("currentDoctor", JSON.stringify(data.doctor));
-
-      if (data.isNewUser) {
-        // New doctor account — go to dashboard where the enrollment form is available
-        navigate("/doctor-dashboard?newAccount=1");
-      } else {
-        navigate("/doctor-dashboard");
-      }
+      afterLogin(res.data.doctor, res.data.isNewUser);
     } catch (err) {
-      setError("Could not connect to server.");
+      setError(err.response?.data?.msg || "Google Sign-In failed.");
     }
     setLoading(false);
   };
@@ -82,34 +73,13 @@ export default function DoctorAuthPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: loginForm.email.trim().toLowerCase(),
-          password: loginForm.password,
-        }),
+      const res = await api.post("/api/doctor/login", {
+        email: loginForm.email.trim().toLowerCase(),
+        password: loginForm.password,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem(
-        "currentDoctor",
-        JSON.stringify(data.doctor)
-      );
-
-      navigate("/doctor-dashboard");
+      afterLogin(res.data.doctor);
     } catch (err) {
-      setError("Could not connect to server.");
+      setError(err.response?.data?.message || "Invalid email or password.");
     }
 
     setLoading(false);
@@ -121,50 +91,22 @@ export default function DoctorAuthPage() {
     setLoading(true);
     setError("");
 
-    if (
-      registerForm.password !==
-      registerForm.confirmPassword
-    ) {
+    if (registerForm.password !== registerForm.confirmPassword) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
     }
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: registerForm.name.trim(),
-          email: registerForm.email.trim().toLowerCase(),
-          password: registerForm.password,
-          confirmPassword:
-            registerForm.confirmPassword,
-        }),
+      const res = await api.post("/api/doctor/register", {
+        name: registerForm.name.trim(),
+        email: registerForm.email.trim().toLowerCase(),
+        password: registerForm.password,
+        confirmPassword: registerForm.confirmPassword,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(
-          data.message ||
-            "Registration failed. Please try again."
-        );
-        setLoading(false);
-        return;
-      }
-
-      localStorage.setItem("doctorToken", data.token);
-      localStorage.setItem(
-        "currentDoctor",
-        JSON.stringify(data.doctor)
-      );
-
-      navigate("/doctor-dashboard");
+      afterLogin(res.data.doctor);
     } catch (err) {
-      setError("Could not connect to server.");
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     }
 
     setLoading(false);

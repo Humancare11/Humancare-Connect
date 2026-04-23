@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "./MedicalQuestions.css";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 const STATUS_META = {
   pending:  { label: "Pending Review",    icon: "⏳", color: "#d97706", bg: "#fef3c7", border: "#fcd34d" },
@@ -127,7 +125,6 @@ function QuestionCard({ q }) {
 }
 
 export default function MedicalQuestions() {
-  const token = localStorage.getItem("token");
   const [questions,  setQuestions]  = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [text,       setText]       = useState("");
@@ -142,9 +139,7 @@ export default function MedicalQuestions() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get(`${API}/api/qna/user-questions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/api/qna/user-questions");
       setQuestions(res.data);
     } catch (err) {
       console.error("Failed to fetch questions:", err);
@@ -163,10 +158,7 @@ export default function MedicalQuestions() {
     if (!text.trim()) return;
     setSubmitting(true);
     try {
-      await axios.post(`${API}/api/qna/ask`,
-        { question: text, category },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post("/api/qna/ask", { question: text, category });
       setText("");
       setCategory("General");
       showToast("Question submitted! You'll receive an answer within 12 hours.", true);

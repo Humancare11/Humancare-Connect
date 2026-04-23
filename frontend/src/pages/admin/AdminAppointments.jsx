@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 const STATUS_COLORS = {
   pending:   { bg: "#fef3c7", color: "#d97706", border: "#fcd34d" },
@@ -16,10 +14,8 @@ export default function AdminAppointments() {
   const [search,   setSearch]   = useState("");
   const [filter,   setFilter]   = useState("all");
 
-  const token = localStorage.getItem("adminToken");
-
   useEffect(() => {
-    axios.get(`${API}/api/appointments/admin/all`, { headers: { Authorization: `Bearer ${token}` } })
+    api.get("/api/appointments/admin/all")
       .then(r => setAppointments(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));

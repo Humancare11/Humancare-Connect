@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "./ProfileSettings.css";
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProfileSettings() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, updateUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -17,19 +17,16 @@ export default function ProfileSettings() {
   });
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
+    if (user) {
       setFormData({
-        name: storedUser.name || "",
-        email: storedUser.email || "",
-        mobile: storedUser.mobile || "",
-        gender: storedUser.gender || "",
-        dob: storedUser.dob || "",
+        name: user.name || "",
+        email: user.email || "",
+        mobile: user.mobile || "",
+        gender: user.gender || "",
+        dob: user.dob || "",
       });
     }
-    setLoading(false);
-  }, []);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,13 +41,8 @@ export default function ProfileSettings() {
     setError("");
     setSaved(false);
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/auth/update-profile`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const updatedUser = { ...user, ...formData };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      await api.put("/api/auth/update-profile", formData);
+      updateUser({ ...user, ...formData });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -74,14 +66,7 @@ export default function ProfileSettings() {
     return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
   };
 
-  if (loading) {
-    return (
-      <div className="hc-ps__loader">
-        <div className="hc-ps__spinner" />
-        <p>Loading profile…</p>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
     <div className="hc-ps__page">
@@ -277,14 +262,13 @@ export default function ProfileSettings() {
                   type="button"
                   className="hc-ps__btn hc-ps__btn--ghost"
                   onClick={() => {
-                    const storedUser = JSON.parse(localStorage.getItem("user"));
-                    if (storedUser) {
+                    if (user) {
                       setFormData({
-                        name: storedUser.name || "",
-                        email: storedUser.email || "",
-                        mobile: storedUser.mobile || "",
-                        gender: storedUser.gender || "",
-                        dob: storedUser.dob || "",
+                        name: user.name || "",
+                        email: user.email || "",
+                        mobile: user.mobile || "",
+                        gender: user.gender || "",
+                        dob: user.dob || "",
                       });
                     }
                     setSaved(false);

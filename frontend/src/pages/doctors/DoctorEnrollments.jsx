@@ -3,6 +3,7 @@ import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { getNames } from "country-list";
 import "./DoctorEnrollments.css";
+import api from "../../api";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
@@ -183,18 +184,15 @@ export default function DoctorEnrollments({ onComplete, initialData, doctorId })
     e.preventDefault();
     if (!validate(4)) return;
     setSubmitting(true);
-    const token = localStorage.getItem("doctorToken");
     const { profilePhoto, medicalCertification, ...rest } = form;
     try {
-      const res = await fetch("/api/doctor/enrollment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...rest, doctorId, hasProfilePhoto: hasExistingPhoto || !!profilePhoto, hasCertification: hasExistingCert || !!medicalCertification }),
+      const res = await api.post("/api/doctor/enrollment", {
+        ...rest, doctorId,
+        hasProfilePhoto: hasExistingPhoto || !!profilePhoto,
+        hasCertification: hasExistingCert || !!medicalCertification,
       });
-      if (!res.ok) { const err = await res.json(); console.error(err.message); return; }
-      const saved = await res.json();
       setShowSuccess(true);
-      setTimeout(() => { setShowSuccess(false); setIsReadOnly(true); onComplete?.(saved); }, 3000);
+      setTimeout(() => { setShowSuccess(false); setIsReadOnly(true); onComplete?.(res.data); }, 3000);
     } catch (err) { console.error(err); }
     finally { setSubmitting(false); }
   };

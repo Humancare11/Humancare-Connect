@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 function DetailRow({ label, value }) {
   if (!value) return null;
@@ -69,11 +67,8 @@ export default function ManageDoctors() {
   const [filter,      setFilter]      = useState("all");
   const [toast,       setToast]       = useState(null);
 
-  const token   = localStorage.getItem("adminToken");
-  const headers = { Authorization: `Bearer ${token}` };
-
   useEffect(() => {
-    axios.get(`${API}/api/admin/doctors`, { headers })
+    api.get("/api/admin/doctors")
       .then(r => setEnrollments(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -86,7 +81,7 @@ export default function ManageDoctors() {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await axios.put(`${API}/api/admin/doctors/${id}/${action}`, {}, { headers });
+      const res = await api.put(`/api/admin/doctors/${id}/${action}`, {});
       setEnrollments(prev => prev.map(e => e._id === id ? { ...e, approvalStatus: res.data.enrollment.approvalStatus } : e));
       setSelected(prev => prev?._id === id ? { ...prev, approvalStatus: res.data.enrollment.approvalStatus } : prev);
       showToast(`Doctor ${action}d successfully.`);

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import "./MyRecords.css";
-
-const API = import.meta.env.VITE_API_URL || "";
+import api from "../../api";
 
 function formatDate(d) {
   if (!d) return "—";
@@ -122,17 +120,15 @@ function CertificateCard({ cert }) {
 }
 
 export default function MyRecords() {
-  const token = localStorage.getItem("token");
   const [prescriptions,  setPrescriptions]  = useState([]);
   const [certificates,   setCertificates]   = useState([]);
   const [loading,        setLoading]        = useState(true);
   const [activeTab,      setActiveTab]      = useState("prescriptions");
 
   useEffect(() => {
-    if (!token) return;
     Promise.all([
-      axios.get(`${API}/api/medical/my-prescriptions`, { headers: { Authorization: `Bearer ${token}` } }),
-      axios.get(`${API}/api/medical/my-certificates`,  { headers: { Authorization: `Bearer ${token}` } }),
+      api.get("/api/medical/my-prescriptions"),
+      api.get("/api/medical/my-certificates"),
     ])
       .then(([rxRes, certRes]) => {
         setPrescriptions(rxRes.data);
@@ -140,7 +136,7 @@ export default function MyRecords() {
       })
       .catch((err) => console.error("Failed to load records", err))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   const tabs = [
     { key: "prescriptions", label: "Prescriptions",       icon: "💊", count: prescriptions.length  },

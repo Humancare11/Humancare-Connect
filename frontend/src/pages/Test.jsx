@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import socket from "../socket";
+import api from "../api";
+import { useDoctorAuth } from "../context/DoctorAuthContext";
 import "./test.css";
 
 const menuItems = [
@@ -66,7 +68,7 @@ const NavIcon = ({ name }) => {
 export default function DoctorLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [doctor, setDoctor] = useState(null);
+  const { doctor, loading, logout: contextLogout } = useDoctorAuth();
   const [sideOpen, setSideOpen] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [time, setTime] = useState(new Date());
@@ -77,49 +79,34 @@ export default function DoctorLayout({ children }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("doctorToken");
-    const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
-
-    if (!token || !currentDoctor) {
+    if (loading) return;
+    if (!doctor) {
       navigate("/doctor-login");
       return;
     }
 
-    setDoctor(currentDoctor);
-
-    fetch(`/api/doctor/enrollment/${currentDoctor.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((enrollment) => {
-        if (enrollment) {
-          setIsEnrolled(true);
-          const updated = { ...currentDoctor, isEnrolled: true };
-          localStorage.setItem("currentDoctor", JSON.stringify(updated));
-          setDoctor(updated);
-        } else {
-          setIsEnrolled(currentDoctor.isEnrolled || false);
-        }
+    api.get(`/api/doctor/enrollment/${doctor._id || doctor.id}`)
+      .then(res => {
+        if (res.data) setIsEnrolled(true);
       })
       .catch(() => {
-        setIsEnrolled(currentDoctor.isEnrolled || false);
+        setIsEnrolled(doctor.isEnrolled || false);
       });
-  }, [navigate]);
+  }, [doctor, loading, navigate]);
 
   useEffect(() => {
     if (!socket.connected) socket.connect();
-    if (doctor?.id) {
-      socket.emit("user-online", { userId: doctor.id, role: "doctor" });
+    if (doctor?.id || doctor?._id) {
+      socket.emit("user-online", { userId: doctor._id || doctor.id, role: "doctor" });
     }
   }, [doctor]);
 
-  const logout = () => {
-    localStorage.removeItem("currentDoctor");
-    localStorage.removeItem("doctorToken");
+  const logout = async () => {
+    await contextLogout();
     navigate("/doctor-login");
   };
 
-  if (!doctor) return null;
+  if (loading || !doctor) return null;
 
   const initials = doctor.name
     ? doctor.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()

@@ -1,112 +1,68 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import {
-  FaFacebookF,
-  FaGoogle,
-  FaLinkedinIn,
-} from "react-icons/fa";
+import api from "../../api";
+import { useAdmin } from "../../context/AdminContext";
 
 export default function AdminAuthPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [adminForm, setAdminForm] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [superAdminForm, setSuperAdminForm] = useState({
-    email: "",
-    password: "",
-  });
+  const [adminForm, setAdminForm] = useState({ email: "", password: "" });
+  const [superAdminForm, setSuperAdminForm] = useState({ email: "", password: "" });
 
   const navigate = useNavigate();
+  const { login } = useAdmin();
 
-  // Admin Input Change
-  const handleAdminChange = (e) => {
-    setAdminForm({
-      ...adminForm,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleAdminChange = (e) =>
+    setAdminForm({ ...adminForm, [e.target.name]: e.target.value });
 
-  // Super Admin Input Change
-  const handleSuperAdminChange = (e) => {
-    setSuperAdminForm({
-      ...superAdminForm,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleSuperAdminChange = (e) =>
+    setSuperAdminForm({ ...superAdminForm, [e.target.name]: e.target.value });
 
-  // Admin Login Submit
   const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/admin-login`,
-        adminForm
-      );
-
-      const { token, user } = res.data;
+      const res = await api.post("/api/auth/admin-login", adminForm);
+      const { user } = res.data;
 
       if (user.role !== "admin") {
-        setError(
-          "This account is not an Admin. Use Super Admin login."
-        );
+        setError("This account is not an Admin. Use Super Admin login.");
         setLoading(false);
         return;
       }
 
-      localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminUser", JSON.stringify(user));
-
+      login(user);
       navigate("/admin-dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.msg ||
-        "Admin login failed. Please try again."
-      );
+      setError(err.response?.data?.msg || "Admin login failed. Please try again.");
     }
 
     setLoading(false);
   };
 
-  // Super Admin Login Submit
   const handleSuperAdminSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/admin-login`,
-        superAdminForm
-      );
-
-      const { token, user } = res.data;
+      const res = await api.post("/api/auth/admin-login", superAdminForm);
+      const { user } = res.data;
 
       if (user.role !== "superadmin") {
-        setError(
-          "This account is not a Super Admin. Use Admin login."
-        );
+        setError("This account is not a Super Admin. Use Admin login.");
         setLoading(false);
         return;
       }
 
-      localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminUser", JSON.stringify(user));
-
+      login(user);
       navigate("/superadmin-dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.msg ||
-        "Super Admin login failed. Please try again."
-      );
+      setError(err.response?.data?.msg || "Super Admin login failed. Please try again.");
     }
 
     setLoading(false);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./RaiseTicket.css";
+import api from "../../api";
 
 const STATUS_META = {
   open:     { label: "Open",     cls: "urt-s-open"     },
@@ -18,8 +19,6 @@ const fmt = (d) =>
   new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
 export default function UserRaiseTicket() {
-  const token = localStorage.getItem("token");
-
   const [title,       setTitle]       = useState("");
   const [description, setDescription] = useState("");
   const [category,    setCategory]    = useState("other");
@@ -40,11 +39,8 @@ export default function UserRaiseTicket() {
   const fetchTickets = async () => {
     setFetching(true);
     try {
-      const res = await fetch("/api/tickets/user/my", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) setTickets(data);
+      const res = await api.get("/api/tickets/user/my");
+      setTickets(res.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -57,26 +53,14 @@ export default function UserRaiseTicket() {
     if (!title.trim() || !description.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/tickets/user/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, description, category }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast("Ticket submitted successfully!", true);
-        setTitle("");
-        setDescription("");
-        setCategory("other");
-        fetchTickets();
-      } else {
-        showToast(data.message || "Failed to submit ticket.", false);
-      }
-    } catch {
-      showToast("Something went wrong. Please try again.", false);
+      await api.post("/api/tickets/user/create", { title, description, category });
+      showToast("Ticket submitted successfully!", true);
+      setTitle("");
+      setDescription("");
+      setCategory("other");
+      fetchTickets();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Something went wrong. Please try again.", false);
     } finally {
       setLoading(false);
     }
