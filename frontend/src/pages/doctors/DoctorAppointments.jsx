@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import "./DoctorAppointments.css";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 const STATUS_META = {
   pending: { label: "Pending", icon: "⏳", color: "amber" },
@@ -29,7 +30,7 @@ function getGreeting() {
 }
 
 export default function DoctorAppointments() {
-  const doctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
+  const { doctor } = useDoctorAuth();
   const doctorName = doctor?.name || "Doctor";
 
   const [appointments, setAppointments] = useState([]);
@@ -38,28 +39,17 @@ export default function DoctorAppointments() {
   const [selectedId, setSelectedId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
 
-  const token = localStorage.getItem("doctorToken");
-
   useEffect(() => {
-    if (!token) return;
-
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/appointments/doctor`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api.get("/api/appointments/doctor")
       .then((res) => setAppointments(res.data))
       .catch((err) => console.error("Failed to load appointments", err))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   const confirmAppointment = async (id) => {
     setConfirmingId(id);
     try {
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/confirm`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/api/appointments/${id}/confirm`, {});
 
       setAppointments((prev) =>
         prev.map((a) => (a._id === id ? res.data.appointment : a))

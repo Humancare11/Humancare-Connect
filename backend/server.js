@@ -47,6 +47,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(require("cookie-parser")());
 
 // Serve uploaded files
 const fs = require("fs");
@@ -62,6 +63,8 @@ app.use("/api/qna", require("./routes/qna"));
 app.use("/api/doctor", require("./routes/doctorAuth"));
 app.use("/api/appointments", require("./routes/appointments"));
 app.use("/api/upload", require("./routes/upload"));
+app.use("/api/tickets", require("./routes/tickets"));
+app.use("/api/medical", require("./routes/medical"));
 
 app.get("/api/health", (req, res) => {
   res.send("API Running...");

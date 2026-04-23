@@ -1,20 +1,19 @@
 const express = require("express");
-const router = express.Router();
-const { verifyToken, adminOnly } = require("../middleware/verifyToken");
+const router  = require("express").Router();
+const { verifyToken, verifyUserToken, verifyDoctorToken, verifyAdminToken, adminOnly } = require("../middleware/verifyToken");
 const {
-  createAppointment,
-  getPatientAppointments,
-  getDoctorAppointments,
-  confirmAppointment,
-  getAllAppointments,
-  getAppointmentById,
+  createAppointment, getPatientAppointments, getDoctorAppointments,
+  confirmAppointment, completeAppointment, cancelAppointment,
+  getAllAppointments, getAppointmentById,
 } = require("../controllers/appointmentController");
 
-router.post("/", verifyToken, createAppointment);
-router.get("/mine", verifyToken, getPatientAppointments);
-router.get("/doctor", verifyToken, getDoctorAppointments);
-router.get("/admin/all", verifyToken, adminOnly, getAllAppointments);
-router.put("/:id/confirm", verifyToken, confirmAppointment);
-router.get("/:id", verifyToken, getAppointmentById);
+router.post("/",         verifyUserToken,   createAppointment);
+router.get("/mine",      verifyUserToken,   getPatientAppointments);
+router.get("/doctor",    verifyDoctorToken, getDoctorAppointments);
+router.get("/admin/all", verifyAdminToken,  adminOnly, getAllAppointments);
+router.put("/:id/confirm",  verifyToken, confirmAppointment);
+router.put("/:id/complete", verifyToken, completeAppointment);
+router.put("/:id/cancel",   verifyToken, cancelAppointment);
+router.get("/:id",          verifyToken, getAppointmentById);
 
 module.exports = router;

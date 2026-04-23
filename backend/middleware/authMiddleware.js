@@ -1,31 +1,20 @@
 const jwt = require("jsonwebtoken");
 
+// Generic auth middleware — tries userToken cookie, then Authorization header
 module.exports = function (req, res, next) {
-  const authHeader = req.header("Authorization");
+  const token =
+    req.cookies?.userToken ||
+    (req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : null);
 
-  if (!authHeader) {
-    return res.status(401).json({ msg: "No token, authorization denied" });
-  }
+  if (!token) return res.status(401).json({ msg: "No token, authorization denied" });
 
   try {
-    let token = authHeader;
-
-    // Agar header "Bearer <token>" format me aaye
-    if (authHeader.startsWith("Bearer ")) {
-      token = authHeader.split(" ")[1];
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Agar token sign karte waqt { user: { id, role } } bheja hai
-    if (decoded.user) {
-      req.user = decoded.user;
-    } else {
-      req.user = decoded;
-    }
-
+    req.user = decoded.user ? decoded.user : decoded;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ msg: "Invalid token" });
   }
 };

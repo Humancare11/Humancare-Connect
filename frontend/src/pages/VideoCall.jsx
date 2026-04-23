@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import socket from "../socket";
 import "./videocall.css";
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
+import { useDoctorAuth } from "../context/DoctorAuthContext";
 
 const STUN_SERVERS = {
   iceServers: [
@@ -27,19 +29,13 @@ export default function VideoCall() {
   const navigate = useNavigate();
 
   // ── Identity ───────────────────────────────────────────────────
-  const isDoctor = useMemo(() => !!localStorage.getItem("doctorToken"), []);
-  const authToken = useMemo(
-    () => localStorage.getItem("doctorToken") || localStorage.getItem("token"),
-    []
-  );
+  const { doctor } = useDoctorAuth();
+  const { user } = useAuth();
+  const isDoctor = !!doctor;
   const currentUser = useMemo(() => {
-    if (localStorage.getItem("doctorToken")) {
-      const d = JSON.parse(localStorage.getItem("currentDoctor") || "{}");
-      return { id: d.id || "doctor", name: d.name || "Doctor" };
-    }
-    const u = JSON.parse(localStorage.getItem("user") || "{}");
-    return { id: u._id || "user", name: u.name || "Patient" };
-  }, []);
+    if (doctor) return { id: doctor._id || doctor.id || "doctor", name: doctor.name || "Doctor" };
+    return { id: user?._id || "user", name: user?.name || "Patient" };
+  }, [doctor, user]);
 
   // ── Appointment state ──────────────────────────────────────────
   const [appt, setAppt]           = useState(null);
@@ -47,25 +43,28 @@ export default function VideoCall() {
   const [apptError, setApptError] = useState("");
 
   // ── WebRTC refs ────────────────────────────────────────────────
-  const localVideoRef  = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const pcRef          = useRef(null);
-  const localStreamRef = useRef(null);
-  const callTimerRef   = useRef(null);
-  const inCallRef      = useRef(false);
-  const isReadyRef     = useRef(false);
-  const chatOpenRef    = useRef(false);
+  const localVideoRef    = useRef(null);
+  const remoteVideoRef   = useRef(null);
+  const pcRef            = useRef(null);
+  const localStreamRef   = useRef(null);
+  const screenStreamRef  = useRef(null);
+  const callTimerRef     = useRef(null);
+  const inCallRef        = useRef(false);
+  const isReadyRef       = useRef(false);
+  const chatOpenRef      = useRef(false);
 
   // ── Call state ─────────────────────────────────────────────────
   const [isReady, setIsReady]                     = useState(false);
   const [inCall, setInCall]                       = useState(false);
   const [isMuted, setIsMuted]                     = useState(false);
   const [isCamOff, setIsCamOff]                   = useState(false);
+  const [isScreenSharing, setIsScreenSharing]     = useState(false);
   const [isRemoteConnected, setIsRemoteConnected] = useState(false);
   const [callDuration, setCallDuration]           = useState(0);
   const [camError, setCamError]                   = useState(false);
   const [connectionState, setConnectionState]     = useState("idle");
   const [peerJoined, setPeerJoined]               = useState(false);
+  const [completing, setCompleting]               = useState(false);
 
   // ── Chat state ─────────────────────────────────────────────────
   const [chatOpen, setChatOpen]       = useState(false);
@@ -88,22 +87,19 @@ export default function VideoCall() {
 
   // ── 1. Fetch appointment (gate + info panel) ───────────────────
   useEffect(() => {
-    if (!authToken || !appointmentId) {
+    if (!appointmentId) {
       setApptError("You must be logged in to join a call.");
       setApptLoading(false);
       return;
     }
-    axios
-      .get(`/api/appointments/${appointmentId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
+    api.get(`/api/appointments/${appointmentId}`)
       .then((res) => setAppt(res.data))
       .catch((err) => {
         const msg = err.response?.data?.msg || "Could not load appointment.";
         setApptError(msg);
       })
       .finally(() => setApptLoading(false));
-  }, [appointmentId, authToken]);
+  }, [appointmentId]);
 
   // ── 2. WebRTC + Socket (only when appointment is confirmed) ────
   useEffect(() => {
@@ -257,9 +253,60 @@ export default function VideoCall() {
   const endCall = useCallback(() => {
     socket.emit("leave-appointment-room", { appointmentId });
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop());
     pcRef.current?.close();
     navigate(-1);
   }, [appointmentId, navigate]);
+
+  const toggleScreenShare = useCallback(async () => {
+    const pc = pcRef.current;
+    if (!pc) return;
+
+    if (isScreenSharing) {
+      // Revert to camera
+      screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current = null;
+      const camTrack = localStreamRef.current?.getVideoTracks()[0];
+      if (camTrack) {
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(camTrack);
+        if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+      }
+      setIsScreenSharing(false);
+    } else {
+      try {
+        const screen = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        screenStreamRef.current = screen;
+        const screenTrack = screen.getVideoTracks()[0];
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) await sender.replaceTrack(screenTrack);
+        if (localVideoRef.current) {
+          const mixed = new MediaStream([screenTrack, ...(localStreamRef.current?.getAudioTracks() || [])]);
+          localVideoRef.current.srcObject = mixed;
+        }
+        screenTrack.onended = () => toggleScreenShare();
+        setIsScreenSharing(true);
+      } catch (err) {
+        if (err.name !== "NotAllowedError") console.error("Screen share error:", err);
+      }
+    }
+  }, [isScreenSharing]);
+
+  const completeConsultation = useCallback(async () => {
+    if (!isDoctor || completing) return;
+    setCompleting(true);
+    try {
+      await api.put(`/api/appointments/${appointmentId}/complete`, {});
+      socket.emit("leave-appointment-room", { appointmentId });
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+      pcRef.current?.close();
+      navigate("/doctor-dashboard/patients");
+    } catch (err) {
+      alert(err.response?.data?.msg || "Failed to complete consultation.");
+      setCompleting(false);
+    }
+  }, [isDoctor, completing, appointmentId, navigate]);
 
   // ── Chat ───────────────────────────────────────────────────────
   const toggleChat = useCallback(() => {
@@ -297,11 +344,8 @@ export default function VideoCall() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await axios.post("/api/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${authToken}`,
-        },
+      const res = await api.post("/api/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       // Send file URL as a chat message through socket
       socket.emit("appointment-message", {
@@ -596,6 +640,16 @@ export default function VideoCall() {
           </button>
 
           <button
+            className={`hc-vc__ctrl-btn ${isScreenSharing ? "hc-vc__ctrl-btn--screen-on" : ""}`}
+            onClick={toggleScreenShare}
+            disabled={!isReady}
+            title={isScreenSharing ? "Stop sharing screen" : "Share screen"}
+          >
+            <span className="hc-vc__ctrl-icon">🖥️</span>
+            <span className="hc-vc__ctrl-label">{isScreenSharing ? "Stop Share" : "Share"}</span>
+          </button>
+
+          <button
             className={`hc-vc__ctrl-btn hc-vc__ctrl-btn--chat ${chatOpen ? "hc-vc__ctrl-btn--chat-open" : ""}`}
             onClick={toggleChat}>
             <span className="hc-vc__ctrl-icon">💬</span>
@@ -627,6 +681,18 @@ export default function VideoCall() {
             <span className="hc-vc__ctrl-icon">📵</span>
             <span className="hc-vc__ctrl-label">End</span>
           </button>
+
+          {isDoctor && (
+            <button
+              className="hc-vc__ctrl-btn hc-vc__ctrl-btn--complete"
+              onClick={completeConsultation}
+              disabled={completing}
+              title="Mark consultation as complete and go to My Patients"
+            >
+              <span className="hc-vc__ctrl-icon">{completing ? "⏳" : "✅"}</span>
+              <span className="hc-vc__ctrl-label">{completing ? "Saving…" : "Complete"}</span>
+            </button>
+          )}
 
           <button className="hc-vc__ctrl-btn hc-vc__ctrl-btn--back" onClick={() => navigate(-1)}>
             <span className="hc-vc__ctrl-icon">←</span>

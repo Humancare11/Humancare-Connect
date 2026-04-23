@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import "./Dashboard.css";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
-/* ─── helpers ─── */
+/* ─────────────────────────────────────────
+   Helpers
+───────────────────────────────────────── */
 const initials = (name = "") =>
   name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "DR";
 
@@ -13,7 +16,7 @@ const fmt = (iso) => {
   return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 };
 
-const greeting = () => {
+const getGreeting = () => {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
@@ -21,52 +24,83 @@ const greeting = () => {
 };
 
 const todayLabel = () =>
-  new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  new Date().toLocaleDateString("en-IN", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
 
-const avatarColors = ["#0c8b7a", "#7c3aed", "#d97706", "#dc2626", "#0369a1", "#059669"];
-const avatarBg = ["#d0faf4", "#ede9fe", "#fef3c7", "#fee2e2", "#dbeafe", "#d1fae5"];
+/* Avatar palette cycles */
+const AVATAR_PALETTE = [
+  { bg: "rgba(25,201,163,0.15)",  color: "#19c9a3" },
+  { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
+  { bg: "rgba(245,158,11,0.15)",  color: "#f59e0b" },
+  { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  { bg: "rgba(56,189,248,0.15)",  color: "#38bdf8" },
+  { bg: "rgba(34,197,94,0.15)",   color: "#22c55e"  },
+];
+const palette = (i) => AVATAR_PALETTE[i % AVATAR_PALETTE.length];
 
-const getAC = (i) => ({ color: avatarColors[i % avatarColors.length], bg: avatarBg[i % avatarBg.length] });
-
-/* ─── sub-components ─── */
-const StatCard = ({ icon, label, value, sub, accent }) => (
-  <div className="db2-stat" style={{ "--ac": accent }}>
-    <div className="db2-stat-icon">{icon}</div>
-    <div className="db2-stat-body">
-      <span className="db2-stat-value">{value}</span>
-      <span className="db2-stat-label">{label}</span>
-      {sub && <span className="db2-stat-sub">{sub}</span>}
+/* ─────────────────────────────────────────
+   Sub-components
+───────────────────────────────────────── */
+function StatCard({ icon, label, value, sub, accentVar, delay = 0 }) {
+  return (
+    <div className="dd-stat" style={{ "--ac": `var(${accentVar})`, animationDelay: `${delay}s` }}>
+      <div className="dd-stat-icon">{icon}</div>
+      <div className="dd-stat-body">
+        <span className="dd-stat-value">{value}</span>
+        <span className="dd-stat-label">{label}</span>
+        {sub && <span className="dd-stat-sub">{sub}</span>}
+      </div>
+      <div className="dd-stat-blob" />
     </div>
-    <div className="db2-stat-glow" />
-  </div>
-);
+  );
+}
 
-const TypeBadge = ({ type }) => {
-  const map = {
-    Video: { cls: "video", label: "Video" },
-    "In-Clinic": { cls: "clinic", label: "Clinic" },
-    Chat: { cls: "chat", label: "Chat" },
-  };
-  const t = map[type] || { cls: "clinic", label: type };
-  return <span className={`db2-badge db2-badge--${t.cls}`}>{t.label}</span>;
+const STATUS_MAP = {
+  confirmed: { cls: "teal",   label: "Confirmed" },
+  pending:   { cls: "amber",  label: "Pending"   },
+  done:      { cls: "green",  label: "Done"      },
+  completed: { cls: "green",  label: "Completed" },
+  cancelled: { cls: "red",    label: "Cancelled" },
 };
 
-const StatusBadge = ({ status }) => {
-  const map = {
-    confirmed: { cls: "confirmed", label: "Confirmed" },
-    pending: { cls: "pending", label: "Pending" },
-    done: { cls: "done", label: "Done" },
-    cancelled: { cls: "cancelled", label: "Cancelled" },
-  };
-  const s = map[status] || { cls: "pending", label: status };
-  return <span className={`db2-badge db2-badge--${s.cls}`}>{s.label}</span>;
+const TYPE_MAP = {
+  Video:      { cls: "purple", label: "Video"    },
+  "In-Clinic":{ cls: "teal",   label: "Clinic"   },
+  Chat:       { cls: "amber",  label: "Chat"     },
 };
 
-/* ─── main component ─── */
-export default function Dashbord() {
+function Badge({ text, cls }) {
+  return <span className={`dd-badge dd-badge--${cls}`}>{text}</span>;
+}
+
+const QUICK_ACTIONS = [
+  { to: "/doctor-dashboard/appointments", label: "Appointments", accentVar: "--teal",   icon: "M8 2v4M16 2v4M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" },
+  { to: "/doctor-dashboard/patients",     label: "Patients",     accentVar: "--purple", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" },
+  { to: "/doctor-dashboard/messages",     label: "Messages",     accentVar: "--amber",  icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" },
+  { to: "/doctor-dashboard/raise-ticket", label: "Raise Ticket", accentVar: "--orange", icon: "M2 10h20l-2 8H4l-2-8zM6 2v4M18 2v4M6 10v8M18 10v8M10 6h4" },
+  { to: "/doctor-dashboard/analytics",   label: "Analytics",    accentVar: "--blue",   icon: "M18 20V10M12 20V4M6 20v-6M2 20h20" },
+  { to: "/doctor-dashboard/enrollments", label: "Enrollments",  accentVar: "--red",    icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8" },
+  { to: "/doctor-dashboard/settings",    label: "Settings",     accentVar: "--green",  icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" },
+];
+
+function SvgIcon({ d, size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {d.split("M").filter(Boolean).map((seg, i) => (
+        <path key={i} d={`M${seg}`} />
+      ))}
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────
+   Main Component
+───────────────────────────────────────── */
+export default function DoctorDashboard() {
   const navigate = useNavigate();
-  const doctor = JSON.parse(localStorage.getItem("currentDoctor") || "null") || {};
-  const token = localStorage.getItem("doctorToken");
+  const { doctor = {} } = useDoctorAuth();
 
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,53 +109,39 @@ export default function Dashbord() {
   const [tab, setTab] = useState("today");
   const [now, setNow] = useState(new Date());
 
-  /* live clock */
+  /* Live clock */
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(t);
   }, []);
 
-  /* fetch appointments */
+  /* Fetch */
   const fetchAppointments = useCallback(() => {
-    if (!token) return;
     setLoading(true);
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/appointments/doctor`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api.get("/api/appointments/doctor")
       .then((r) => setAppointments(r.data))
       .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
-  /* confirm */
+  /* Confirm */
   const confirm = async (id) => {
     setConfirming(id);
     try {
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/confirm`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setAppointments((prev) =>
-        prev.map((a) => (a._id === id ? res.data.appointment : a))
-      );
+      const res = await api.put(`/api/appointments/${id}/confirm`, {});
+      setAppointments((prev) => prev.map((a) => (a._id === id ? res.data.appointment : a)));
     } catch { /* silent */ }
     finally { setConfirming(null); }
   };
 
-  /* cancel */
+  /* Cancel */
   const cancel = async (id) => {
     if (!window.confirm("Cancel this appointment?")) return;
     setCancellingId(id);
     try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/appointments/${id}/cancel`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/appointments/${id}/cancel`, {});
       setAppointments((prev) =>
         prev.map((a) => (a._id === id ? { ...a, status: "cancelled" } : a))
       );
@@ -129,201 +149,183 @@ export default function Dashbord() {
     finally { setCancellingId(null); }
   };
 
-  /* derived stats */
+  /* Derived */
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayAppts = appointments.filter((a) => a.date === todayStr || a.date?.startsWith(todayStr));
-  const pendingCount = appointments.filter((a) => a.status === "pending").length;
+  const todayAppts    = appointments.filter((a) => a.date === todayStr || a.date?.startsWith(todayStr));
+  const pendingCount  = appointments.filter((a) => a.status === "pending").length;
   const confirmedCount = appointments.filter((a) => a.status === "confirmed").length;
-  const doneCount = appointments.filter((a) => a.status === "done" || a.status === "completed").length;
+  const doneCount     = appointments.filter((a) => a.status === "done" || a.status === "completed").length;
 
-  const displayed = tab === "today"
-    ? todayAppts
-    : tab === "pending"
+  const displayed =
+    tab === "today"
+      ? todayAppts
+      : tab === "pending"
       ? appointments.filter((a) => a.status === "pending")
       : appointments.filter((a) => a.status === "confirmed");
 
-  const docInitials = initials(doctor.name);
+  const nextConfirmed = appointments.find((a) => a.status === "confirmed");
 
   return (
-    <div className="db2-wrap">
+    <div className="dd-root">
 
-      {/* ── Welcome Banner ── */}
-      <div className="db2-banner">
-        <div className="db2-banner-left">
-          <p className="db2-banner-greeting">{greeting()},</p>
-          <h1 className="db2-banner-name">Dr. {doctor.name || "Doctor"} 👋</h1>
-          <p className="db2-banner-date">{todayLabel()}</p>
+      {/* ── Banner ── */}
+      <div className="dd-banner">
+        <div className="dd-banner-left">
+          <span className="dd-eyebrow">HumaniCare</span>
+          <h1 className="dd-banner-name">
+            {getGreeting()}, Dr. {doctor.name || "Doctor"}{" "}
+            <span className="dd-wave">👋</span>
+          </h1>
+          <p className="dd-banner-date">{todayLabel()}</p>
         </div>
-        <div className="db2-banner-right">
-          <div className="db2-banner-clock">
+        <div className="dd-banner-right">
+          <div className="dd-clock">
             {now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
           </div>
-          <p className="db2-banner-sub">
+          <p className="dd-banner-today">
             {todayAppts.length > 0
-              ? `${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""} today`
+              ? `${todayAppts.length} appointment${todayAppts.length !== 1 ? "s" : ""} today`
               : "No appointments today"}
           </p>
         </div>
+        <div className="dd-banner-glow" />
       </div>
 
-      {/* ── Stats Row ── */}
-      <div className="db2-stats-row">
+      {/* ── Stats ── */}
+      <div className="dd-stats">
         <StatCard
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          }
-          label="Today's Appointments"
-          value={loading ? "—" : todayAppts.length}
+          accentVar="--teal" delay={0.05}
+          label="Today's Appointments" value={loading ? "—" : todayAppts.length}
           sub={`${confirmedCount} confirmed`}
-          accent="#0c8b7a"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
         />
         <StatCard
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          }
-          label="Pending Approval"
-          value={loading ? "—" : pendingCount}
+          accentVar="--amber" delay={0.1}
+          label="Pending Approval" value={loading ? "—" : pendingCount}
           sub="awaiting confirmation"
-          accent="#d97706"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
         />
         <StatCard
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          }
-          label="Total Appointments"
-          value={loading ? "—" : appointments.length}
+          accentVar="--purple" delay={0.15}
+          label="Total Appointments" value={loading ? "—" : appointments.length}
           sub={`${doneCount} completed`}
-          accent="#7c3aed"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
         />
         <StatCard
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-          }
-          label="Confirmed"
-          value={loading ? "—" : confirmedCount}
+          accentVar="--green" delay={0.2}
+          label="Confirmed" value={loading ? "—" : confirmedCount}
           sub="ready for consultation"
-          accent="#059669"
+          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
         />
       </div>
 
       {/* ── Main Grid ── */}
-      <div className="db2-grid">
+      <div className="dd-grid">
 
-        {/* ── Appointments Panel ── */}
-        <div className="db2-panel">
-          <div className="db2-panel-head">
-            <span className="db2-panel-title">Appointments</span>
-            <div className="db2-tabs">
-              {["today", "pending", "confirmed"].map((t) => (
+        {/* ── Left: Appointments Panel ── */}
+        <div className="dd-panel">
+          <div className="dd-panel-head">
+            <span className="dd-panel-title">Appointments</span>
+            <div className="dd-tabs">
+              {[
+                { key: "today",     label: "Today",     count: todayAppts.length  },
+                { key: "pending",   label: "Pending",   count: pendingCount       },
+                { key: "confirmed", label: "Confirmed", count: confirmedCount     },
+              ].map(({ key, label, count }) => (
                 <button
-                  key={t}
-                  className={`db2-tab${tab === t ? " db2-tab--active" : ""}`}
-                  onClick={() => setTab(t)}
+                  key={key}
+                  className={`dd-tab ${tab === key ? "dd-tab--active" : ""}`}
+                  onClick={() => setTab(key)}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                  <span className="db2-tab-count">
-                    {t === "today" ? todayAppts.length
-                      : t === "pending" ? pendingCount
-                        : confirmedCount}
-                  </span>
+                  {label}
+                  <span className="dd-tab-count">{count}</span>
                 </button>
               ))}
             </div>
-            <Link to="/doctor-dashboard/appointments" className="db2-view-all">
+            <Link to="/doctor-dashboard/appointments" className="dd-view-all">
               View all →
             </Link>
           </div>
 
-          <div className="db2-appt-list">
+          <div className="dd-appt-list">
             {loading ? (
-              <div className="db2-loading">
-                {[1, 2, 3].map((n) => <div key={n} className="db2-skeleton" />)}
+              <div className="dd-skeletons">
+                {[1, 2, 3].map((n) => <div key={n} className="dd-skeleton" style={{ animationDelay: `${n * 0.08}s` }} />)}
               </div>
             ) : displayed.length === 0 ? (
-              <div className="db2-empty">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
+              <div className="dd-empty">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 <p>No appointments in this category</p>
               </div>
             ) : (
               displayed.map((a, i) => {
-                const ac = getAC(i);
-                const av = initials(a.patientId?.name || "P");
+                const pal = palette(i);
+                const av  = initials(a.patientId?.name || "P");
+                const sm  = STATUS_MAP[a.status] || { cls: "amber", label: a.status };
+                const tm  = TYPE_MAP[a.type || "In-Clinic"] || { cls: "teal", label: a.type || "Clinic" };
                 return (
-                  <div className="db2-appt-row" key={a._id}>
-                    <div className="db2-appt-av" style={{ background: ac.bg, color: ac.color }}>{av}</div>
-                    <div className="db2-appt-info">
-                      <div className="db2-appt-name">{a.patientId?.name || "Unknown Patient"}</div>
-                      <div className="db2-appt-issue">{a.problem || "General consultation"}</div>
-                      <div className="db2-appt-meta">
-                        <TypeBadge type={a.type || "In-Clinic"} />
-                        <span className="db2-appt-time">
+                  <div className="dd-appt-row" key={a._id} style={{ animationDelay: `${i * 0.04}s` }}>
+                    <div
+                      className="dd-appt-av"
+                      style={{ background: pal.bg, color: pal.color, boxShadow: `0 0 0 1.5px ${pal.color}30` }}
+                    >{av}</div>
+
+                    <div className="dd-appt-info">
+                      <div className="dd-appt-name">{a.patientId?.name || "Unknown Patient"}</div>
+                      <div className="dd-appt-issue">{a.problem || "General consultation"}</div>
+                      <div className="dd-appt-meta">
+                        <Badge text={tm.label} cls={tm.cls} />
+                        <span className="dd-appt-time">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                           </svg>
                           {a.time || "—"} · {a.date ? fmt(a.date) : "—"}
                         </span>
                       </div>
                     </div>
-                    <div className="db2-appt-status">
-                      <StatusBadge status={a.status} />
-                    </div>
-                    <div className="db2-appt-actions">
-                      {a.status === "pending" && (
-                        <button
-                          className="db2-btn db2-btn--confirm"
-                          onClick={() => confirm(a._id)}
-                          disabled={confirming === a._id}
-                        >
-                          {confirming === a._id ? "…" : "Confirm"}
-                        </button>
-                      )}
-                      {a.status === "confirmed" && (
-                        <button
-                          className="db2-btn db2-btn--join"
-                          onClick={() => navigate(`/video-call/${a._id}`)}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="23 7 16 12 23 17 23 7" />
-                            <rect x="1" y="5" width="15" height="14" rx="2" />
-                          </svg>
-                          Join Call
-                        </button>
-                      )}
-                      {(a.status === "pending" || a.status === "confirmed") && (
-                        <button
-                          className="db2-btn db2-btn--cancel"
-                          onClick={() => cancel(a._id)}
-                          disabled={cancellingId === a._id}
-                          title="Cancel"
-                        >
-                          {cancellingId === a._id ? "…" : "✕"}
-                        </button>
-                      )}
-                      {(a.status === "done" || a.status === "completed") && (
-                        <span className="db2-done">✓ Completed</span>
-                      )}
+
+                    <div className="dd-appt-right">
+                      <Badge text={sm.label} cls={sm.cls} />
+                      <div className="dd-appt-actions">
+                        {a.status === "pending" && (
+                          <button
+                            className="dd-btn dd-btn--confirm"
+                            onClick={() => confirm(a._id)}
+                            disabled={confirming === a._id}
+                          >
+                            {confirming === a._id ? <span className="dd-spin" /> : "Confirm"}
+                          </button>
+                        )}
+                        {a.status === "confirmed" && (
+                          <button
+                            className="dd-btn dd-btn--join"
+                            onClick={() => navigate(`/video-call/${a._id}`)}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                            </svg>
+                            Join
+                          </button>
+                        )}
+                        {(a.status === "done" || a.status === "completed") && (
+                          <span className="dd-done">✓ Done</span>
+                        )}
+                        {(a.status === "pending" || a.status === "confirmed") && (
+                          <button
+                            className="dd-btn dd-btn--cancel"
+                            onClick={() => cancel(a._id)}
+                            disabled={cancellingId === a._id}
+                            title="Cancel"
+                          >
+                            {cancellingId === a._id ? <span className="dd-spin dd-spin--red" /> : "✕"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -333,122 +335,67 @@ export default function Dashbord() {
         </div>
 
         {/* ── Right Column ── */}
-        <div className="db2-right">
+        <div className="dd-right-col">
 
-
-
-          {/* Quick Actions */}
-          <div className="db2-panel">
-            <div className="db2-panel-head">
-              <span className="db2-panel-title">Quick Actions</span>
-            </div>
-            <div className="db2-quick-grid">
-              <Link to="/doctor-dashboard/appointments" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#d0faf4", color: "#0c8b7a" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </div>
-                <span>Appointments</span>
-              </Link>
-              <Link to="/doctor-dashboard/patients" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#ede9fe", color: "#7c3aed" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </div>
-                <span>My Patients</span>
-              </Link>
-              <Link to="/doctor-dashboard/messages" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#fef3c7", color: "#d97706" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                </div>
-                <span>Messages</span>
-              </Link>
-              <Link to="/doctor-dashboard/analytics" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#dbeafe", color: "#0369a1" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <line x1="18" y1="20" x2="18" y2="10" />
-                    <line x1="12" y1="20" x2="12" y2="4" />
-                    <line x1="6" y1="20" x2="6" y2="14" />
-                    <line x1="2" y1="20" x2="22" y2="20" />
-                  </svg>
-                </div>
-                <span>Analytics</span>
-              </Link>
-              <Link to="/doctor-dashboard/enrollments" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#fee2e2", color: "#dc2626" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                  </svg>
-                </div>
-                <span>Enrollments</span>
-              </Link>
-              <Link to="/doctor-dashboard/settings" className="db2-quick-item">
-                <div className="db2-quick-icon" style={{ background: "#d1fae5", color: "#059669" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                </div>
-                <span>Settings</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Upcoming next appointment */}
-          {(() => {
-            const next = appointments.find((a) => a.status === "confirmed");
-            if (!next) return null;
-            const av = initials(next.patientId?.name || "P");
-            const ac = getAC(0);
+          {/* Next Consultation */}
+          {nextConfirmed && (() => {
+            const pal = palette(0);
+            const av  = initials(nextConfirmed.patientId?.name || "P");
+            const tm  = TYPE_MAP[nextConfirmed.type || "In-Clinic"] || { cls: "teal", label: "Clinic" };
             return (
-              <div className="db2-panel db2-next-panel">
-                <div className="db2-panel-head">
-                  <span className="db2-panel-title">Next Consultation</span>
-                  <span className="db2-badge db2-badge--confirmed">Confirmed</span>
+              <div className="dd-panel dd-next-panel">
+                <div className="dd-panel-head">
+                  <span className="dd-panel-title">Next Consultation</span>
+                  <Badge text="Confirmed" cls="teal" />
                 </div>
-                <div className="db2-next-body">
-                  <div className="db2-next-av" style={{ background: ac.bg, color: ac.color }}>{av}</div>
-                  <div>
-                    <div className="db2-next-name">{next.patientId?.name || "Patient"}</div>
-                    <div className="db2-next-issue">{next.problem || "General consultation"}</div>
-                    <div className="db2-next-meta">
-                      <TypeBadge type={next.type || "In-Clinic"} />
-                      <span className="db2-appt-time">
+                <div className="dd-next-body">
+                  <div
+                    className="dd-next-av"
+                    style={{ background: pal.bg, color: pal.color, boxShadow: `0 0 0 2px ${pal.color}40` }}
+                  >{av}</div>
+                  <div className="dd-next-info">
+                    <div className="dd-next-name">{nextConfirmed.patientId?.name || "Patient"}</div>
+                    <div className="dd-next-issue">{nextConfirmed.problem || "General consultation"}</div>
+                    <div className="dd-next-meta">
+                      <Badge text={tm.label} cls={tm.cls} />
+                      <span className="dd-appt-time">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
+                          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                         </svg>
-                        {next.time} · {fmt(next.date)}
+                        {nextConfirmed.time} · {fmt(nextConfirmed.date)}
                       </span>
                     </div>
                   </div>
                 </div>
                 <button
-                  className="db2-btn db2-btn--join db2-btn--full"
-                  onClick={() => navigate(`/video-call/${next._id}`)}
+                  className="dd-btn dd-btn--join dd-btn--wide"
+                  onClick={() => navigate(`/video-call/${nextConfirmed._id}`)}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="23 7 16 12 23 17 23 7" />
-                    <rect x="1" y="5" width="15" height="14" rx="2" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
                   </svg>
                   Start Video Call
                 </button>
               </div>
             );
           })()}
+
+          {/* Quick Actions */}
+          <div className="dd-panel">
+            <div className="dd-panel-head">
+              <span className="dd-panel-title">Quick Actions</span>
+            </div>
+            <div className="dd-quick-grid">
+              {QUICK_ACTIONS.map(({ to, label, accentVar, icon }) => (
+                <Link key={to} to={to} className="dd-quick-item" style={{ "--qa": `var(${accentVar})` }}>
+                  <div className="dd-quick-icon">
+                    <SvgIcon d={icon} size={18} />
+                  </div>
+                  <span className="dd-quick-label">{label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
 
         </div>
       </div>

@@ -1,30 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import AppointmentChat from "../../components/AppointmentChat";
 import "./appointment.css";
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Appointments() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("confirmed");
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/appointments/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api.get("/api/appointments/mine")
       .then((res) => setAppointments(res.data))
       .catch((err) => console.error("Failed to load appointments", err))
       .finally(() => setLoading(false));
@@ -230,6 +219,7 @@ export default function Appointments() {
               <AppointmentChat
                 appointmentId={selectedAppointment._id}
                 userName={user?.name}
+                userId={user?._id}
               />
             </div>
             <div className="appt-modal-footer">

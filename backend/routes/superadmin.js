@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const { verifyToken, superAdminOnly } = require("../middleware/verifyToken");
+const { verifyAdminToken, superAdminOnly } = require("../middleware/verifyToken");
 
 // GET /api/superadmin/admins — list all admins
-router.get("/admins", verifyToken, superAdminOnly, async (req, res) => {
+router.get("/admins", verifyAdminToken, superAdminOnly, async (req, res) => {
   try {
     const admins = await User.find({ role: "admin" })
       .select("-password")
@@ -17,7 +17,7 @@ router.get("/admins", verifyToken, superAdminOnly, async (req, res) => {
 });
 
 // POST /api/superadmin/admins — create a new admin
-router.post("/admins", verifyToken, superAdminOnly, async (req, res) => {
+router.post("/admins", verifyAdminToken, superAdminOnly, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -51,7 +51,7 @@ router.post("/admins", verifyToken, superAdminOnly, async (req, res) => {
 });
 
 // DELETE /api/superadmin/admins/:id — remove an admin
-router.delete("/admins/:id", verifyToken, superAdminOnly, async (req, res) => {
+router.delete("/admins/:id", verifyAdminToken, superAdminOnly, async (req, res) => {
   try {
     const admin = await User.findOneAndDelete({ _id: req.params.id, role: "admin" });
     if (!admin) return res.status(404).json({ msg: "Admin not found." });

@@ -1,9 +1,8 @@
 // src/pages/AskDoctor.jsx
 import { useState, useRef, useEffect, useCallback } from "react";
-import axios from "axios";
 import "./AskDoctor.css";
-
-const API = `${import.meta.env.VITE_API_URL}/api/qna`;
+import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const CATEGORIES = [
   "General",
@@ -135,6 +134,9 @@ const IconChevRight = () => (
 );
 
 export default function AskDoctor() {
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+
   const [questions, setQuestions] = useState([]);
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
@@ -149,6 +151,7 @@ export default function AskDoctor() {
 
   // Fetch questions from MongoDB on load
   const fetchQuestions = useCallback(() => {
+<<<<<<< HEAD
     axios
       .get(API)
       //
@@ -159,6 +162,10 @@ export default function AskDoctor() {
             : (res.data.questions ?? res.data.data ?? []),
         ),
       )
+=======
+    api.get("/api/qna")
+      .then((res) => setQuestions(res.data))
+>>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       .catch((err) => console.error("Failed to fetch questions:", err));
   }, []);
 
@@ -182,6 +189,10 @@ export default function AskDoctor() {
   /* submit */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      setErrors({ text: "You must be logged in to ask a question." });
+      return;
+    }
     const errs = validate();
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -190,6 +201,7 @@ export default function AskDoctor() {
 
     setSubmitting(true);
     try {
+<<<<<<< HEAD
       const res = await axios.post(`${API}/ask`, {
         question: text,
         category,
@@ -202,8 +214,13 @@ export default function AskDoctor() {
       setErrors({});
       setCategory("General");
       setCurrentPage(1);
+=======
+      await api.post("/api/qna/ask", { question: text, category });
+      setText(""); setFile(null); setAgreed(false);
+      setErrors({}); setCategory("General"); setCurrentPage(1);
+>>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 6000);
+      setTimeout(() => setSubmitted(false), 8000);
     } catch (err) {
       setErrors({
         text: err.response?.data?.msg || "Failed to submit. Please try again.",
@@ -270,10 +287,27 @@ export default function AskDoctor() {
                     Question submitted successfully!
                   </div>
                   <div className="ad-success-sub">
+<<<<<<< HEAD
                     We will review your question and respond within 2 hours. You
                     can see it listed below.
+=======
+                    Your question has been received. A verified doctor will answer it within <strong>12 hours</strong>.
+                    Track the status in your <a href="/user/medical-questions" style={{ color: "#fff", textDecoration: "underline" }}>Medical Questions</a> dashboard.
+>>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* login gate */}
+            {!isLoggedIn && (
+              <div style={{
+                background: "#fef3c7", border: "1px solid #fcd34d",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+                fontSize: 14, color: "#92400e", display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 18 }}>🔒</span>
+                <span>You must <a href="/login" style={{ color: "#b45309", fontWeight: 600 }}>log in</a> to ask a question.</span>
               </div>
             )}
 
@@ -415,12 +449,17 @@ export default function AskDoctor() {
                 )}
               </div>
 
+<<<<<<< HEAD
               <button
                 type="submit"
                 className="ad-submit-btn"
                 disabled={submitting}
               >
                 {submitting ? "Submitting…" : "Ask Doctor Now →"}
+=======
+              <button type="submit" className="ad-submit-btn" disabled={submitting || !isLoggedIn}>
+                {submitting ? "Submitting…" : !isLoggedIn ? "Log in to Ask →" : "Ask Doctor Now →"}
+>>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
               </button>
             </form>
           </div>

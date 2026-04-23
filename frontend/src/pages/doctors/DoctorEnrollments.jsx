@@ -1,1505 +1,605 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PhoneInputLib from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { getNames } from "country-list";
 import "./DoctorEnrollments.css";
+import api from "../../api";
 
 const PhoneInput = PhoneInputLib.default ?? PhoneInputLib;
 
-const DoctorEnrollments = ({ onComplete, initialData, doctorId }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [countries, setCountries] = useState([]);
-  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [isReadOnly, setIsReadOnly] = useState(!!initialData);
-  const [hasExistingProfilePhoto, setHasExistingProfilePhoto] = useState(false);
-  const [hasExistingCertification, setHasExistingCertification] = useState(false);
+const LANGUAGES = ["English","Hindi","Bengali","Tamil","Telugu","Marathi","Gujarati","Kannada","Malayalam","Punjabi"];
 
-  const [formData, setFormData] = useState({
-    // Section 1 - Personal Details
-    email: "",
-    countryCode: "",
-    phoneNumber: "",
-    firstName: "",
-    surname: "",
-    gender: "",
-    dob: "",
-    qualification: "",
-    specialization: "",
-    subSpecialization: "",
-    consultantFees: "",
-    address: "",
-    country: "",
-    state: "",
-    city: "",
-    zip: "",
-    profilePhoto: null,
-    experience: "",
-    aboutDoctor: "",
-    consultationMode: "",
-    languagesKnown: [],
-    clinicName: "",
-    clinicAddress: "",
+const SPECIALITIES = {
+  "Cardiologist":       ["Interventional Cardiology","Non-Invasive Cardiology","Electrophysiology","Heart Failure","Preventive Cardiology"],
+  "Dermatologist":      ["Cosmetic Dermatology","Dermatopathology","Pediatric Dermatology","Trichology","Laser Dermatology"],
+  "Orthopedic Surgeon": ["Joint Replacement","Spine Surgery","Sports Injury","Pediatric Orthopedics","Trauma Surgery"],
+  "Neurologist":        ["Stroke Specialist","Epilepsy Specialist","Neurophysiology","Movement Disorders","Neurocritical Care"],
+  "Oncologist":         ["Medical Oncology","Surgical Oncology","Radiation Oncology","Pediatric Oncology","Gynecologic Oncology"],
+  "Pediatrician":       ["Neonatology","Pediatric Cardiology","Pediatric Neurology","Pediatric Oncology","Developmental Pediatrics"],
+  "OB-GYN":             ["Infertility Specialist","Gynecologic Oncology","Maternal-Fetal Medicine","Reproductive Endocrinology","Laparoscopic Surgery"],
+  "Psychiatrist":       ["Child Psychiatry","Addiction Psychiatry","Geriatric Psychiatry","Forensic Psychiatry","Psychotherapy"],
+  "Radiologist":        ["Interventional Radiology","Neuroradiology","Musculoskeletal Radiology","Pediatric Radiology","Breast Imaging"],
+  "Urologist":          ["Andrology","Endourology","Uro-Oncology","Pediatric Urology","Reconstructive Urology"],
+};
 
-    // Section 2 - Verification + Payout
-    medicalRegistrationNumber: "",
-    medicalLicense: "",
-    medicalCertification: null,
-    idProof: "",
-    medicalCouncilName: "",
-    registrationYear: "",
-    idProofType: "",
-    payoutEmail: "",
-    accountHolderName: "",
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
+const STEPS = [
+  { num: 1, title: "Personal Info",    icon: "👤" },
+  { num: 2, title: "Practice Details", icon: "🏥" },
+  { num: 3, title: "Verification",     icon: "🔒" },
+  { num: 4, title: "Payout Setup",     icon: "💳" },
+];
+
+const V = {
+  email:                    v => !v ? "Email is required" : !/\S+@\S+\.\S+/.test(v) ? "Enter a valid email" : "",
+  phoneNumber:              v => !v ? "Phone number is required" : v.length < 10 ? "Enter a valid phone number" : "",
+  firstName:                v => !v ? "First name is required" : "",
+  surname:                  v => !v ? "Surname is required" : "",
+  gender:                   v => !v ? "Please select gender" : "",
+  dob:                      v => { if (!v) return "Date of birth is required"; const a = Math.floor((Date.now() - new Date(v)) / 31557600000); return a < 23 ? "Minimum age is 23 years" : a > 80 ? "Please enter a valid date" : ""; },
+  qualification:            v => !v ? "Qualification is required" : "",
+  specialization:           v => !v ? "Please select specialization" : "",
+  consultantFees:           v => !v ? "Consultation fee is required" : v < 100 ? "Minimum fee is ₹100" : "",
+  address:                  v => !v ? "Address is required" : v.length < 10 ? "Please enter a complete address" : "",
+  country:                  v => !v ? "Please select country" : "",
+  state:                    v => !v ? "State is required" : "",
+  city:                     v => !v ? "City is required" : "",
+  zip:                      v => !v ? "ZIP code is required" : !/^\d{5,6}$/.test(v) ? "Enter a valid ZIP code" : "",
+  languagesKnown:           v => (!v || v.length === 0) ? "Select at least one language" : "",
+  experience:               v => !v ? "Experience is required" : v < 1 ? "Minimum 1 year" : v > 60 ? "Maximum 60 years" : "",
+  aboutDoctor:              v => !v ? "This field is required" : v.length < 150 ? `${150 - v.length} more characters needed (min 150)` : v.length > 300 ? "Maximum 300 characters" : "",
+  consultationMode:         v => !v ? "Please select a consultation mode" : "",
+  clinicName:               v => !v ? "Clinic name is required" : "",
+  clinicAddress:            v => !v ? "Clinic address is required" : v.length < 10 ? "Please enter a complete address" : "",
+  medicalRegistrationNumber:v => !v ? "Registration number is required" : "",
+  medicalLicense:           v => !v ? "License number is required" : "",
+  idProof:                  v => !v ? "ID proof number is required" : "",
+  medicalCouncilName:       v => !v ? "Please select medical council" : "",
+  registrationYear:         v => { if (!v) return "Registration year is required"; const y = parseInt(v); return y < 1950 ? "Enter a valid year" : y > new Date().getFullYear() ? "Year cannot be in future" : ""; },
+  idProofType:              v => !v ? "Please select ID proof type" : "",
+  payoutEmail:              v => v && !/\S+@\S+\.\S+/.test(v) ? "Enter a valid email" : "",
+  accountHolderName:        v => !v ? "Account holder name is required" : "",
+  bankName:                 v => !v ? "Bank name is required" : "",
+  accountNumber:            v => !v ? "Account number is required" : !/^\d{9,18}$/.test(v) ? "Enter a valid account number (9–18 digits)" : "",
+  ifscCode:                 v => !v ? "IFSC code is required" : !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(v.toUpperCase()) ? "Enter a valid IFSC code (e.g. SBIN0001234)" : "",
+};
+
+const STEP_FIELDS = {
+  1: ["email","phoneNumber","firstName","surname","gender","dob"],
+  2: ["qualification","specialization","consultantFees","experience","aboutDoctor","consultationMode","languagesKnown","clinicName","clinicAddress","address","country","state","city","zip"],
+  3: ["medicalRegistrationNumber","medicalLicense","medicalCouncilName","registrationYear","idProofType","idProof"],
+  4: ["accountHolderName","bankName","accountNumber","ifscCode"],
+};
+
+/* ── Simple Field Wrapper ── */
+function Field({ label, error, hint, required: req, children }) {
+  return (
+    <div className="sf-field">
+      <label className="sf-label">
+        {label} {req && <span className="sf-req">*</span>}
+      </label>
+      {children}
+      {hint && !error && <p className="sf-hint">{hint}</p>}
+      {error && (
+        <p className="sf-error">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function DoctorEnrollments({ onComplete, initialData, doctorId }) {
+  const [step, setStep]                     = useState(1);
+  const [countries, setCountries]           = useState([]);
+  const [photoPreview, setPhotoPreview]     = useState(null);
+  const [showSuccess, setShowSuccess]       = useState(false);
+  const [isReadOnly, setIsReadOnly]         = useState(!!initialData);
+  const [hasExistingPhoto, setHasExistingPhoto] = useState(false);
+  const [hasExistingCert, setHasExistingCert]   = useState(false);
+  const [errors, setErrors]                 = useState({});
+  const [submitting, setSubmitting]         = useState(false);
+  const topRef = useRef(null);
+
+  const [form, setForm] = useState({
+    email:"", phoneNumber:"", firstName:"", surname:"", gender:"", dob:"",
+    qualification:"", specialization:"", subSpecialization:"", consultantFees:"",
+    address:"", country:"", state:"", city:"", zip:"",
+    profilePhoto: null, experience:"", aboutDoctor:"", consultationMode:"",
+    languagesKnown:[], clinicName:"", clinicAddress:"",
+    medicalRegistrationNumber:"", medicalLicense:"", medicalCertification: null,
+    idProof:"", medicalCouncilName:"", registrationYear:"", idProofType:"",
+    payoutEmail:"", accountHolderName:"", bankName:"", accountNumber:"", ifscCode:"",
   });
 
-  const [errors, setErrors] = useState({});
-
   useEffect(() => {
-    const countryNames = getNames();
-    const sortedCountries = countryNames.sort((a, b) => a.localeCompare(b));
-    setCountries(sortedCountries);
-
-    // Populate form if initialData exists
+    setCountries(getNames().sort((a,b) => a.localeCompare(b)));
     if (initialData) {
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-        // Ensure files are null as they can't be easily restored from JSON
-        profilePhoto: null,
-        medicalCertification: null
-      }));
-      setHasExistingProfilePhoto(!!initialData.hasProfilePhoto || !!initialData.profilePhoto);
-      setHasExistingCertification(!!initialData.hasCertification || !!initialData.medicalCertification);
+      setForm(p => ({ ...p, ...initialData, profilePhoto: null, medicalCertification: null }));
+      setHasExistingPhoto(!!(initialData.hasProfilePhoto || initialData.profilePhoto));
+      setHasExistingCert(!!(initialData.hasCertification || initialData.medicalCertification));
     }
   }, [initialData]);
 
-  const validators = {
-    email: (value) => {
-      if (!value) return "Email is required";
-      if (!/\S+@\S+\.\S+/.test(value)) return "Invalid email format";
-      return "";
-    },
-
-    phoneNumber: (value) => {
-      if (!value) return "Phone number is required";
-      if (value.length < 10) return "Phone number must be at least 10 digits";
-      return "";
-    },
-
-    firstName: (value) => {
-      if (!value) return "First name is required";
-      if (value.length < 2) return "First name must be at least 2 characters";
-      return "";
-    },
-
-    surname: (value) => {
-      if (!value) return "Surname is required";
-      if (value.length < 2) return "Surname must be at least 2 characters";
-      return "";
-    },
-
-    gender: (value) => {
-      if (!value) return "Please select gender";
-      return "";
-    },
-
-    dob: (value) => {
-      if (!value) return "Date of birth is required";
-      const age = Math.floor((new Date() - new Date(value)) / 31557600000);
-      if (age < 23) return "Doctor must be at least 23 years old";
-      if (age > 80) return "Please enter a valid date of birth";
-      return "";
-    },
-
-    qualification: (value) => {
-      if (!value) return "Qualification is required";
-      return "";
-    },
-
-    specialization: (value) => {
-      if (!value) return "Please select a specialization";
-      return "";
-    },
-
-    consultantFees: (value) => {
-      if (!value) return "Consultation fee is required";
-      if (value < 0) return "Fee cannot be negative";
-      if (value < 100) return "Minimum fee should be ₹100";
-      return "";
-    },
-
-    address: (value) => {
-      if (!value) return "Address is required";
-      if (value.length < 10) return "Please provide a complete address";
-      return "";
-    },
-
-    country: (value) => {
-      if (!value) return "Please select country";
-      return "";
-    },
-
-    state: (value) => {
-      if (!value) return "State is required";
-      return "";
-    },
-
-    city: (value) => {
-      if (!value) return "City is required";
-      return "";
-    },
-
-    zip: (value) => {
-      if (!value) return "ZIP code is required";
-      if (!/^\d{5,6}$/.test(value)) return "Invalid ZIP code format";
-      return "";
-    },
-
-    languagesKnown: (value) => {
-      if (!value || value.length === 0) {
-        return "Please select at least one language";
-      }
-      return "";
-    },
-
-    medicalRegistrationNumber: (value) => {
-      if (!value) return "Medical registration number is required";
-      return "";
-    },
-
-    medicalLicense: (value) => {
-      if (!value) return "Medical license number is required";
-      return "";
-    },
-
-    idProof: (value) => {
-      if (!value) return "ID proof is required";
-      return "";
-    },
-
-    payoutEmail: (value) => {
-      if (value && !/\S+@\S+\.\S+/.test(value)) return "Invalid email format";
-      return "";
-    },
-
-    experience: (value) => {
-      if (!value) return "Experience is required";
-      if (value < 1) return "Experience must be at least 1 year";
-      if (value > 60) return "Please enter valid experience (max 60 years)";
-      return "";
-    },
-
-    aboutDoctor: (value) => {
-      if (!value) return "About Doctor is required";
-      if (value.length < 150) return "Please provide at least 150 characters";
-      if (value.length > 300) return "Maximum 300 characters allowed";
-      return "";
-    },
-
-    consultationMode: (value) => {
-      if (!value) return "Please select consultation mode";
-      return "";
-    },
-
-    clinicName: (value) => {
-      if (!value) return "Clinic name is required";
-      if (value.length < 3) return "Clinic name must be at least 3 characters";
-      return "";
-    },
-
-    clinicAddress: (value) => {
-      if (!value) return "Clinic address is required";
-      if (value.length < 10) return "Please provide a complete clinic address";
-      return "";
-    },
-
-    medicalCouncilName: (value) => {
-      if (!value) return "Medical council name is required";
-      return "";
-    },
-
-    registrationYear: (value) => {
-      if (!value) return "Registration year is required";
-      const currentYear = new Date().getFullYear();
-      if (value < 1950) return "Please enter a valid year";
-      if (value > currentYear) return "Year cannot be in the future";
-      return "";
-    },
-
-    idProofType: (value) => {
-      if (!value) return "Please select ID proof type";
-      return "";
-    },
-
-    accountHolderName: (value) => {
-      if (!value) return "Account holder name is required";
-      if (value.length < 3) return "Please enter a valid name";
-      return "";
-    },
-
-    bankName: (value) => {
-      if (!value) return "Bank name is required";
-      return "";
-    },
-
-    accountNumber: (value) => {
-      if (!value) return "Account number is required";
-      if (!/^\d{9,18}$/.test(value)) {
-        return "Please enter a valid account number (9-18 digits)";
-      }
-      return "";
-    },
-
-    ifscCode: (value) => {
-      if (!value) return "IFSC code is required";
-      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value.toUpperCase())) {
-        return "Please enter a valid IFSC code";
-      }
-      return "";
-    },
+  const set = (name, val) => {
+    setForm(p => ({ ...p, [name]: val, ...(name === "specialization" && { subSpecialization: "" }) }));
+    if (errors[name]) setErrors(p => ({ ...p, [name]: "" }));
   };
 
-  const validateField = (name, value) => {
-    const validator = validators[name];
-    return validator ? validator(value) : "";
-  };
-
-  const validateFileSize = (file, maxSizeMB = 2) => {
-    if (!file) return "File is required";
-    const maxSize = maxSizeMB * 1024 * 1024;
-    if (file.size > maxSize) return `File size must be less than ${maxSizeMB}MB`;
-    return "";
-  };
-
-  const validateFileType = (
-    file,
-    allowedTypes = ["pdf", "jpg", "jpeg", "png"]
-  ) => {
-    if (!file) return "File is required";
-    const fileExtension = file.name.split(".").pop().toLowerCase();
-    if (!allowedTypes.includes(fileExtension)) {
-      return `Only ${allowedTypes.join(", ").toUpperCase()} files are allowed`;
-    }
-    return "";
-  };
-
-  const validateStep = (step) => {
-    const newErrors = {};
-
-    if (step === 1) {
-      const fields = [
-        "email",
-        "phoneNumber",
-        "firstName",
-        "surname",
-        "gender",
-        "dob",
-        "qualification",
-        "specialization",
-        "consultantFees",
-        "address",
-        "country",
-        "state",
-        "city",
-        "zip",
-        "experience",
-        "aboutDoctor",
-        "consultationMode",
-        "clinicName",
-        "clinicAddress",
-        "languagesKnown",
-      ];
-
-      fields.forEach((field) => {
-        const error = validateField(field, formData[field]);
-        if (error) newErrors[field] = error;
-      });
-
-      if (formData.profilePhoto) {
-        const sizeError = validateFileSize(formData.profilePhoto);
-        const typeError = validateFileType(formData.profilePhoto, [
-          "jpg",
-          "jpeg",
-          "png",
-        ]);
-        if (sizeError) newErrors.profilePhoto = sizeError;
-        else if (typeError) newErrors.profilePhoto = typeError;
-      } else if (!hasExistingProfilePhoto) {
-        // Only require if no existing photo
-        newErrors.profilePhoto = "Profile photo is required";
-      }
-    } else if (step === 2) {
-      const fields = [
-        "medicalRegistrationNumber",
-        "medicalLicense",
-        "idProof",
-        "medicalCouncilName",
-        "registrationYear",
-        "idProofType",
-        "accountHolderName",
-        "bankName",
-        "accountNumber",
-        "ifscCode",
-      ];
-
-      fields.forEach((field) => {
-        const error = validateField(field, formData[field]);
-        if (error) newErrors[field] = error;
-      });
-
-      if (formData.medicalCertification) {
-        const sizeError = validateFileSize(formData.medicalCertification);
-        const typeError = validateFileType(formData.medicalCertification);
-        if (sizeError) newErrors.medicalCertification = sizeError;
-        else if (typeError) newErrors.medicalCertification = typeError;
-      } else if (!hasExistingCertification) {
-        newErrors.medicalCertification = "Medical certification file is required";
-      }
-
-      if (formData.payoutEmail) {
-        const error = validateField("payoutEmail", formData.payoutEmail);
-        if (error) newErrors.payoutEmail = error;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e) => {
+  const onChange = e => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === "checkbox" ? checked : value;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: newValue,
-      ...(name === "specialization" && { subSpecialization: "" }),
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-
-    if (value) {
-      const error = validateField(name, newValue);
-      if (error) {
-        setErrors((prev) => ({ ...prev, [name]: error }));
-      }
-    }
+    set(name, type === "checkbox" ? checked : value);
   };
 
-  const handlePhoneChange = (phone) => {
-    setFormData((prev) => ({ ...prev, phoneNumber: phone }));
-    if (errors.phoneNumber) {
-      setErrors((prev) => ({ ...prev, phoneNumber: "" }));
-    }
-  };
-
-  const handleFileChange = (e) => {
+  const onFile = e => {
     const { name, files } = e.target;
     const file = files[0];
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: file,
-    }));
-
-    if (name === "profilePhoto" && file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-
-      const sizeError = validateFileSize(file);
-      const typeError = validateFileType(file, ["jpg", "jpeg", "png"]);
-      if (sizeError || typeError) {
-        setErrors((prev) => ({ ...prev, [name]: sizeError || typeError }));
-      } else if (errors[name]) {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
-      }
-    } else if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (!file) return;
+    set(name, file);
+    if (name === "profilePhoto") {
+      const r = new FileReader();
+      r.onloadend = () => setPhotoPreview(r.result);
+      r.readAsDataURL(file);
     }
   };
 
-  const handleLanguageToggle = (language) => {
-    setFormData((prev) => ({
-      ...prev,
-      languagesKnown: prev.languagesKnown.includes(language)
-        ? prev.languagesKnown.filter((l) => l !== language)
-        : [...prev.languagesKnown, language],
-    }));
-
-    if (errors.languagesKnown) {
-      setErrors((prev) => ({ ...prev, languagesKnown: "" }));
-    }
+  const toggleLang = lang => {
+    const next = form.languagesKnown.includes(lang)
+      ? form.languagesKnown.filter(l => l !== lang)
+      : [...form.languagesKnown, lang];
+    set("languagesKnown", next);
   };
 
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      if (currentStep < 2) setCurrentStep(currentStep + 1);
-    } else {
-      const firstErrorElement = document.querySelector(".error-message");
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      setErrors({});
-    }
-  };
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!validateStep(2)) return;
-
-  const token = localStorage.getItem("doctorToken");
-
-  // Exclude File objects — send only serializable data + flags
-  const { profilePhoto, medicalCertification, ...serializableData } = formData;
-
-  const payload = {
-    ...serializableData,
-    doctorId,
-    hasProfilePhoto: hasExistingProfilePhoto || !!profilePhoto,
-    hasCertification: hasExistingCertification || !!medicalCertification,
-  };
-
-  try {
-    const res = await fetch("/api/doctor/enrollment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
+  const validate = s => {
+    const errs = {};
+    (STEP_FIELDS[s] || []).forEach(f => {
+      const e = V[f]?.(form[f]);
+      if (e) errs[f] = e;
     });
-
-    if (!res.ok) {
-      const err = await res.json();
-      console.error("Enrollment error:", err.message);
-      return;
+    if (s === 1 && !form.profilePhoto && !hasExistingPhoto) errs.profilePhoto = "Profile photo is required";
+    if (s === 3 && !form.medicalCertification && !hasExistingCert) errs.medicalCertification = "Medical certification is required";
+    if (s === 4 && form.payoutEmail) { const e = V.payoutEmail(form.payoutEmail); if (e) errs.payoutEmail = e; }
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      document.querySelector(".sf-error")?.closest(".sf-field")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
     }
-
-    const saved = await res.json();
-    setShowSuccess(true);
-
-    setTimeout(() => {
-      setShowSuccess(false);
-      setIsReadOnly(true);
-      if (onComplete) onComplete(saved);
-    }, 2000);
-  } catch (err) {
-    console.error("Enrollment submission failed:", err);
-  }
-};
-
-  const languages = [
-    "English",
-    "Hindi",
-    "Bengali",
-    "Tamil",
-    "Telugu",
-    "Marathi",
-    "Gujarati",
-    "Kannada",
-    "Malayalam",
-    "Punjabi",
-  ];
-
-  const specialities = {
-    Cardiologist: [
-      "Interventional Cardiology",
-      "Non-Invasive Cardiology",
-      "Electrophysiology",
-      "Heart Failure Specialist",
-      "Preventive Cardiology",
-    ],
-    Dermatologist: [
-      "Cosmetic Dermatology",
-      "Dermatopathology",
-      "Pediatric Dermatology",
-      "Trichology (Hair Specialist)",
-      "Laser Dermatology",
-    ],
-    "Orthopedic Surgeon / Orthopedist": [
-      "Joint Replacement",
-      "Spine Surgery",
-      "Sports Injury",
-      "Pediatric Orthopedics",
-      "Trauma Surgery",
-    ],
-    "Orthopedic Surgery": [
-      "Joint Replacement",
-      "Spine Surgery",
-      "Sports Injury",
-      "Pediatric Orthopedics",
-      "Trauma Surgery",
-    ],
-    Neurologist: [
-      "Stroke Specialist",
-      "Epilepsy Specialist",
-      "Neurophysiology",
-      "Movement Disorders",
-      "Neurocritical Care",
-    ],
-    Oncologist: [
-      "Medical Oncology",
-      "Surgical Oncology",
-      "Radiation Oncology",
-      "Pediatric Oncology",
-      "Gynecologic Oncology",
-    ],
-    Pediatrician: [
-      "Neonatology",
-      "Pediatric Cardiology",
-      "Pediatric Neurology",
-      "Pediatric Oncology",
-      "Developmental Pediatrics",
-    ],
-    "Obstetrician and Gynecologist": [
-      "Infertility Specialist",
-      "Gynecologic Oncology",
-      "Maternal-Fetal Medicine",
-      "Reproductive Endocrinology",
-      "Laparoscopic Surgery",
-    ],
-    Psychiatrist: [
-      "Child Psychiatry",
-      "Addiction Psychiatry",
-      "Geriatric Psychiatry",
-      "Forensic Psychiatry",
-      "Psychotherapy",
-    ],
-    Radiologist: [
-      "Interventional Radiology",
-      "Neuroradiology",
-      "Musculoskeletal Radiology",
-      "Pediatric Radiology",
-      "Breast Imaging",
-    ],
-    Urologist: [
-      "Andrology",
-      "Endourology",
-      "Uro-Oncology",
-      "Pediatric Urology",
-      "Reconstructive Urology",
-    ],
+    return true;
   };
+
+  const next = () => {
+    if (validate(step)) {
+      setStep(s => Math.min(s + 1, 4));
+      topRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const back = () => {
+    setStep(s => Math.max(s - 1, 1));
+    setErrors({});
+    topRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!validate(4)) return;
+    setSubmitting(true);
+    const { profilePhoto, medicalCertification, ...rest } = form;
+    try {
+      const res = await api.post("/api/doctor/enrollment", {
+        ...rest, doctorId,
+        hasProfilePhoto: hasExistingPhoto || !!profilePhoto,
+        hasCertification: hasExistingCert || !!medicalCertification,
+      });
+      setShowSuccess(true);
+      setTimeout(() => { setShowSuccess(false); setIsReadOnly(true); onComplete?.(res.data); }, 3000);
+    } catch (err) { console.error(err); }
+    finally { setSubmitting(false); }
+  };
+
+  const charLen = form.aboutDoctor.length;
 
   return (
-    <div className="doctor-enrollment-container">
+    <div className="sf-root" ref={topRef}>
+
+      {/* ── Success Modal ── */}
       {showSuccess && (
-        <div className="success-message-overlay">
-          <div className="success-message-card">
-            <div className="success-icon">✓</div>
-            <h3>Application Submitted Successfully!</h3>
-            <p>
-              Thank you for submitting your doctor enrollment form. We will
-              review your application and get back to you within 2-3 business
-              days.
-            </p>
+        <div className="sf-success-overlay">
+          <div className="sf-success-box">
+            <div className="sf-success-icon">
+              <svg viewBox="0 0 52 52" fill="none">
+                <circle cx="26" cy="26" r="24" stroke="var(--teal)" strokeWidth="2.5" className="sf-check-circle"/>
+                <polyline points="14,27 22,35 38,19" stroke="var(--teal)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="sf-check-mark"/>
+              </svg>
+            </div>
+            <h3>Application Submitted!</h3>
+            <p>We'll review your application and respond within 2–3 business days.</p>
           </div>
         </div>
       )}
 
-      <div className="enrollment-card">
-        <div className="steps-sidebar">
-          <h2 className="enrollment-title">Enroll as a Doctor</h2>
-          <p className="enrollment-subtitle">
-            Complete these 2 simple steps to join our platform.
-          </p>
+      {/* ── Page Header ── */}
+      <div className="sf-page-header">
+        <span className="sf-eyebrow">HumaniCare</span>
+        <h1 className="sf-page-title">Doctor Enrollment</h1>
+        <p className="sf-page-sub">Complete all 4 steps to register on our platform.</p>
+      </div>
 
-          <div className="steps-list">
-            <div
-              className={`step-item ${currentStep === 1 ? "active" : ""} ${currentStep > 1 ? "completed" : ""}`}
-            >
-              <div className="step-number">1</div>
-              <div className="step-content">
-                <h4>Personal Details</h4>
-                <p>Basic professional information</p>
-              </div>
+      {/* ── Step Indicator ── */}
+      <div className="sf-stepper">
+        {STEPS.map(s => (
+          <div key={s.num} className={`sf-step ${step === s.num ? "sf-step--active" : ""} ${step > s.num ? "sf-step--done" : ""}`}>
+            <div className="sf-step-circle">
+              {step > s.num
+                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                : s.num
+              }
             </div>
-
-            <div className={`step-item ${currentStep === 2 ? "active" : ""}`}>
-              <div className="step-number">2</div>
-              <div className="step-content">
-                <h4>Verification</h4>
-                <p>Credentials and payout information</p>
-              </div>
-            </div>
+            <span className="sf-step-label">{s.title}</span>
           </div>
+        ))}
+        {/* connecting line */}
+        <div className="sf-stepper-bar">
+          <div className="sf-stepper-fill" style={{ width: `${((step - 1) / 3) * 100}%` }} />
+        </div>
+      </div>
+
+      {/* ── Form Card ── */}
+      <div className="sf-card">
+
+        {/* Card Header */}
+        <div className="sf-card-header">
+          <div className="sf-card-header-left">
+            <span className="sf-step-tag">Step {step} of 4</span>
+            <h2 className="sf-card-title">{STEPS[step-1].icon} {STEPS[step-1].title}</h2>
+          </div>
+          {initialData && isReadOnly && (
+            <button className="sf-edit-btn" onClick={() => setIsReadOnly(false)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
+            </button>
+          )}
         </div>
 
-        <div className="form-main">
-          <div className="form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <span className="step-indicator">Step {currentStep}/2</span>
-              <h2>
-                {currentStep === 1 && "Personal Details"}
-                {currentStep === 2 && "Doctor Verification"}
-              </h2>
-              {currentStep === 1 && (
-                <p>Provide your professional and contact information.</p>
-              )}
-              {currentStep === 2 && (
-                <p>Upload verification documents and payout details.</p>
-              )}
-            </div>
-            {initialData && isReadOnly && (
-              <button 
-                type="button" 
-                className="btn-secondary" 
-                onClick={() => setIsReadOnly(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Edit
-              </button>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="sf-form">
 
-          <form onSubmit={handleSubmit}>
-            {currentStep === 1 && (
-              <div className="form-section">
-                <div className="form-group">
-                  <label>Email Address</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="e.g. doctor@example.com"
-                    required
-                    disabled={isReadOnly}
-                  />
-                  <span className="helper-text">
-                    Your professional email address.
-                  </span>
-                  {errors.email && (
-                    <span className="error-message">{errors.email}</span>
-                  )}
+          {/* ═══ STEP 1 ═══ */}
+          {step === 1 && (
+            <div className="sf-section">
+              <p className="sf-section-desc">Fill in your personal and contact information.</p>
+
+              {/* Photo Upload */}
+              <div className="sf-photo-row">
+                <div className="sf-photo-thumb">
+                  {photoPreview
+                    ? <img src={photoPreview} alt="preview" />
+                    : hasExistingPhoto
+                    ? <span>📸</span>
+                    : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="7" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                  }
                 </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Phone Number</label>
-                    <PhoneInput
-                      country="in"
-                      value={formData.phoneNumber}
-                      onChange={handlePhoneChange}
-                      disabled={isReadOnly}
-                      inputStyle={{
-                        width: "100%",
-                        height: "48px",
-                        fontSize: "15px",
-                        backgroundColor: isReadOnly ? '#f8fafc' : 'white'
-                      }}
-                    />
-                    {errors.phoneNumber && (
-                      <span className="error-message">
-                        {errors.phoneNumber}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>First Name</label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="Dr. John"
-                      required
-                      disabled={isReadOnly}
-                    />
-                    {errors.firstName && (
-                      <span className="error-message">{errors.firstName}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Surname</label>
-                    <input
-                      type="text"
-                      name="surname"
-                      value={formData.surname}
-                      onChange={handleInputChange}
-                      placeholder="Doe"
-                      required
-                      disabled={isReadOnly}
-                    />
-                    {errors.surname && (
-                      <span className="error-message">{errors.surname}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Gender</label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {errors.gender && (
-                      <span className="error-message">{errors.gender}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Date of Birth</label>
-                    <input
-                      type="date"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                    />
-                    {errors.dob && (
-                      <span className="error-message">{errors.dob}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Qualification</label>
-                  <input
-                    type="text"
-                    name="qualification"
-                    value={formData.qualification}
-                    onChange={handleInputChange}
-                    placeholder="e.g. MBBS, MD"
-                    required
-                    disabled={isReadOnly}
-                  />
-                  {errors.qualification && (
-                    <span className="error-message">
-                      {errors.qualification}
-                    </span>
-                  )}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Specialization</label>
-                    <select
-                      name="specialization"
-                      value={formData.specialization}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Select Specialization</option>
-                      {Object.keys(specialities).map(spec => (
-                        <option key={spec} value={spec}>{spec}</option>
-                      ))}
-                    </select>
-                    {errors.specialization && (
-                      <span className="error-message">
-                        {errors.specialization}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Sub-Specialization</label>
-                    <select
-                      name="subSpecialization"
-                      value={formData.subSpecialization}
-                      onChange={handleInputChange}
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Select Sub-Specialization</option>
-                      {specialities[formData.specialization]?.map(
-                        (sub, index) => (
-                          <option key={index} value={sub}>
-                            {sub}
-                          </option>
-                        )
-                      )}
-                    </select>
-                    <span className="helper-text">
-                      Select a specialization first to see sub-specializations
-                    </span>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Consultant Fees (₹)</label>
-                  <input
-                    type="number"
-                    name="consultantFees"
-                    value={formData.consultantFees}
-                    onChange={handleInputChange}
-                    placeholder="Enter consultation fee"
-                    required
-                    disabled={isReadOnly}
-                  />
-                  {errors.consultantFees && (
-                    <span className="error-message">
-                      {errors.consultantFees}
-                    </span>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Address</label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="Enter your clinic/practice address"
-                    rows="3"
-                    required
-                    disabled={isReadOnly}
-                  />
-                  {errors.address && (
-                    <span className="error-message">{errors.address}</span>
-                  )}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Country</label>
-                    <select
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                    >
-                      <option value="">Select Country</option>
-                      {countries.map((country) => (
-                        <option key={country} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.country && (
-                      <span className="error-message">{errors.country}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      placeholder="State"
-                      required
-                      disabled={isReadOnly}
-                    />
-                    {errors.state && (
-                      <span className="error-message">{errors.state}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      placeholder="City"
-                      required
-                      disabled={isReadOnly}
-                    />
-                    {errors.city && (
-                      <span className="error-message">{errors.city}</span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>ZIP Code</label>
-                    <input
-                      type="text"
-                      name="zip"
-                      value={formData.zip}
-                      onChange={handleInputChange}
-                      placeholder="Postal Code"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.zip ? "input-error" : ""}
-                    />
-                    {errors.zip && (
-                      <span className="error-message">{errors.zip}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Profile Photo</label>
+                <div className="sf-photo-details">
+                  <p className="sf-photo-label">Profile Photo <span className="sf-req">*</span></p>
+                  <p className="sf-photo-hint">JPG or PNG, max 2MB</p>
                   {!isReadOnly && (
-                    <input
-                      type="file"
-                      name="profilePhoto"
-                      onChange={handleFileChange}
-                      accept="image/jpeg,image/jpg,image/png"
-                      className={errors.profilePhoto ? "input-error" : ""}
-                    />
-                  )}
-                  {(profilePhotoPreview || hasExistingProfilePhoto) && (
-                    <div className="profile-photo-preview">
-                      {profilePhotoPreview ? (
-                        <img src={profilePhotoPreview} alt="Profile Preview" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} />
-                      ) : (
-                        <div style={{ width: '100px', height: '100px', background: '#f1f5f9', borderRadius: '8px', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#64748b', textAlign: 'center', padding: '0.5rem' }}>Photo Uploaded</div>
-                      )}
-                      {!isReadOnly && (
-                        <button
-                          type="button"
-                          className="remove-photo-btn"
-                          onClick={() => {
-                            setProfilePhotoPreview(null);
-                            setHasExistingProfilePhoto(false);
-                            setFormData((prev) => ({
-                              ...prev,
-                              profilePhoto: null,
-                            }));
-                          }}
-                        >
-                          ✕ Remove
+                    <div className="sf-photo-actions">
+                      <label className="sf-upload-label">
+                        <input type="file" name="profilePhoto" accept="image/jpeg,image/jpg,image/png" onChange={onFile} style={{ display: "none" }} />
+                        {form.profilePhoto || hasExistingPhoto ? "Change Photo" : "Upload Photo"}
+                      </label>
+                      {(photoPreview || hasExistingPhoto) && (
+                        <button type="button" className="sf-remove-link" onClick={() => { setPhotoPreview(null); setHasExistingPhoto(false); set("profilePhoto", null); }}>
+                          Remove
                         </button>
                       )}
                     </div>
                   )}
-                  {!isReadOnly && (
-                    <span className="helper-text">
-                      Upload a professional photo (JPG, PNG - Max 2MB)
-                    </span>
-                  )}
                   {errors.profilePhoto && (
-                    <span className="error-message">{errors.profilePhoto}</span>
+                    <p className="sf-error">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {errors.profilePhoto}
+                    </p>
                   )}
                 </div>
+              </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Experience (Years)</label>
-                    <input
-                      type="number"
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      placeholder="e.g. 5"
-                      required
-                      min="1"
-                      max="60"
-                      disabled={isReadOnly}
-                      className={errors.experience ? "input-error" : ""}
-                    />
-                    {errors.experience && (
-                      <span className="error-message">{errors.experience}</span>
-                    )}
-                  </div>
+              <div className="sf-row-2">
+                <Field label="First Name" error={errors.firstName} required>
+                  <input className={`sf-input ${errors.firstName ? "sf-input--err" : ""}`} name="firstName" value={form.firstName} onChange={onChange} disabled={isReadOnly} placeholder="e.g. Rahul" />
+                </Field>
+                <Field label="Surname" error={errors.surname} required>
+                  <input className={`sf-input ${errors.surname ? "sf-input--err" : ""}`} name="surname" value={form.surname} onChange={onChange} disabled={isReadOnly} placeholder="e.g. Sharma" />
+                </Field>
+              </div>
 
-                  <div className="form-group">
-                    <label>Consultation Mode</label>
-                    <select
-                      name="consultationMode"
-                      value={formData.consultationMode}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                      className={errors.consultationMode ? "input-error" : ""}
-                    >
-                      <option value="">Select Mode</option>
-                      <option value="Online">Online</option>
-                      <option value="Offline">Offline</option>
-                      <option value="Both">Both</option>
-                    </select>
-                    {errors.consultationMode && (
-                      <span className="error-message">
-                        {errors.consultationMode}
-                      </span>
-                    )}
-                  </div>
-                </div>
+              <div className="sf-row-2">
+                <Field label="Gender" error={errors.gender} required>
+                  <select className={`sf-input sf-select ${errors.gender ? "sf-input--err" : ""}`} name="gender" value={form.gender} onChange={onChange} disabled={isReadOnly}>
+                    <option value="">Select gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </Field>
+                <Field label="Date of Birth" error={errors.dob} required>
+                  <input className={`sf-input ${errors.dob ? "sf-input--err" : ""}`} type="date" name="dob" value={form.dob} onChange={onChange} disabled={isReadOnly} />
+                </Field>
+              </div>
 
-                <div className="form-group">
-                  <label>About Doctor</label>
-                  <textarea
-                    name="aboutDoctor"
-                    value={formData.aboutDoctor}
-                    onChange={handleInputChange}
-                    placeholder="Write a brief description about your expertise, experience, and practice..."
-                    rows="4"
-                    required
-                    maxLength="300"
+              <Field label="Email Address" error={errors.email} required>
+                <input className={`sf-input ${errors.email ? "sf-input--err" : ""}`} type="email" name="email" value={form.email} onChange={onChange} disabled={isReadOnly} placeholder="doctor@example.com" />
+              </Field>
+
+              <Field label="Phone Number" error={errors.phoneNumber} required>
+                <div className={`sf-phone ${errors.phoneNumber ? "sf-phone--err" : ""}`}>
+                  <PhoneInput
+                    country="in"
+                    value={form.phoneNumber}
+                    onChange={v => set("phoneNumber", v)}
                     disabled={isReadOnly}
-                    className={errors.aboutDoctor ? "input-error" : ""}
+                    inputStyle={{ width: "100%", height: "46px", fontSize: "14px", background: "transparent", color: "var(--sf-text)", border: "none", outline: "none" }}
+                    buttonStyle={{ background: "transparent", border: "none", borderRight: "1px solid var(--sf-border)" }}
+                    dropdownStyle={{ background: "#1a2d42", color: "#f0f6ff", border: "1px solid rgba(255,255,255,0.1)" }}
                   />
-                  {!isReadOnly && (
-                    <div className="character-counter">
-                      {formData.aboutDoctor.length}/300 characters
-                      {formData.aboutDoctor.length < 150 && (
-                        <span className="counter-warning" style={{ color: '#ef4444' }}> (min 150 required)</span>
-                      )}
-                    </div>
-                  )}
-                  {errors.aboutDoctor && (
-                    <span className="error-message">{errors.aboutDoctor}</span>
-                  )}
                 </div>
+              </Field>
+            </div>
+          )}
 
-                <div className="form-group">
-                  <label>Languages Known</label>
-                  {!isReadOnly && (
-                    <span className="helper-text">
-                      Select all languages you can communicate in.
-                    </span>
-                  )}
-                  <div className="language-chips">
-                    {languages.map((lang) => (
-                      <div
-                        key={lang}
-                        className={`chip ${formData.languagesKnown.includes(lang) ? "selected" : ""}`}
-                        onClick={() => !isReadOnly && handleLanguageToggle(lang)}
-                        style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
-                      >
-                        {lang}
-                      </div>
+          {/* ═══ STEP 2 ═══ */}
+          {step === 2 && (
+            <div className="sf-section">
+              <p className="sf-section-desc">Tell us about your medical practice and clinic details.</p>
+
+              <div className="sf-row-2">
+                <Field label="Qualification" error={errors.qualification} required>
+                  <input className={`sf-input ${errors.qualification ? "sf-input--err" : ""}`} name="qualification" value={form.qualification} onChange={onChange} disabled={isReadOnly} placeholder="e.g. MBBS, MD" />
+                </Field>
+                <Field label="Years of Experience" error={errors.experience} required>
+                  <input className={`sf-input ${errors.experience ? "sf-input--err" : ""}`} type="number" name="experience" value={form.experience} onChange={onChange} disabled={isReadOnly} placeholder="e.g. 5" min="1" max="60" />
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="Specialization" error={errors.specialization} required>
+                  <select className={`sf-input sf-select ${errors.specialization ? "sf-input--err" : ""}`} name="specialization" value={form.specialization} onChange={onChange} disabled={isReadOnly}>
+                    <option value="">Select specialization</option>
+                    {Object.keys(SPECIALITIES).map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </Field>
+                <Field label="Sub-Specialization" hint="Optional">
+                  <select className="sf-input sf-select" name="subSpecialization" value={form.subSpecialization} onChange={onChange} disabled={isReadOnly || !form.specialization}>
+                    <option value="">Select sub-specialization</option>
+                    {SPECIALITIES[form.specialization]?.map((s,i) => <option key={i}>{s}</option>)}
+                  </select>
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="Consultation Fee (₹)" error={errors.consultantFees} required>
+                  <input className={`sf-input ${errors.consultantFees ? "sf-input--err" : ""}`} type="number" name="consultantFees" value={form.consultantFees} onChange={onChange} disabled={isReadOnly} placeholder="Minimum ₹100" />
+                </Field>
+                <Field label="Consultation Mode" error={errors.consultationMode} required>
+                  <div className="sf-toggle-group">
+                    {["Online","Offline","Both"].map(m => (
+                      <button key={m} type="button"
+                        className={`sf-toggle ${form.consultationMode === m ? "sf-toggle--on" : ""}`}
+                        onClick={() => !isReadOnly && set("consultationMode", m)}
+                        disabled={isReadOnly}
+                      >{m}</button>
                     ))}
                   </div>
-                  {errors.languagesKnown && (
-                    <span className="error-message">
-                      {errors.languagesKnown}
-                    </span>
-                  )}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Clinic Name</label>
-                    <input
-                      type="text"
-                      name="clinicName"
-                      value={formData.clinicName}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Apollo Clinic"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.clinicName ? "input-error" : ""}
-                    />
-                    {errors.clinicName && (
-                      <span className="error-message">{errors.clinicName}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Clinic Address</label>
-                  <textarea
-                    name="clinicAddress"
-                    value={formData.clinicAddress}
-                    onChange={handleInputChange}
-                    placeholder="Enter complete clinic address"
-                    rows="3"
-                    required
-                    disabled={isReadOnly}
-                    className={errors.clinicAddress ? "input-error" : ""}
-                  />
-                  {errors.clinicAddress && (
-                    <span className="error-message">
-                      {errors.clinicAddress}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div className="form-section">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Medical Registration Number</label>
-                    <input
-                      type="text"
-                      name="medicalRegistrationNumber"
-                      value={formData.medicalRegistrationNumber}
-                      onChange={handleInputChange}
-                      placeholder="Enter your MCI registration number"
-                      required
-                      disabled={isReadOnly}
-                      className={
-                        errors.medicalRegistrationNumber ? "input-error" : ""
-                      }
-                    />
-                    {errors.medicalRegistrationNumber && (
-                      <span className="error-message">
-                        {errors.medicalRegistrationNumber}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Medical License Number</label>
-                    <input
-                      type="text"
-                      name="medicalLicense"
-                      value={formData.medicalLicense}
-                      onChange={handleInputChange}
-                      placeholder="State medical license number"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.medicalLicense ? "input-error" : ""}
-                    />
-                    {errors.medicalLicense && (
-                      <span className="error-message">
-                        {errors.medicalLicense}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Medical Council Name</label>
-                    <select
-                      name="medicalCouncilName"
-                      value={formData.medicalCouncilName}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                      className={errors.medicalCouncilName ? "input-error" : ""}
-                    >
-                      <option value="">Select Medical Council</option>
-                      <option value="Medical Council of India">
-                        Medical Council of India
-                      </option>
-                      <option value="State Medical Council">
-                        State Medical Council
-                      </option>
-                      <option value="Dental Council of India">
-                        Dental Council of India
-                      </option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {errors.medicalCouncilName && (
-                      <span className="error-message">
-                        {errors.medicalCouncilName}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Registration Year</label>
-                    <input
-                      type="number"
-                      name="registrationYear"
-                      value={formData.registrationYear}
-                      onChange={handleInputChange}
-                      placeholder="e.g. 2010"
-                      required
-                      min="1950"
-                      max={new Date().getFullYear()}
-                      disabled={isReadOnly}
-                      className={errors.registrationYear ? "input-error" : ""}
-                    />
-                    {errors.registrationYear && (
-                      <span className="error-message">
-                        {errors.registrationYear}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Medical Certification (Upload)</label>
-                    {!isReadOnly && (
-                      <input
-                        type="file"
-                        name="medicalCertification"
-                        onChange={handleFileChange}
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        required={!hasExistingCertification}
-                        disabled={isReadOnly}
-                        className={errors.medicalCertification ? "input-error" : ""}
-                      />
-                    )}
-                    {hasExistingCertification && (
-                      <div style={{ fontSize: '0.875rem', color: '#0c8b7a', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        Certification Uploaded
-                        {!isReadOnly && (
-                          <button 
-                            type="button" 
-                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem' }}
-                            onClick={() => setHasExistingCertification(false)}
-                          >
-                            Change
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {!isReadOnly && !hasExistingCertification && (
-                      <span className="helper-text">
-                        Upload your medical degree certificate (PDF, JPG, PNG -
-                        Max 2MB)
-                      </span>
-                    )}
-                    {errors.medicalCertification && (
-                      <span className="error-message">
-                        {errors.medicalCertification}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>ID Proof Type</label>
-                    <select
-                      name="idProofType"
-                      value={formData.idProofType}
-                      onChange={handleInputChange}
-                      required
-                      disabled={isReadOnly}
-                      className={errors.idProofType ? "input-error" : ""}
-                    >
-                      <option value="">Select ID Proof</option>
-                      <option value="Aadhaar">Aadhaar Card</option>
-                      <option value="PAN">PAN Card</option>
-                      <option value="Passport">Passport</option>
-                    </select>
-                    {errors.idProofType && (
-                      <span className="error-message">
-                        {errors.idProofType}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>ID Proof Number</label>
-                  <input
-                    type="text"
-                    name="idProof"
-                    value={formData.idProof}
-                    onChange={handleInputChange}
-                    placeholder="Enter ID proof number"
-                    required
-                    disabled={isReadOnly}
-                    className={errors.idProof ? "input-error" : ""}
-                  />
-                  {errors.idProof && (
-                    <span className="error-message">{errors.idProof}</span>
-                  )}
-                </div>
-
-                <div className="section-divider" style={{ margin: '2rem 0', borderTop: '1px solid #e2e8f0', position: 'relative', textAlign: 'center' }}>
-                  <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 1rem', fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Payout Details</span>
-                </div>
-
-                <div className="form-group">
-                  <label>Payout Email (Optional)</label>
-                  <input
-                    type="email"
-                    name="payoutEmail"
-                    value={formData.payoutEmail}
-                    onChange={handleInputChange}
-                    placeholder="For payment notifications"
-                    disabled={isReadOnly}
-                    className={errors.payoutEmail ? "input-error" : ""}
-                  />
-                  {errors.payoutEmail && (
-                    <span className="error-message">{errors.payoutEmail}</span>
-                  )}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Account Holder Name</label>
-                    <input
-                      type="text"
-                      name="accountHolderName"
-                      value={formData.accountHolderName}
-                      onChange={handleInputChange}
-                      placeholder="As per bank account"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.accountHolderName ? "input-error" : ""}
-                    />
-                    {errors.accountHolderName && (
-                      <span className="error-message">
-                        {errors.accountHolderName}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>Bank Name</label>
-                    <input
-                      type="text"
-                      name="bankName"
-                      value={formData.bankName}
-                      onChange={handleInputChange}
-                      placeholder="e.g. State Bank of India"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.bankName ? "input-error" : ""}
-                    />
-                    {errors.bankName && (
-                      <span className="error-message">{errors.bankName}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Account Number</label>
-                    <input
-                      type="text"
-                      name="accountNumber"
-                      value={formData.accountNumber}
-                      onChange={handleInputChange}
-                      placeholder="Bank account number"
-                      required
-                      disabled={isReadOnly}
-                      className={errors.accountNumber ? "input-error" : ""}
-                    />
-                    {errors.accountNumber && (
-                      <span className="error-message">
-                        {errors.accountNumber}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label>IFSC Code</label>
-                    <input
-                      type="text"
-                      name="ifscCode"
-                      value={formData.ifscCode}
-                      onChange={handleInputChange}
-                      placeholder="e.g. SBIN0001234"
-                      required
-                      maxLength="11"
-                      disabled={isReadOnly}
-                      style={{ textTransform: "uppercase" }}
-                      className={errors.ifscCode ? "input-error" : ""}
-                    />
-                    {errors.ifscCode && (
-                      <span className="error-message">{errors.ifscCode}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="quick-tip" style={{ display: 'flex', gap: '1rem', padding: '1rem', background: '#f0fdfa', borderRadius: '10px', marginTop: '2rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle
-                      cx="10"
-                      cy="10"
-                      r="9"
-                      stroke="#0C8B7A"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M10 6v4M10 14h.01"
-                      stroke="#0C8B7A"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div>
-                    <strong>Quick Tip:</strong>
-                    <p style={{ fontSize: '0.875rem', color: '#475569', margin: 0 }}>
-                      Provide accurate credentials for faster verification and
-                      account approval.
+                  {errors.consultationMode && (
+                    <p className="sf-error">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {errors.consultationMode}
                     </p>
-                  </div>
-                </div>
+                  )}
+                </Field>
               </div>
-            )}
 
-            <div className="form-actions">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={prevStep}
-                >
-                  Previous Step
-                </button>
-              )}
+              <Field label="Languages Known" error={errors.languagesKnown} required hint="Select all languages you speak">
+                <div className="sf-chips">
+                  {LANGUAGES.map(l => (
+                    <button key={l} type="button"
+                      className={`sf-chip ${form.languagesKnown.includes(l) ? "sf-chip--on" : ""}`}
+                      onClick={() => !isReadOnly && toggleLang(l)}
+                      disabled={isReadOnly}
+                    >{l}</button>
+                  ))}
+                </div>
+              </Field>
 
-              <div className="actions-right">
-                {currentStep < 2 ? (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={nextStep}
-                  >
-                    Next Step
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M6 12l4-4-4-4"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                ) : (
-                  !isReadOnly && (
-                    <button type="submit" className="btn-primary">
-                      {initialData ? "Update Enrollment" : "Submit Application"}
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path
-                          d="M6 12l4-4-4-4"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
-                  )
+              <Field label="About Yourself" error={errors.aboutDoctor} required hint="Minimum 150 characters, maximum 300">
+                <textarea
+                  className={`sf-input sf-textarea ${errors.aboutDoctor ? "sf-input--err" : ""}`}
+                  name="aboutDoctor" value={form.aboutDoctor} onChange={onChange}
+                  disabled={isReadOnly} rows={4} maxLength={300}
+                  placeholder="Write about your experience, expertise, and approach to patient care..."
+                />
+                {!isReadOnly && (
+                  <div className="sf-charcount">
+                    <div className="sf-charbar">
+                      <div className="sf-charbar-fill" style={{
+                        width: `${(charLen / 300) * 100}%`,
+                        background: charLen < 150 ? "var(--sf-amber)" : charLen > 280 ? "var(--sf-red)" : "var(--teal)"
+                      }}/>
+                    </div>
+                    <span style={{ color: charLen < 150 ? "var(--sf-amber)" : charLen > 280 ? "var(--sf-red)" : "var(--teal)" }}>
+                      {charLen} / 300
+                    </span>
+                  </div>
                 )}
+              </Field>
+
+              <div className="sf-divider">Clinic Details</div>
+
+              <Field label="Clinic Name" error={errors.clinicName} required>
+                <input className={`sf-input ${errors.clinicName ? "sf-input--err" : ""}`} name="clinicName" value={form.clinicName} onChange={onChange} disabled={isReadOnly} placeholder="e.g. Apollo Clinic, Shree Hospital" />
+              </Field>
+
+              <Field label="Clinic Address" error={errors.clinicAddress} required>
+                <textarea className={`sf-input sf-textarea ${errors.clinicAddress ? "sf-input--err" : ""}`} name="clinicAddress" value={form.clinicAddress} onChange={onChange} disabled={isReadOnly} rows={3} placeholder="Full clinic address with landmark" />
+              </Field>
+
+              <Field label="Residential Address" error={errors.address} required>
+                <textarea className={`sf-input sf-textarea ${errors.address ? "sf-input--err" : ""}`} name="address" value={form.address} onChange={onChange} disabled={isReadOnly} rows={3} placeholder="Your home / practice address" />
+              </Field>
+
+              <div className="sf-row-2">
+                <Field label="Country" error={errors.country} required>
+                  <select className={`sf-input sf-select ${errors.country ? "sf-input--err" : ""}`} name="country" value={form.country} onChange={onChange} disabled={isReadOnly}>
+                    <option value="">Select country</option>
+                    {countries.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="State" error={errors.state} required>
+                  <input className={`sf-input ${errors.state ? "sf-input--err" : ""}`} name="state" value={form.state} onChange={onChange} disabled={isReadOnly} placeholder="State / Province" />
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="City" error={errors.city} required>
+                  <input className={`sf-input ${errors.city ? "sf-input--err" : ""}`} name="city" value={form.city} onChange={onChange} disabled={isReadOnly} placeholder="City" />
+                </Field>
+                <Field label="ZIP / Postal Code" error={errors.zip} required>
+                  <input className={`sf-input ${errors.zip ? "sf-input--err" : ""}`} name="zip" value={form.zip} onChange={onChange} disabled={isReadOnly} placeholder="e.g. 400001" />
+                </Field>
               </div>
             </div>
-          </form>
-        </div>
+          )}
+
+          {/* ═══ STEP 3 ═══ */}
+          {step === 3 && (
+            <div className="sf-section">
+              <p className="sf-section-desc">Provide your medical credentials and upload your certification.</p>
+
+              <div className="sf-row-2">
+                <Field label="Medical Registration Number" error={errors.medicalRegistrationNumber} required>
+                  <input className={`sf-input ${errors.medicalRegistrationNumber ? "sf-input--err" : ""}`} name="medicalRegistrationNumber" value={form.medicalRegistrationNumber} onChange={onChange} disabled={isReadOnly} placeholder="MCI registration number" />
+                </Field>
+                <Field label="Medical License Number" error={errors.medicalLicense} required>
+                  <input className={`sf-input ${errors.medicalLicense ? "sf-input--err" : ""}`} name="medicalLicense" value={form.medicalLicense} onChange={onChange} disabled={isReadOnly} placeholder="State medical license" />
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="Medical Council" error={errors.medicalCouncilName} required>
+                  <select className={`sf-input sf-select ${errors.medicalCouncilName ? "sf-input--err" : ""}`} name="medicalCouncilName" value={form.medicalCouncilName} onChange={onChange} disabled={isReadOnly}>
+                    <option value="">Select medical council</option>
+                    <option>Medical Council of India</option>
+                    <option>State Medical Council</option>
+                    <option>Dental Council of India</option>
+                    <option>Other</option>
+                  </select>
+                </Field>
+                <Field label="Registration Year" error={errors.registrationYear} required>
+                  <input className={`sf-input ${errors.registrationYear ? "sf-input--err" : ""}`} type="number" name="registrationYear" value={form.registrationYear} onChange={onChange} disabled={isReadOnly} placeholder="e.g. 2010" min="1950" max={new Date().getFullYear()} />
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="ID Proof Type" error={errors.idProofType} required>
+                  <select className={`sf-input sf-select ${errors.idProofType ? "sf-input--err" : ""}`} name="idProofType" value={form.idProofType} onChange={onChange} disabled={isReadOnly}>
+                    <option value="">Select ID type</option>
+                    <option value="Aadhaar">Aadhaar Card</option>
+                    <option value="PAN">PAN Card</option>
+                    <option value="Passport">Passport</option>
+                  </select>
+                </Field>
+                <Field label="ID Proof Number" error={errors.idProof} required>
+                  <input className={`sf-input ${errors.idProof ? "sf-input--err" : ""}`} name="idProof" value={form.idProof} onChange={onChange} disabled={isReadOnly} placeholder="Enter your ID number" />
+                </Field>
+              </div>
+
+              <Field label="Medical Certification Document" error={errors.medicalCertification} hint="Upload your medical degree certificate (PDF, JPG, PNG – max 2MB)" required>
+                {hasExistingCert ? (
+                  <div className="sf-file-done">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>Certification uploaded successfully</span>
+                    {!isReadOnly && <button type="button" className="sf-replace-btn" onClick={() => setHasExistingCert(false)}>Replace</button>}
+                  </div>
+                ) : !isReadOnly ? (
+                  <label className={`sf-upload-zone ${errors.medicalCertification ? "sf-upload-zone--err" : ""}`}>
+                    <input type="file" name="medicalCertification" accept=".pdf,.jpg,.jpeg,.png" onChange={onFile} style={{ display: "none" }} />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span className="sf-upload-text">{form.medicalCertification ? form.medicalCertification.name : "Click to upload file"}</span>
+                    <span className="sf-upload-hint">PDF, JPG or PNG, max 2MB</span>
+                  </label>
+                ) : null}
+              </Field>
+
+              <div className="sf-notice">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                <p>Documents are reviewed within <strong>2–3 business days</strong>. You'll receive an email notification once your account is approved.</p>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ STEP 4 ═══ */}
+          {step === 4 && (
+            <div className="sf-section">
+              <p className="sf-section-desc">Add your bank details to receive consultation payments.</p>
+
+              <Field label="Payout Email" error={errors.payoutEmail} hint="Optional — used for payment notifications only">
+                <input className={`sf-input ${errors.payoutEmail ? "sf-input--err" : ""}`} type="email" name="payoutEmail" value={form.payoutEmail} onChange={onChange} disabled={isReadOnly} placeholder="payments@example.com" />
+              </Field>
+
+              <div className="sf-row-2">
+                <Field label="Account Holder Name" error={errors.accountHolderName} required>
+                  <input className={`sf-input ${errors.accountHolderName ? "sf-input--err" : ""}`} name="accountHolderName" value={form.accountHolderName} onChange={onChange} disabled={isReadOnly} placeholder="Name as on bank account" />
+                </Field>
+                <Field label="Bank Name" error={errors.bankName} required>
+                  <input className={`sf-input ${errors.bankName ? "sf-input--err" : ""}`} name="bankName" value={form.bankName} onChange={onChange} disabled={isReadOnly} placeholder="e.g. State Bank of India" />
+                </Field>
+              </div>
+
+              <div className="sf-row-2">
+                <Field label="Account Number" error={errors.accountNumber} required>
+                  <input className={`sf-input ${errors.accountNumber ? "sf-input--err" : ""}`} name="accountNumber" value={form.accountNumber} onChange={onChange} disabled={isReadOnly} placeholder="9 to 18 digit account number" />
+                </Field>
+                <Field label="IFSC Code" error={errors.ifscCode} required hint="11 character code, e.g. SBIN0001234">
+                  <input className={`sf-input ${errors.ifscCode ? "sf-input--err" : ""}`} name="ifscCode" value={form.ifscCode} onChange={onChange} disabled={isReadOnly} placeholder="e.g. SBIN0001234" maxLength={11} style={{ textTransform: "uppercase" }} />
+                </Field>
+              </div>
+
+              <div className="sf-notice sf-notice--secure">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <p>Your bank details are <strong>encrypted and secure</strong>. They are used only to transfer consultation payments to you.</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Footer Navigation ── */}
+          <div className="sf-footer">
+            {step > 1
+              ? <button type="button" className="sf-btn-back" onClick={back}>
+                  ← Back
+                </button>
+              : <span />
+            }
+            <div className="sf-footer-right">
+              <span className="sf-footer-step">{step} / 4</span>
+              {step < 4
+                ? <button type="button" className="sf-btn-next" onClick={next}>
+                    Continue →
+                  </button>
+                : !isReadOnly && (
+                    <button type="submit" className="sf-btn-next" disabled={submitting}>
+                      {submitting
+                        ? <><span className="sf-spin" /> Submitting…</>
+                        : initialData ? "Update Application" : "Submit Application"
+                      }
+                    </button>
+                  )
+              }
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );
-};
-
-export default DoctorEnrollments;
+}

@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
 import "./Appointment.css";
+import api from "../api";
 
 export default function Appointment() {
   const { state } = useLocation();
@@ -24,28 +24,14 @@ export default function Appointment() {
     e.preventDefault();
     setError("");
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Please login to book the appointment.");
-      return;
-    }
-
     try {
       const doctorId = doctor.doctorId || doctor.id;
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/appointments`,
-        {
-          doctorId,
-          date: form.date,
-          time: form.time,
-          problem: form.problem,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.post("/api/appointments", {
+        doctorId,
+        date: form.date,
+        time: form.time,
+        problem: form.problem,
+      });
 
       setAppointment(res.data.appointment);
       setSuccess(true);

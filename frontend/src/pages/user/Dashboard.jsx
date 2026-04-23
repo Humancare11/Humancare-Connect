@@ -1,24 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import AppointmentChat from "../../components/AppointmentChat";
 import "./dashboard.css";
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
-    const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/appointments/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api.get("/api/appointments/mine")
       .then((res) => setAppointments(res.data))
       .catch((err) => console.error("Failed to load appointments", err))
       .finally(() => setLoading(false));
@@ -187,7 +181,7 @@ export default function Dashboard() {
               <button className="hc-dash__modal-close" onClick={() => setSelectedAppointment(null)}>×</button>
             </div>
             <div className="hc-dash__modal-body">
-              <AppointmentChat appointmentId={selectedAppointment._id} userName={user?.name} />
+              <AppointmentChat appointmentId={selectedAppointment._id} userName={user?.name} userId={user?._id} />
             </div>
             <div className="hc-dash__modal-footer">
               <Link to={`/video-call/${selectedAppointment._id}`} className="hc-dash__btn hc-dash__btn--primary hc-dash__btn--full">

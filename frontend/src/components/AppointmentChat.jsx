@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import socket from "../socket";
 
-export default function AppointmentChat({ appointmentId, userName }) {
+export default function AppointmentChat({ appointmentId, userName, userId }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [joined, setJoined] = useState(false);
@@ -39,7 +39,7 @@ export default function AppointmentChat({ appointmentId, userName }) {
 
     const payload = {
       appointmentId,
-      senderId: localStorage.getItem("token") ? JSON.parse(localStorage.getItem("user"))?._id : null,
+      senderId: userId || null,
       senderName: userName || "Patient",
       text: message.trim(),
     };

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import socket from "../../socket";
 import "./DoctorLayout.css";
+import api from "../../api";
+import { useDoctorAuth } from "../../context/DoctorAuthContext";
 
 const menuItems = [
   { path: "/doctor-dashboard",              label: "Dashboard",    icon: "dashboard" },
@@ -9,6 +11,8 @@ const menuItems = [
   { path: "/doctor-dashboard/appointments", label: "Appointments", icon: "appointments" },
   { path: "/doctor-dashboard/patients",     label: "My Patients",  icon: "patients" },
   { path: "/doctor-dashboard/messages",     label: "Messages",     icon: "messages" },
+  { path: "/doctor-dashboard/qna",          label: "Medical Q&A",  icon: "qna" },
+  { path: "/doctor-dashboard/raise-ticket", label: "Raise Ticket", icon: "ticket" },
   // { path: "/doctor-dashboard/analytics",    label: "Analytics",    icon: "analytics" },
   // { path: "/doctor-dashboard/settings",     label: "Settings",     icon: "settings" },
 ];
@@ -47,6 +51,17 @@ const NavIcon = ({ name }) => {
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     ),
+    qna: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 9h6M9 12h4"/><path d="M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6l4 4 4-4h2a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+      </svg>
+    ),
+    ticket: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 10h20l-2 8H4l-2-8z"/><path d="M6 2v4"/><path d="M18 2v4"/>
+        <path d="M6 10v8"/><path d="M18 10v8"/><path d="M10 6h4"/>
+      </svg>
+    ),
     analytics: (
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -66,7 +81,7 @@ const NavIcon = ({ name }) => {
 export default function DoctorLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [doctor, setDoctor] = useState(null);
+  const { doctor, loading, logout: contextLogout } = useDoctorAuth();
   const [sideOpen, setSideOpen] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [time, setTime] = useState(new Date());
@@ -77,49 +92,31 @@ export default function DoctorLayout({ children }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("doctorToken");
-    const currentDoctor = JSON.parse(localStorage.getItem("currentDoctor") || "null");
-
-    if (!token || !currentDoctor) {
+    if (!loading && !doctor) {
       navigate("/doctor-login");
       return;
     }
 
-    setDoctor(currentDoctor);
-
-    fetch(`/api/doctor/enrollment/${currentDoctor.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((enrollment) => {
-        if (enrollment) {
-          setIsEnrolled(true);
-          const updated = { ...currentDoctor, isEnrolled: true };
-          localStorage.setItem("currentDoctor", JSON.stringify(updated));
-          setDoctor(updated);
-        } else {
-          setIsEnrolled(currentDoctor.isEnrolled || false);
-        }
-      })
-      .catch(() => {
-        setIsEnrolled(currentDoctor.isEnrolled || false);
-      });
-  }, [navigate]);
+    if (doctor) {
+      api.get(`/api/doctor/enrollment/${doctor._id || doctor.id}`)
+        .then((res) => setIsEnrolled(!!res.data))
+        .catch(() => setIsEnrolled(doctor.isEnrolled || false));
+    }
+  }, [doctor, loading, navigate]);
 
   useEffect(() => {
     if (!socket.connected) socket.connect();
-    if (doctor?.id) {
-      socket.emit("user-online", { userId: doctor.id, role: "doctor" });
+    if (doctor?._id || doctor?.id) {
+      socket.emit("user-online", { userId: doctor._id || doctor.id, role: "doctor" });
     }
   }, [doctor]);
 
-  const logout = () => {
-    localStorage.removeItem("currentDoctor");
-    localStorage.removeItem("doctorToken");
+  const logout = async () => {
+    await contextLogout();
     navigate("/doctor-login");
   };
 
-  if (!doctor) return null;
+  if (loading || !doctor) return null;
 
   const initials = doctor.name
     ? doctor.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
