@@ -35,17 +35,13 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorLayout from "./pages/doctors/DoctorLayout";
 import Dashbord from "./pages/doctors/Dashbord";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
-<<<<<<< HEAD
-import useLenis from "./hooks/useLenis";
 // User imports
-=======
 import DoctorAppointments from "./pages/doctors/DoctorAppointments";
 import DoctorPatients from "./pages/doctors/DoctorPatients";
 import DoctorMessages from "./pages/doctors/DoctorMessages";
 import DoctorAnalytics from "./pages/doctors/DoctorAnalytics";
 import DoctorSettings from "./pages/doctors/DoctorSettings";
 
->>>>>>> 99881ee7964edcc47e1430b3304a61da6f7fda3b
 import UserLayout from "./pages/user/UserLayout";
 import Dashboard from "./pages/user/Dashboard";
 import Appointments from "./pages/user/Appointments";
@@ -265,12 +261,8 @@ function AppLayout() {
           }
         />
 
-<<<<<<< HEAD
         <Route path="/home-demo" element={<Home2 />} />
       </Routes>
-
-=======
->>>>>>> 99881ee7964edcc47e1430b3304a61da6f7fda3b
       {!hideLayout && <Footer />}
     </>
   );

@@ -6,6 +6,8 @@ import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
 import WordReveal from "../components/WordReveal";
 import StepProgress from "../components/StepProgress";
 
+import HeroNew from "./hero-new";
+
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
@@ -22,6 +24,7 @@ import {
 } from "react-icons/fi";
 
 // framer-motion not used in this file
+import { motion, useInView } from "framer-motion";
 
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
@@ -452,6 +455,22 @@ export default function HomePage() {
   const btnRef = useRef(null);
   const stepsRef = useRef([]);
   const rightRef = useRef(null);
+  const whyRef = useRef(null);
+  const whyInView = useInView(whyRef, { once: true, amount: 0.15 });
+
+  const whyListVariants = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.2 } },
+  };
+
+  const whyItemVariants = {
+    hidden: { opacity: 0, x: 60 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 1.5, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  };
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -732,6 +751,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <HeroNew />
 
       {/* ✅ sb-bar is now OUTSIDE <section className="hero"> */}
       <div className="sb-bar">
@@ -864,8 +884,14 @@ export default function HomePage() {
               <h2 className="section-title" style={{ marginBottom: "34px" }}>
                 Built on trust, at every step.
               </h2>
-              <div className="why-list">
-                <div className="why-item reveal">
+              <motion.div
+                className="why-list"
+                ref={whyRef}
+                variants={whyListVariants}
+                initial="hidden"
+                animate={whyInView ? "visible" : "hidden"}
+              >
+                <motion.div className="why-item" variants={whyItemVariants}>
                   <div>
                     <div className="why-item-title">
                       HIPAA &amp; SOC 2 Certified
@@ -876,8 +902,8 @@ export default function HomePage() {
                       infrastructure.
                     </div>
                   </div>
-                </div>
-                <div className="why-item reveal">
+                </motion.div>
+                <motion.div className="why-item" variants={whyItemVariants}>
                   <div>
                     <div className="why-item-title">
                       Board-Certified Physicians Only
@@ -888,8 +914,8 @@ export default function HomePage() {
                       reviews, and ongoing audits.
                     </div>
                   </div>
-                </div>
-                <div className="why-item reveal">
+                </motion.div>
+                <motion.div className="why-item" variants={whyItemVariants}>
                   <div>
                     <div className="why-item-title">
                       Transparent, Flat-Fee Pricing
@@ -900,8 +926,8 @@ export default function HomePage() {
                       rate.
                     </div>
                   </div>
-                </div>
-                <div className="why-item reveal">
+                </motion.div>
+                <motion.div className="why-item" variants={whyItemVariants}>
                   <div>
                     <div className="why-item-title">24 / 7 Human Support</div>
                     <div className="why-item-desc">
@@ -910,8 +936,8 @@ export default function HomePage() {
                       coordination.
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
         </div>

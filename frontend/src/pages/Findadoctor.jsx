@@ -133,6 +133,28 @@ const ChevronRight = () => (
   </svg>
 );
 
+// Normalize a doctor object from the API so all fields are always defined
+const normalizeDoctor = (doc) => ({
+  id: "",
+  name: "Unknown Doctor",
+  degree: "",
+  specialty: "General",
+  rating: "N/A",
+  experience: 0,
+  location: "Location not specified",
+  languages: [],
+  price: 0,
+  color: "#6366f1",
+  initials: "DR",
+  gender: "Any",
+  source: "",
+  ...doc,
+  // Ensure arrays are always arrays even if API sends null
+  languages: Array.isArray(doc.languages) ? doc.languages : [],
+  // Ensure price is always a number
+  price: typeof doc.price === "number" ? doc.price : Number(doc.price) || 0,
+});
+
 export default function DoctorFinder() {
   const navigate = useNavigate();
   const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
@@ -140,12 +162,15 @@ export default function DoctorFinder() {
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/api/doctor/approved`)
-      .then((res) => setDynamicDoctors([...res.data, ...allDoctors]))
+      .then((res) => {
+        const normalized = res.data.map(normalizeDoctor);
+        setDynamicDoctors([...normalized, ...allDoctors]);
+      })
       .catch(() => setDynamicDoctors(allDoctors));
   }, []);
+
   const handleBook = (doc) => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       navigate("/login");
     } else {
@@ -219,15 +244,15 @@ export default function DoctorFinder() {
       if (appliedSearchSpecialty) {
         const q = appliedSearchSpecialty.toLowerCase();
         if (
-          !doc.specialty.toLowerCase().includes(q) &&
-          !doc.name.toLowerCase().includes(q) &&
-          !doc.degree.toLowerCase().includes(q)
+          !(doc.specialty ?? "").toLowerCase().includes(q) &&
+          !(doc.name ?? "").toLowerCase().includes(q) &&
+          !(doc.degree ?? "").toLowerCase().includes(q)
         )
           return false;
       }
       if (
         appliedSearchLocation &&
-        !doc.location
+        !(doc.location ?? "")
           .toLowerCase()
           .includes(appliedSearchLocation.toLowerCase())
       )
@@ -240,7 +265,7 @@ export default function DoctorFinder() {
       if (appliedGender !== "Any" && doc.gender !== appliedGender) return false;
       if (
         appliedLanguages.length > 0 &&
-        !appliedLanguages.some((l) => doc.languages.includes(l))
+        !appliedLanguages.some((l) => (doc.languages ?? []).includes(l))
       )
         return false;
       return true;
@@ -299,7 +324,6 @@ export default function DoctorFinder() {
       <div className="fd-hero">
         <div className="fd-hero-inner">
           <div className="fd-hero-text">
-            {/* <span className="fd-hero-badge">4,800+ Verified Doctors</span> */}
             <h1>Find the right doctor for you</h1>
             <p>
               Book in minutes with top-rated specialists across Maharashtra. No
@@ -497,82 +521,98 @@ export default function DoctorFinder() {
             </div>
           ) : (
             <div className="fd-card-list">
-              {paginatedDoctors.map((doc, i) => (
-                <div
-                  className="fd-card"
-                  key={doc.id}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  {/* Avatar Section */}
-                  <div className="fd-avatar-section">
-                    <div
-                      className="fd-avatar"
-                      style={{
-                        background: `${doc.color}18`,
-                        color: doc.color,
-                        borderColor: `${doc.color}30`,
-                      }}
-                    >
-                      {doc.initials}
-                    </div>
-                  </div>
+              {paginatedDoctors.map((doc, i) => {
+                const langs = Array.isArray(doc.languages) ? doc.languages : [];
+                const price =
+                  typeof doc.price === "number"
+                    ? doc.price
+                    : Number(doc.price) || 0;
 
-                  {/* Info Section */}
-                  <div className="fd-card-info">
-                    <div className="fd-name-row">
-                      <span className="fd-name">{doc.name}</span>
-                      {doc.source !== "enrollment" && <VerifiedIcon />}                    </div>
-                    <div className="fd-degree">{doc.degree}</div>
-                    <div className="fd-meta">
-                      <span className="fd-rating">
-                        <StarIcon /> {doc.rating}
-                      </span>
-                      <span className="fd-dot">·</span>
-                      <span className="fd-exp">{doc.experience} yrs exp</span>
-                    </div>
-                  </div>
-
-                  {/* Center Details */}
-                  <div className="fd-card-center">
-                    <div className="fd-spec-tag">{doc.specialty}</div>
-                    <div className="fd-langs">
-                      {doc.languages.slice(0, 3).join(" · ")}
-                      {doc.languages.length > 3
-                        ? ` +${doc.languages.length - 3}`
-                        : ""}
-                    </div>
-                    <div className="fd-loc">
-                      <LocationIcon /> {doc.location}
-                    </div>
-                  </div>
-
-                  {/* Price Section */}
-                  <div className="fd-price-section">
-                    <div className="fd-price-row">
-                      <span className="fd-price">
-                        ₹{doc.price.toLocaleString()}
-                      </span>
-                      <button
-                        className="fd-heart"
-                        onClick={() => toggleFavorite(doc.id)}
+                return (
+                  <div
+                    className="fd-card"
+                    key={doc.id ?? i}
+                    style={{ animationDelay: `${i * 60}ms` }}
+                  >
+                    {/* Avatar Section */}
+                    <div className="fd-avatar-section">
+                      <div
+                        className="fd-avatar"
+                        style={{
+                          background: `${doc.color ?? "#6366f1"}18`,
+                          color: doc.color ?? "#6366f1",
+                          borderColor: `${doc.color ?? "#6366f1"}30`,
+                        }}
                       >
-                        <HeartIcon filled={favorites[doc.id]} />
+                        {doc.initials ?? "DR"}
+                      </div>
+                    </div>
+
+                    {/* Info Section */}
+                    <div className="fd-card-info">
+                      <div className="fd-name-row">
+                        <span className="fd-name">
+                          {doc.name ?? "Unknown Doctor"}
+                        </span>
+                        {doc.source !== "enrollment" && <VerifiedIcon />}
+                      </div>
+                      <div className="fd-degree">{doc.degree ?? ""}</div>
+                      <div className="fd-meta">
+                        <span className="fd-rating">
+                          <StarIcon /> {doc.rating ?? "N/A"}
+                        </span>
+                        <span className="fd-dot">·</span>
+                        <span className="fd-exp">
+                          {doc.experience ?? 0} yrs exp
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Center Details */}
+                    <div className="fd-card-center">
+                      <div className="fd-spec-tag">
+                        {doc.specialty ?? "General"}
+                      </div>
+                      <div className="fd-langs">
+                        {langs.slice(0, 3).join(" · ")}
+                        {langs.length > 3 ? ` +${langs.length - 3}` : ""}
+                      </div>
+                      <div className="fd-loc">
+                        <LocationIcon />{" "}
+                        {doc.location ?? "Location not specified"}
+                      </div>
+                    </div>
+
+                    {/* Price Section */}
+                    <div className="fd-price-section">
+                      <div className="fd-price-row">
+                        <span className="fd-price">
+                          ₹{price.toLocaleString()}
+                        </span>
+                        <button
+                          className="fd-heart"
+                          onClick={() => toggleFavorite(doc.id)}
+                        >
+                          <HeartIcon filled={favorites[doc.id]} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="fd-card-actions">
+                      <button
+                        className="fd-book-btn"
+                        onClick={() => handleBook(doc)}
+                      >
+                        Book Appointment
+                      </button>
+                      <button className="fd-profile-link">
+                        View Profile →
                       </button>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="fd-card-actions">
-                    <button
-                      className="fd-book-btn"
-                      onClick={() => handleBook(doc)}
-                    >
-                      Book Appointment
-                    </button>
-                    <button className="fd-profile-link">View Profile →</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

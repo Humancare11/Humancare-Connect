@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import "./Header.css";
+import { useEffect, useState } from "react";
+import "./header.css";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Header() {
   useEffect(() => {
@@ -41,15 +42,18 @@ export default function Header() {
       hamburger.classList.toggle("open");
       mobileMenu.classList.toggle("open");
     };
-    hamburger?.addEventListener("click", toggleMenu);
-    mobileMenu?.querySelectorAll("a").forEach((a) => {
-      const onMenuClick = () => {
-        hamburger?.classList.remove("open");
-        mobileMenu?.classList.remove("open");
-      };
-      a.addEventListener("click", onMenuClick);
-      a._onMenuClick = onMenuClick;
-    });
+    if (hamburger) hamburger.addEventListener("click", toggleMenu);
+    if (mobileMenu) {
+      const links = mobileMenu.querySelectorAll("a");
+      links.forEach((a) => {
+        const onMenuClick = () => {
+          hamburger?.classList.remove("open");
+          mobileMenu?.classList.remove("open");
+        };
+        a.addEventListener("click", onMenuClick);
+        a._onMenuClick = onMenuClick;
+      });
+    }
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -58,14 +62,17 @@ export default function Header() {
         if (item._onEnter)
           item.removeEventListener("mouseenter", item._onEnter);
       });
-      hamburger?.removeEventListener("click", toggleMenu);
-      mobileMenu?.querySelectorAll("a").forEach((a) => {
-        if (a._onMenuClick) a.removeEventListener("click", a._onMenuClick);
-      });
+      if (hamburger) hamburger.removeEventListener("click", toggleMenu);
+      if (mobileMenu) {
+        mobileMenu.querySelectorAll("a").forEach((a) => {
+          if (a._onMenuClick) a.removeEventListener("click", a._onMenuClick);
+        });
+      }
     };
   }, []);
 
   const navItems = [
+    { label: "Home", link: "/" },
     { label: "Find a Doctor", link: "/find-a-doctor" },
     { label: "Ask a Question", link: "/ask-a-question" },
     { label: "Medical Services", link: "/medical-services" },
@@ -73,10 +80,24 @@ export default function Header() {
     { label: "Blogs", link: "/blogs" },
   ];
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // ✅ Check login
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+  const location = useLocation();
+  useEffect(() => {
+    // update login status when location changes (e.g., after login)
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, [location.pathname]);
   return (
     <header className="glass-header" id="header">
       <div className="nav-container">
-        <div className="logo">Humancare</div>
+        <a href="/" className="logo">
+          Humancare
+        </a>
         <nav className="nav-menu">
           <span className="nav-pill"></span>
           {navItems.map((item, index) => (
@@ -85,9 +106,27 @@ export default function Header() {
             </a>
           ))}
         </nav>
-        <a href="#" className="nav-cta">
+        <a href="/book-appointment" className="nav-cta">
           <span>Book Appointment</span>
         </a>
+        {/* 🔥 AUTH BUTTONS */}
+        {/* <div className="auth-buttons">
+          {!isLoggedIn ? (
+            <div className="auth-combined">
+              <Link to="/login" className="auth-link">
+                Login
+              </Link>
+              <span className="divider">/</span>
+              <Link to="/register" className="auth-link">
+                Register
+              </Link>
+            </div>
+          ) : (
+            <Link to="/profile" className="profile-icon">
+              <FaUserCircle />
+            </Link>
+          )}
+        </div> */}
         <div className="hamburger" id="hamburger">
           <span></span>
           <span></span>
@@ -99,7 +138,7 @@ export default function Header() {
               {item.label}
             </a>
           ))}
-          <a href="#" className="nav-cta">
+          <a href="/book-appointment" className="nav-cta">
             Book Appointment
           </a>
         </div>
