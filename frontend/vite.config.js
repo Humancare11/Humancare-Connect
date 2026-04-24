@@ -8,8 +8,13 @@ export default ({ mode }) => {
 
   return defineConfig({
     plugins: [react()],
+    publicDir: 'public',
     define: {
       __API_URL__: JSON.stringify(apiUrl)
+    },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
     },
     server: {
       proxy: {
@@ -17,7 +22,6 @@ export default ({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace(/^\/api/, '/api')
         }
       }
     }
