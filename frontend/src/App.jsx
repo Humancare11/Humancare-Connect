@@ -28,16 +28,16 @@ import BookAppointment from "./pages/BookAppointment";
 import VideoCall from "./pages/VideoCall";
 
 import socket from "./socket";
-import { useAuth } from "./context/AuthContext";
 import { useAdmin } from "./context/AdminContext";
-// import useLenis from "../hooks/useLenis";
+import { useAuth } from "./context/AuthContext";
+import useLenis from "./hooks/useLenis";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorLayout from "./pages/doctors/DoctorLayout";
 import Dashbord from "./pages/doctors/Dashbord";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
-import useLenis from "./hooks/useLenis";
+import { useDoctorAuth } from "./context/DoctorAuthContext";
 import DoctorAppointments from "./pages/doctors/DoctorAppointments";
 import DoctorPatients from "./pages/doctors/DoctorPatients";
 import DoctorMessages from "./pages/doctors/DoctorMessages";
@@ -79,6 +79,11 @@ function PrivateRoute({ children, allowedRoles }) {
     return <Navigate to="/adminauth" replace />;
 
   return children;
+}
+
+function DoctorEnrollmentsWrapper() {
+  const { doctor } = useDoctorAuth();
+  return <DoctorEnrollments doctorId={doctor?._id || doctor?.id} />;
 }
 
 function AppLayout() {
@@ -214,7 +219,7 @@ function AppLayout() {
           path="/doctor-dashboard/enrollments"
           element={
             <DoctorLayout>
-              <DoctorEnrollments />
+              <DoctorEnrollmentsWrapper />
             </DoctorLayout>
           }
         />
@@ -349,9 +354,8 @@ function AppLayout() {
           }
         />
         <Route path="/home-demo" element={<Home2 />} />
-        {/* <Route path="/home-demo" element={<Home2 />} />
-        {!hideLayout && <Footer />} */}
       </Routes>
+      {!hideLayout && <Footer />}
     </>
   );
 }

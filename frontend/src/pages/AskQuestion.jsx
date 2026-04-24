@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function AskQuestion() {
@@ -11,7 +11,7 @@ export default function AskQuestion() {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/qna`);
+      const res = await api.get("/api/qna");
       setQuestions(res.data);
     } catch (error) {
       console.error("Fetch questions error:", error);
@@ -42,8 +42,8 @@ export default function AskQuestion() {
     try {
       setLoading(true);
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/qna/ask`,
+      await api.post(
+        "/api/qna/ask",
         {
           question: question.trim(),
           name: user?.name || "User",

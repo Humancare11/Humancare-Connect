@@ -110,7 +110,7 @@ export default function Header() {
           <span>Book Appointment</span>
         </a>
         {/* 🔥 AUTH BUTTONS */}
-        {/* <div className="auth-buttons">
+        <div className="auth-buttons">
           {!isLoggedIn ? (
             <div className="auth-combined">
               <Link to="/login" className="auth-link">
@@ -126,7 +126,7 @@ export default function Header() {
               <FaUserCircle />
             </Link>
           )}
-        </div> */}
+        </div>
         <div className="hamburger" id="hamburger">
           <span></span>
           <span></span>

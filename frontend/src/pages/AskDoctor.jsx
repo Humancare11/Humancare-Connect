@@ -149,11 +149,16 @@ export default function AskDoctor() {
   const [expandedId, setExpandedId] = useState(null);
   const fileRef = useRef();
 
-  // Fetch questions from MongoDB on load
+  // ── fetch questions ──
   const fetchQuestions = useCallback(() => {
     api
       .get("/api/qna")
-      .then((res) => setQuestions(res.data))
+      .then((res) => {
+        const data = res.data;
+        setQuestions(
+          Array.isArray(data) ? data : (data.questions ?? data.data ?? []),
+        );
+      })
       .catch((err) => console.error("Failed to fetch questions:", err));
   }, []);
 
@@ -161,7 +166,7 @@ export default function AskDoctor() {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  /* validation */
+  // ── validation ──
   const validate = () => {
     const e = {};
     if (!text.trim()) e.text = "Please enter your question.";
@@ -174,7 +179,7 @@ export default function AskDoctor() {
     return e;
   };
 
-  /* submit */
+  // ── submit ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
@@ -189,7 +194,8 @@ export default function AskDoctor() {
 
     setSubmitting(true);
     try {
-      await api.post("/api/qna/ask", { question: text, category });
+      const res = await api.post("/api/qna/ask", { question: text, category });
+      setQuestions((prev) => [res.data, ...prev]);
       setText("");
       setFile(null);
       setAgreed(false);
@@ -206,7 +212,7 @@ export default function AskDoctor() {
     setSubmitting(false);
   };
 
-  /* pagination */
+  // ── pagination ──
   const totalPages = Math.max(1, Math.ceil(questions.length / PER_PAGE));
   const visible = questions.slice(
     (currentPage - 1) * PER_PAGE,
@@ -446,6 +452,8 @@ export default function AskDoctor() {
                   <span className="ad-err-msg">{errors.agreed}</span>
                 )}
               </div>
+
+              {/* submit button */}
               <button
                 type="submit"
                 className="ad-submit-btn"
@@ -488,7 +496,6 @@ export default function AskDoctor() {
                 No questions yet. Be the first to ask!
               </div>
             )}
-
             {visible.map((q, i) => {
               const col = CATEGORY_META[q.category] || CATEGORY_META.General;
               const expanded = expandedId === q._id;
@@ -522,7 +529,6 @@ export default function AskDoctor() {
                         (q.question.length > 130 ? "…" : "")}
                   </p>
 
-                  {/* doctor info — shown once answered */}
                   {q.answered && q.doctor?.name && (
                     <div className="ad-doctor-row">
                       <div
@@ -542,7 +548,6 @@ export default function AskDoctor() {
                     </div>
                   )}
 
-                  {/* answer or pending */}
                   {q.answered && q.answer ? (
                     <div className="ad-answer">
                       <div className="ad-answer-label">Doctor's Answer</div>
@@ -555,7 +560,7 @@ export default function AskDoctor() {
                     </div>
                   ) : (
                     <div className="ad-pending">
-                      <IconClock /> Our experts will respond within 2 hours
+                      <IconClock /> Our experts will respond within 12 hours
                     </div>
                   )}
 
@@ -573,7 +578,6 @@ export default function AskDoctor() {
             })}
           </div>
 
-          {/* pagination */}
           {totalPages > 1 && (
             <div className="ad-pagination">
               <button

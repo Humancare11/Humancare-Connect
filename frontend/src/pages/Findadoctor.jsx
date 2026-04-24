@@ -150,9 +150,7 @@ const normalizeDoctor = (doc) => ({
   gender: "Any",
   source: "",
   ...doc,
-  // Ensure arrays are always arrays even if API sends null
   languages: Array.isArray(doc.languages) ? doc.languages : [],
-  // Ensure price is always a number
   price: typeof doc.price === "number" ? doc.price : Number(doc.price) || 0,
 });
 
@@ -161,24 +159,7 @@ export default function DoctorFinder() {
   const { user } = useAuth();
   const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
-  useEffect(() => {
-    api
-      .get("/api/doctor/approved")
-      .then((res) => {
-        const normalized = res.data.map(normalizeDoctor);
-        setDynamicDoctors([...normalized, ...allDoctors]);
-      })
-      .catch(() => setDynamicDoctors(allDoctors));
-  }, []);
-
-  const handleBook = (doc) => {
-    if (!user) {
-      navigate("/login");
-    } else {
-      navigate("/book-appointment", { state: { doctor: doc } });
-    }
-  };
-
+  // ✅ All hooks moved to top level of the component (not inside handleBook)
   const [searchSpecialty, setSearchSpecialty] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [pendingSpecialities, setPendingSpecialities] = useState([]);
@@ -193,6 +174,28 @@ export default function DoctorFinder() {
   const [languageSearch, setLanguageSearch] = useState("");
   const [favorites, setFavorites] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    api
+      .get("/api/doctor/approved")
+      .then((res) => {
+        const normalized = res.data.map(normalizeDoctor);
+        setDynamicDoctors([...normalized, ...allDoctors]);
+      })
+      .catch(() => setDynamicDoctors(allDoctors));
+  }, []);
+
+  // ✅ handleBook is now a clean, simple function at component level
+  const handleBook = (doc) => {
+    if (!user) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+    }
+    navigate("/book-appointment", { state: { doctor: doc } });
+  };
 
   const toggleFavorite = (id) => setFavorites((p) => ({ ...p, [id]: !p[id] }));
   const toggleSpeciality = (s) =>
