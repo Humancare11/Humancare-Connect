@@ -162,27 +162,18 @@ export default function DoctorFinder() {
   const [dynamicDoctors, setDynamicDoctors] = useState(allDoctors);
 
   useEffect(() => {
-<<<<<<< HEAD
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/api/doctor/approved`)
+    api
+      .get("/api/doctor/approved")
       .then((res) => {
         const normalized = res.data.map(normalizeDoctor);
         setDynamicDoctors([...normalized, ...allDoctors]);
       })
-=======
-    api.get("/api/doctor/approved")
-      .then((res) => setDynamicDoctors([...res.data, ...allDoctors]))
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       .catch(() => setDynamicDoctors(allDoctors));
   }, []);
 
   const handleBook = (doc) => {
-<<<<<<< HEAD
     const token = localStorage.getItem("token");
     if (!token) {
-=======
-    if (!user) {
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       navigate("/login");
     } else {
       navigate("/book-appointment", { state: { doctor: doc } });

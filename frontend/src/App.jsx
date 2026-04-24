@@ -30,20 +30,16 @@ import VideoCall from "./pages/VideoCall";
 import socket from "./socket";
 import { useAuth }      from "./context/AuthContext";
 import { useAdmin }     from "./context/AdminContext";
-// import useLenis from "../hooks/useLenis";
+import useLenis from "./hooks/useLenis";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
 import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorLayout from "./pages/doctors/DoctorLayout";
 import Dashbord from "./pages/doctors/Dashbord";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
-<<<<<<< HEAD
-// User imports
-=======
-import useLenis from "./hooks/useLenis";
-// User imports
+import { useDoctorAuth } from "./context/DoctorAuthContext";
 
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
+
 import DoctorAppointments from "./pages/doctors/DoctorAppointments";
 import DoctorPatients from "./pages/doctors/DoctorPatients";
 import DoctorMessages from "./pages/doctors/DoctorMessages";
@@ -84,6 +80,11 @@ function PrivateRoute({ children, allowedRoles }) {
   if (!allowedRoles.includes(admin.role)) return <Navigate to="/adminauth" replace />;
 
   return children;
+}
+
+function DoctorEnrollmentsWrapper() {
+  const { doctor } = useDoctorAuth();
+  return <DoctorEnrollments doctorId={doctor?._id || doctor?.id} />;
 }
 
 function AppLayout() {
@@ -219,7 +220,7 @@ function AppLayout() {
           path="/doctor-dashboard/enrollments"
           element={
             <DoctorLayout>
-              <DoctorEnrollments />
+              <DoctorEnrollmentsWrapper />
             </DoctorLayout>
           }
         />
@@ -300,16 +301,11 @@ function AppLayout() {
           }
         />
 
-<<<<<<< HEAD
-        <Route path="/home-demo" element={<Home2 />} />
-      </Routes>
-=======
 
         <Route path="/home-demo" element={<Home2 />} />
       </Routes>
 
 
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       {!hideLayout && <Footer />}
     </>
   );
