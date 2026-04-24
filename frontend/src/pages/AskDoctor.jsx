@@ -151,21 +151,9 @@ export default function AskDoctor() {
 
   // Fetch questions from MongoDB on load
   const fetchQuestions = useCallback(() => {
-<<<<<<< HEAD
-    axios
-      .get(API)
-      //
-      .then((res) =>
-        setQuestions(
-          Array.isArray(res.data)
-            ? res.data
-            : (res.data.questions ?? res.data.data ?? []),
-        ),
-      )
-=======
-    api.get("/api/qna")
+    api
+      .get("/api/qna")
       .then((res) => setQuestions(res.data))
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       .catch((err) => console.error("Failed to fetch questions:", err));
   }, []);
 
@@ -201,24 +189,13 @@ export default function AskDoctor() {
 
     setSubmitting(true);
     try {
-<<<<<<< HEAD
-      const res = await axios.post(`${API}/ask`, {
-        question: text,
-        category,
-        name: "Anonymous",
-      });
-      setQuestions((prev) => [res.data, ...prev]);
+      await api.post("/api/qna/ask", { question: text, category });
       setText("");
       setFile(null);
       setAgreed(false);
       setErrors({});
       setCategory("General");
       setCurrentPage(1);
-=======
-      await api.post("/api/qna/ask", { question: text, category });
-      setText(""); setFile(null); setAgreed(false);
-      setErrors({}); setCategory("General"); setCurrentPage(1);
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 8000);
     } catch (err) {
@@ -287,13 +264,16 @@ export default function AskDoctor() {
                     Question submitted successfully!
                   </div>
                   <div className="ad-success-sub">
-<<<<<<< HEAD
-                    We will review your question and respond within 2 hours. You
-                    can see it listed below.
-=======
-                    Your question has been received. A verified doctor will answer it within <strong>12 hours</strong>.
-                    Track the status in your <a href="/user/medical-questions" style={{ color: "#fff", textDecoration: "underline" }}>Medical Questions</a> dashboard.
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
+                    Your question has been received. A verified doctor will
+                    answer it within <strong>12 hours</strong>. Track the status
+                    in your{" "}
+                    <a
+                      href="/user/medical-questions"
+                      style={{ color: "#fff", textDecoration: "underline" }}
+                    >
+                      Medical Questions
+                    </a>{" "}
+                    dashboard.
                   </div>
                 </div>
               </div>
@@ -301,13 +281,31 @@ export default function AskDoctor() {
 
             {/* login gate */}
             {!isLoggedIn && (
-              <div style={{
-                background: "#fef3c7", border: "1px solid #fcd34d",
-                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
-                fontSize: 14, color: "#92400e", display: "flex", alignItems: "center", gap: 10,
-              }}>
+              <div
+                style={{
+                  background: "#fef3c7",
+                  border: "1px solid #fcd34d",
+                  borderRadius: 10,
+                  padding: "12px 16px",
+                  marginBottom: 16,
+                  fontSize: 14,
+                  color: "#92400e",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
                 <span style={{ fontSize: 18 }}>🔒</span>
-                <span>You must <a href="/login" style={{ color: "#b45309", fontWeight: 600 }}>log in</a> to ask a question.</span>
+                <span>
+                  You must{" "}
+                  <a
+                    href="/login"
+                    style={{ color: "#b45309", fontWeight: 600 }}
+                  >
+                    log in
+                  </a>{" "}
+                  to ask a question.
+                </span>
               </div>
             )}
 
@@ -448,18 +446,16 @@ export default function AskDoctor() {
                   <span className="ad-err-msg">{errors.agreed}</span>
                 )}
               </div>
-
-<<<<<<< HEAD
               <button
                 type="submit"
                 className="ad-submit-btn"
-                disabled={submitting}
+                disabled={submitting || !isLoggedIn}
               >
-                {submitting ? "Submitting…" : "Ask Doctor Now →"}
-=======
-              <button type="submit" className="ad-submit-btn" disabled={submitting || !isLoggedIn}>
-                {submitting ? "Submitting…" : !isLoggedIn ? "Log in to Ask →" : "Ask Doctor Now →"}
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
+                {submitting
+                  ? "Submitting…"
+                  : !isLoggedIn
+                    ? "Log in to Ask →"
+                    : "Ask Doctor Now →"}
               </button>
             </form>
           </div>

@@ -28,8 +28,8 @@ import BookAppointment from "./pages/BookAppointment";
 import VideoCall from "./pages/VideoCall";
 
 import socket from "./socket";
-import { useAuth }      from "./context/AuthContext";
-import { useAdmin }     from "./context/AdminContext";
+import { useAuth } from "./context/AuthContext";
+import { useAdmin } from "./context/AdminContext";
 // import useLenis from "../hooks/useLenis";
 
 import DoctorRegister from "./pages/doctors/DoctorRegister";
@@ -37,13 +37,7 @@ import DoctorLogin from "./pages/doctors/DoctorLogin";
 import DoctorLayout from "./pages/doctors/DoctorLayout";
 import Dashbord from "./pages/doctors/Dashbord";
 import DoctorEnrollments from "./pages/doctors/DoctorEnrollments";
-<<<<<<< HEAD
-// User imports
-=======
 import useLenis from "./hooks/useLenis";
-// User imports
-
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
 import DoctorAppointments from "./pages/doctors/DoctorAppointments";
 import DoctorPatients from "./pages/doctors/DoctorPatients";
 import DoctorMessages from "./pages/doctors/DoctorMessages";
@@ -63,13 +57,13 @@ import ChangePassword from "./pages/user/ChangePassword";
 import MyRecords from "./pages/user/MyRecords";
 import UserRaiseTicket from "./pages/user/RaiseTicket";
 
-import AdminLayout        from "./pages/admin/AdminLayout";
-import AdminDashboard     from "./pages/admin/AdminDashboard";
-import ManageDoctors      from "./pages/admin/ManageDoctors";
-import ManageUsers        from "./pages/admin/ManageUsers";
-import AdminAppointments  from "./pages/admin/AdminAppointments";
-import AdminQnA           from "./pages/admin/QnAPage";
-import AdminTickets       from "./pages/admin/SupportTickets";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageDoctors from "./pages/admin/ManageDoctors";
+import ManageUsers from "./pages/admin/ManageUsers";
+import AdminAppointments from "./pages/admin/AdminAppointments";
+import AdminQnA from "./pages/admin/QnAPage";
+import AdminTickets from "./pages/admin/SupportTickets";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import AdminAuth from "./pages/admin/AdminAuth";
 
@@ -81,7 +75,8 @@ function PrivateRoute({ children, allowedRoles }) {
 
   if (loading) return null;
   if (!admin) return <Navigate to="/adminauth" replace />;
-  if (!allowedRoles.includes(admin.role)) return <Navigate to="/adminauth" replace />;
+  if (!allowedRoles.includes(admin.role))
+    return <Navigate to="/adminauth" replace />;
 
   return children;
 }
@@ -284,12 +279,66 @@ function AppLayout() {
 
         <Route path="/adminauth" element={<AdminAuth />} />
 
-        <Route path="/admin-dashboard" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminDashboard /></AdminLayout></PrivateRoute>} />
-        <Route path="/admin-dashboard/manage-doctors" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><ManageDoctors /></AdminLayout></PrivateRoute>} />
-        <Route path="/admin-dashboard/manage-users" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><ManageUsers /></AdminLayout></PrivateRoute>} />
-        <Route path="/admin-dashboard/appointments" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminAppointments /></AdminLayout></PrivateRoute>} />
-        <Route path="/admin-dashboard/qna" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminQnA /></AdminLayout></PrivateRoute>} />
-        <Route path="/admin-dashboard/tickets" element={<PrivateRoute allowedRoles={["admin", "superadmin"]}><AdminLayout><AdminTickets /></AdminLayout></PrivateRoute>} />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <AdminDashboard />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard/manage-doctors"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <ManageDoctors />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard/manage-users"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <ManageUsers />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard/appointments"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <AdminAppointments />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard/qna"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <AdminQnA />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard/tickets"
+          element={
+            <PrivateRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout>
+                <AdminTickets />
+              </AdminLayout>
+            </PrivateRoute>
+          }
+        />
 
         <Route
           path="/superadmin-dashboard"
@@ -299,18 +348,10 @@ function AppLayout() {
             </PrivateRoute>
           }
         />
-
-<<<<<<< HEAD
         <Route path="/home-demo" element={<Home2 />} />
+        {/* <Route path="/home-demo" element={<Home2 />} />
+        {!hideLayout && <Footer />} */}
       </Routes>
-=======
-
-        <Route path="/home-demo" element={<Home2 />} />
-      </Routes>
-
-
->>>>>>> 68fc4c968ff99bea074bffb3bf3043afa13d43b2
-      {!hideLayout && <Footer />}
     </>
   );
 }
