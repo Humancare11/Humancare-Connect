@@ -283,6 +283,11 @@ function AppLayout() {
         <Route path="/video-call/:appointmentId" element={<VideoCall />} />
 
         <Route path="/adminauth" element={<AdminAuth />} />
+        {/* Compatibility redirect for older/alternate URL */}
+        <Route
+          path="/admin-auth"
+          element={<Navigate to="/adminauth" replace />}
+        />
 
         <Route
           path="/admin-dashboard"
