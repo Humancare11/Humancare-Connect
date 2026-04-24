@@ -54,7 +54,14 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    // allow if origin is in our allowlist
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    // fallback: allow all origins (useful for deployed frontend on other host)
+    return callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],

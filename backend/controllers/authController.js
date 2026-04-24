@@ -183,11 +183,9 @@ const doctorLogin = async (req, res) => {
       return res.status(400).json({ msg: "Email and password are required." });
 
     const doctor = await User.findOne({ email });
-
     if (!doctor)
       return res.status(400).json({ msg: "Invalid email or password." });
 
-    // make sure the account is actually a doctor
     if (doctor.role !== "doctor")
       return res.status(403).json({ msg: "This account is not registered as a doctor." });
 
@@ -195,10 +193,13 @@ const doctorLogin = async (req, res) => {
     if (!match)
       return res.status(400).json({ msg: "Invalid email or password." });
 
+    const token = generateToken(doctor);
+    res.cookie("doctorToken", token, COOKIE_OPTS);
+
     return res.json({
-      msg:   "Login successful.",
-      token: generateToken(doctor),
-      user:  safeUser(doctor),
+      msg: "Login successful.",
+      token,              // ✅ frontend saves this to localStorage
+      user: safeUser(doctor), // ✅ key is "user" (safeUser returns user object)
     });
   } catch (err) {
     console.error("doctorLogin error:", err);
@@ -244,7 +245,6 @@ const updateProfile = async (req, res) => {
     if (!name || !email)
       return res.status(400).json({ msg: "Name and email are required." });
 
-    // Check if new email is already taken by another user
     const existing = await User.findOne({ email, _id: { $ne: userId } });
     if (existing)
       return res.status(400).json({ msg: "Email is already in use by another account." });
@@ -255,13 +255,9 @@ const updateProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!updated)
-      return res.status(404).json({ msg: "User not found." });
-
-    return res.json({
-      msg:  "Profile updated successfully.",
-      user: safeUser(updated),
-    });
+    const token = generateToken(updated);
+    res.cookie("userToken", token, COOKIE_OPTS);
+    return res.json({ msg: "Profile updated successfully.", user: safeUser(updated) });
   } catch (err) {
     console.error("updateProfile error:", err);
     return res.status(500).json({ msg: "Server error. Please try again." });
@@ -362,6 +358,7 @@ const googleAuthDoctor = async (req, res) => {
     res.cookie("doctorToken", token, COOKIE_OPTS);
     return res.status(isNewUser ? 201 : 200).json({
       message: isNewUser ? "Registration successful." : "Login successful.",
+      token,
       isNewUser,
       doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });

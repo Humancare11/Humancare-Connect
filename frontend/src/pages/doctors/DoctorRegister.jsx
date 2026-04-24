@@ -26,8 +26,10 @@ export default function DoctorRegister() {
     if (!form.name.trim()) return "Full name is required.";
     if (!form.email.trim()) return "Email is required.";
     if (!/\S+@\S+\.\S+/.test(form.email)) return "Enter a valid email.";
-    if (form.password.length < 6) return "Password must be at least 6 characters.";
-    if (form.password !== form.confirmPassword) return "Passwords do not match.";
+    if (form.password.length < 6)
+      return "Password must be at least 6 characters.";
+    if (form.password !== form.confirmPassword)
+      return "Passwords do not match.";
     return "";
   };
 
@@ -44,16 +46,21 @@ export default function DoctorRegister() {
     setError("");
 
     try {
-      const res = await api.post("/api/doctor/register", {
+      await api.post("/api/doctor/register", {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
         confirmPassword: form.confirmPassword,
       });
-      login(res.data.doctor);
-      navigate("/doctor-dashboard");
+
+      // ✅ Register doesn't return a token — just redirect to login
+      navigate("/doctor-login");
     } catch (err) {
-      setError(err.response?.data?.message || "Could not connect to server. Please try again.");
+      // ✅ Backend sends "msg" not "message"
+      setError(
+        err.response?.data?.msg ||
+          "Could not connect to server. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -91,7 +98,14 @@ export default function DoctorRegister() {
 
           {error && (
             <div className="dr-error">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -157,7 +171,11 @@ export default function DoctorRegister() {
             </div>
 
             <div className="dr-btn-row dr-btn-row--single">
-              <button type="submit" className="dr-btn-primary" disabled={loading}>
+              <button
+                type="submit"
+                className="dr-btn-primary"
+                disabled={loading}
+              >
                 {loading ? "Registering…" : "Register →"}
               </button>
             </div>

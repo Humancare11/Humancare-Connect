@@ -14,13 +14,7 @@ export default function DoctorAuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // LOGIN FORM
-  const [loginForm, setLoginForm] = useState({
-    email: "",
-    password: "",
-  });
-
-  // REGISTER FORM
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
     name: "",
     email: "",
@@ -28,27 +22,21 @@ export default function DoctorAuthPage() {
     confirmPassword: "",
   });
 
-  // ---------------- LOGIN INPUT ----------------
   const handleLoginChange = (e) => {
-    setLoginForm({
-      ...loginForm,
-      [e.target.name]: e.target.value,
-    });
+    setLoginForm({ ...loginForm, [e.target.name]: e.target.value });
     setError("");
   };
 
-  // ---------------- REGISTER INPUT ----------------
   const handleRegisterChange = (e) => {
-    setRegisterForm({
-      ...registerForm,
-      [e.target.name]: e.target.value,
-    });
+    setRegisterForm({ ...registerForm, [e.target.name]: e.target.value });
     setError("");
   };
 
   function afterLogin(doctor, isNewUser = false) {
     login(doctor);
-    navigate(isNewUser ? "/doctor-dashboard?newAccount=1" : "/doctor-dashboard");
+    navigate(
+      isNewUser ? "/doctor-dashboard?newAccount=1" : "/doctor-dashboard",
+    );
   }
 
   // ---------------- GOOGLE AUTH ----------------
@@ -59,6 +47,13 @@ export default function DoctorAuthPage() {
       const res = await api.post("/api/auth/google-doctor", {
         credential: credentialResponse.credential,
       });
+
+      // ✅ Save token to localStorage (both keys used across app)
+      if (res.data.token) {
+        localStorage.setItem("doctorToken", res.data.token);
+        localStorage.setItem("token", res.data.token);
+      }
+
       afterLogin(res.data.doctor, res.data.isNewUser);
     } catch (err) {
       setError(err.response?.data?.msg || "Google Sign-In failed.");
@@ -77,9 +72,18 @@ export default function DoctorAuthPage() {
         email: loginForm.email.trim().toLowerCase(),
         password: loginForm.password,
       });
+
+      // ✅ Save token to localStorage (both keys used across app)
+      if (res.data.token) {
+        localStorage.setItem("doctorToken", res.data.token);
+        localStorage.setItem("token", res.data.token);
+      }
+
+      // Backend returns `doctor` key
       afterLogin(res.data.doctor);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password.");
+      // ✅ Backend sends "msg" not "message"
+      setError(err.response?.data?.msg || "Invalid email or password.");
     }
 
     setLoading(false);
@@ -98,33 +102,43 @@ export default function DoctorAuthPage() {
     }
 
     try {
-      const res = await api.post("/api/doctor/register", {
+      await api.post("/api/doctor/register", {
         name: registerForm.name.trim(),
         email: registerForm.email.trim().toLowerCase(),
         password: registerForm.password,
         confirmPassword: registerForm.confirmPassword,
       });
-      afterLogin(res.data.doctor);
+
+      // ✅ Register doesn't auto-login, redirect to login side
+      setIsRegister(false);
+      setError("");
+      setRegisterForm({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      alert("Registration successful! Please login.");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(
+        err.response?.data?.msg || "Registration failed. Please try again.",
+      );
     }
 
     setLoading(false);
   };
 
   return (
-    <div
-      className={`doctor-auth-wrapper ${
-        isRegister ? "panel-active" : ""
-      }`}
-    >
+    <div className={`doctor-auth-wrapper ${isRegister ? "panel-active" : ""}`}>
       {/* REGISTER FORM */}
       <div className="doctor-auth-form-box register-form-box">
         <form onSubmit={handleRegisterSubmit}>
           <h1>Doctor Register</h1>
 
           <div className="doctor-social-links">
-            <a href="#"><FaFacebookF /></a>
+            <a href="#">
+              <FaFacebookF />
+            </a>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setError("Google Sign-In failed.")}
@@ -132,14 +146,14 @@ export default function DoctorAuthPage() {
               shape="circle"
               size="large"
             />
-            <a href="#"><FaLinkedinIn /></a>
+            <a href="#">
+              <FaLinkedinIn />
+            </a>
           </div>
 
           <span>Create your professional account</span>
 
-          {error && (
-            <p className="doctor-error">{error}</p>
-          )}
+          {error && <p className="doctor-error">{error}</p>}
 
           <input
             type="text"
@@ -202,7 +216,9 @@ export default function DoctorAuthPage() {
           <h1>Doctor Login</h1>
 
           <div className="doctor-social-links">
-            <a href="#"><FaFacebookF /></a>
+            <a href="#">
+              <FaFacebookF />
+            </a>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setError("Google Sign-In failed.")}
@@ -210,14 +226,14 @@ export default function DoctorAuthPage() {
               shape="circle"
               size="large"
             />
-            <a href="#"><FaLinkedinIn /></a>
+            <a href="#">
+              <FaLinkedinIn />
+            </a>
           </div>
 
           <span>Login to your doctor dashboard</span>
 
-          {error && (
-            <p className="doctor-error">{error}</p>
-          )}
+          {error && <p className="doctor-error">{error}</p>}
 
           <input
             type="email"
@@ -262,10 +278,7 @@ export default function DoctorAuthPage() {
           {/* LEFT PANEL */}
           <div className="doctor-panel-content doctor-panel-left">
             <h1>Welcome Back Doctor!</h1>
-            <p>
-              Login to continue managing patients and
-              appointments.
-            </p>
+            <p>Login to continue managing patients and appointments.</p>
             <button
               className="doctor-transparent-btn"
               onClick={() => {
@@ -280,10 +293,7 @@ export default function DoctorAuthPage() {
           {/* RIGHT PANEL */}
           <div className="doctor-panel-content doctor-panel-right">
             <h1>Join HumaniCare</h1>
-            <p>
-              Register now and become part of our trusted
-              doctor network.
-            </p>
+            <p>Register now and become part of our trusted doctor network.</p>
             <button
               className="doctor-transparent-btn"
               onClick={() => {

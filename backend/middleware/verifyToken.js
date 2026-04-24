@@ -3,7 +3,10 @@ const jwt = require("jsonwebtoken");
 // ── shared cookie options (exported so login routes can reuse) ────────────────
 const COOKIE_OPTS = {
   httpOnly: true,
-  sameSite: "lax",
+  // For cross-site requests (frontend hosted on different origin), browsers
+  // require SameSite=None and Secure to send cookies. Use 'none' in
+  // production where frontend/backends are on different hosts.
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   secure: process.env.NODE_ENV === "production",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };

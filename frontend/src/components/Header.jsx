@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./header.css";
 import { Link, useLocation } from "react-router-dom";
+import { FaUserCircle } from "react-icons/fa";
 
 export default function Header() {
   useEffect(() => {

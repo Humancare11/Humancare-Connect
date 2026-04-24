@@ -33,6 +33,7 @@ router.post("/register", async (req, res) => {
     res.cookie("doctorToken", token, COOKIE_OPTS);
     return res.status(201).json({
       message: "Doctor registered successfully.",
+      token,
       doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });
   } catch (err) {
@@ -62,6 +63,7 @@ router.post("/login", async (req, res) => {
     res.cookie("doctorToken", token, COOKIE_OPTS);
     return res.status(200).json({
       message: "Login successful.",
+      token,
       doctor: { id: doctor._id, name: doctor.name, email: doctor.email, isEnrolled: doctor.isEnrolled },
     });
   } catch (err) {
