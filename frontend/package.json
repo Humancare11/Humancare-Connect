@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "cp -r dist/index.html dist/200.html || true",
+    "postbuild": "node -e \"const fs=require('fs');fs.copyFileSync('dist/index.html','dist/200.html')\"",
     "build:prod": "vite build --mode production",
     "preview": "vite preview",
     "lint": "eslint ."
