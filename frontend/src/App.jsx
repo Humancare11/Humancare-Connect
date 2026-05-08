@@ -70,6 +70,10 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import Home2 from "./pages/Home-2";
 import Test from "./pages/Test";
 
+
+
+// import MDemo from "./pages/MDemo";
+
 function PrivateRoute({ children, allowedRoles }) {
   const { admin, loading } = useAdmin();
 
@@ -125,6 +129,8 @@ function AppLayout() {
         <Route path="/book-appointment" element={<BookAppointment />} />
         <Route path="/home-demo" element={<Home2 />} />
         <Route path="/test" element={<Test />} />
+
+        {/* <Route path="/m" element={<MDemo />} /> */}
 
         <Route
           path="/user/dashboard"

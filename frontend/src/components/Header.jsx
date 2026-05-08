@@ -107,9 +107,9 @@ export default function Header() {
             </a>
           ))}
         </nav>
-        <a href="/book-appointment" className="nav-cta">
+        {/* <a href="/book-appointment" className="nav-cta">
           <span>Book Appointment</span>
-        </a>
+        </a> */}
         {/* 🔥 AUTH BUTTONS */}
         <div className="auth-buttons">
           {!isLoggedIn ? (

@@ -1,4 +1,4 @@
-:root {
+/* :root {
   --primary: #4a8fd4;
   --teal: #0ec4ae;
   --gold: #f0a030;
@@ -16,6 +16,45 @@
   --t3: rgba(255, 255, 255, 0.2);
   --radius: 20px;
   --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+} */
+
+:root{
+  --bg: #EAF2FF;
+  --bg-2: #F4F8FF;
+  --ink: #0A1F44;
+  --ink-2: #2A3F66;
+  --muted: #5C7099;
+  --line: rgba(11,87,232,.10);
+  --blue: #0B57E8;
+  --blue-2: #1E6BFF;
+  --blue-3: #7CB7FF;
+  --blue-4: #C8DFFF;
+  --blue-deep: #08308E;
+  --navy: #061333;
+  --mint: #0F9A88;
+  --good: #16A34A;
+  --glass: rgba(255,255,255,.62);
+  --glass-2: rgba(255,255,255,.38);
+  --glass-edge: rgba(255,255,255,.85);
+  --shadow-1: 0 18px 50px -20px rgba(11,40,100,.18);
+  --shadow-2: 0 30px 80px -30px rgba(11,40,100,.30);
+  --shadow-3: 0 50px 120px -40px rgba(11,40,100,.40);
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --display: "Satoshi", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  font-style: normal;
 }
 
 .glass-header {
@@ -34,26 +73,27 @@
 }
 
 .nav-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  border-radius: 50px;
-  background: rgba(10, 22, 48, 0.68); /* FIXED: was commented out */
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border: 1px solid var(--gb);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  position: relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  max-width:1280px;
+  margin:0 auto;
+  background: rgba(255,255,255,.6);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:100px;
+  padding:8px 8px 8px 22px;
+  box-shadow: var(--shadow-1);
+  transition: box-shadow .3s;
 }
 
 .logo {
   font-family: "Satoshi", sans-serif;
   font-weight: 700;
   font-size: 20px;
-  background: linear-gradient(135deg, #fff 20%, var(--teal) 100%);
+  background: linear-gradient(135deg, #fff 20%, var(--blue) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -70,9 +110,9 @@
 .nav-pill {
   position: absolute;
   height: 36px;
-  background: var(--g3);
+  background: var(--blue-3);
   border-radius: 50px;
-  border: 1px solid var(--gb);
+  border: 1px solid var(--g1);
   transition: 0.3s var(--ease);
   z-index: 1;
   width: 0;

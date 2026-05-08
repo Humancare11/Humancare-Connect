@@ -5,8 +5,9 @@ import Aa from "../components/Aa";
 import sceneVideo from "../assets/gifts/scene-card-bg-video.mp4";
 import WordReveal from "../components/WordReveal";
 import StepProgress from "../components/StepProgress";
+import LogoMarquee from "../components/LogoMarquee";
 
-import HeroNew from "./hero-new";
+// import HeroNew from "./hero-new";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -29,7 +30,10 @@ import { motion, useInView } from "framer-motion";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 
+
+
 gsap.registerPlugin(ScrollTrigger);
+
 
 // ─── Scene data ───────────────────────────────────────────────────────────────
 const SCENES = [
@@ -396,58 +400,58 @@ export default function HomePage() {
   let progressPct = ((current + currentStepProgress) / TOTAL_STEPS) * 100;
   progressPct = Math.min(progressPct, 100); // Cap at 100%
 
-  const items = ["figma", "framer", "webflow", "raycast", "supabase", "clerk"];
+  // const items = ["figma", "framer", "webflow", "raycast", "supabase", "clerk"];
 
-  const trackRef = useRef(null);
+  // const trackRef = useRef(null);
 
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
+  // useEffect(() => {
+  //   const track = trackRef.current;
+  //   if (!track) return;
 
-    const buildSet = (copies) => {
-      track.innerHTML = "";
-      for (let c = 0; c < copies; c++) {
-        items.forEach((item) => {
-          const tag = document.createElement("span");
-          tag.className = "sb-tag";
-          tag.textContent = item;
-          track.appendChild(tag);
-        });
-        // optional separator
-        const sep = document.createElement("span");
-        sep.className = "sb-sep";
-        sep.textContent = "\u00A0"; // small gap
-        track.appendChild(sep);
-      }
-    };
+  //   const buildSet = (copies) => {
+  //     track.innerHTML = "";
+  //     for (let c = 0; c < copies; c++) {
+  //       items.forEach((item) => {
+  //         const tag = document.createElement("span");
+  //         tag.className = "sb-tag";
+  //         tag.textContent = item;
+  //         track.appendChild(tag);
+  //       });
+  //       // optional separator
+  //       const sep = document.createElement("span");
+  //       sep.className = "sb-sep";
+  //       sep.textContent = "\u00A0"; 
+  //       track.appendChild(sep);
+  //     }
+  //   };
 
-    const recalc = () => {
+    // const recalc = () => {
       // 1) build a single set to measure width
-      buildSet(1);
+      // buildSet(1);
 
-      requestAnimationFrame(() => {
-        const singleWidth = track.scrollWidth || 0; // width of one set
-        const containerWidth =
-          track.parentElement?.clientWidth || window.innerWidth;
+      // requestAnimationFrame(() => {
+        // const singleWidth = track.scrollWidth || 0;  width of one set
+        // const containerWidth =
+          // track.parentElement?.clientWidth || window.innerWidth;
 
         // Determine how many copies we need so the scrolling content always exceeds the viewport
-        const minNeeded = Math.ceil(
-          (containerWidth * 2) / Math.max(singleWidth, 1),
-        );
-        const copies = Math.max(2, minNeeded);
+        // const minNeeded = Math.ceil(
+          // (containerWidth * 2) / Math.max(singleWidth, 1),
+        // );
+        // const copies = Math.max(2, minNeeded);
 
-        buildSet(copies);
+        // buildSet(copies);
 
         // expose width of one copy for the CSS animation to translate by
-        track.style.setProperty("--scroll-width", `${singleWidth}px`);
-      });
-    };
+        // track.style.setProperty("--scroll-width", `${singleWidth}px`);
+      // });
+    // };
 
-    recalc();
-    window.addEventListener("resize", recalc);
+    // recalc();
+    // window.addEventListener("resize", recalc);
 
-    return () => window.removeEventListener("resize", recalc);
-  }, [items]);
+    // return () => window.removeEventListener("resize", recalc);
+  // }, [items]);
 
   const wrapperRef = useRef(null);
   const headerRef = useRef(null);
@@ -570,6 +574,7 @@ export default function HomePage() {
 
   return (
     <>
+    
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
       <section className="hero">
         {/* hero canvas removed for production: decorative particles were disabled */}
@@ -638,7 +643,7 @@ export default function HomePage() {
               </svg>
               500+ Verified Doctors
             </span>
-            <span className="trust-chip">
+            < span className="trust-chip">
               <svg
                 width="12"
                 height="12"
@@ -751,14 +756,16 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <HeroNew />
+      {/* <HeroNew /> */}
+
 
       {/* ✅ sb-bar is now OUTSIDE <section className="hero"> */}
-      <div className="sb-bar">
+      {/* <div className="sb-bar">
         <div className="sb-track" ref={trackRef} />
-      </div>
+      </div> */}
       {/* ════════════════════ HERO section ═════════════════════════════════════════════ */}
-
+{/* ---------------------------------------------------------------- */}
+ <LogoMarquee />
       <Sa />
 
       {/* ══════════════════════════════════════════════

@@ -88,7 +88,7 @@ h4 {
   align-items: center;
   justify-content: space-between;
   /* padding: 120px 37px 60px; */
-  padding: 190px 37px 65px;
+  padding: 190px 150px 50px;
   background: var(--section);
   position: relative;
   overflow: hidden; /* keeps the grid/orb decorations clipped to hero */
@@ -108,7 +108,7 @@ h4 {
   pointer-events: none;
 }
 
-.hero::after {
+/* .hero::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -117,7 +117,7 @@ h4 {
     linear-gradient(90deg, rgba(34, 58, 94, 0.03) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
-}
+} */
 
 /* ═══ HERO LEFT ═══ */
 .hero-left {
@@ -245,9 +245,9 @@ h4 {
    HERO RIGHT - INTERACTIVE TIMELINE
 ══════════════════════════════════════════════ */
 .hero-right {
-  width: 44%;
-  max-width: 600px;
-  min-height: 480px;
+  width: 64%;
+  max-width: 700px;
+  min-height: 500px;
   position: relative;
   padding-top: 20px;
   z-index: 1;
@@ -762,9 +762,9 @@ h4 {
    SCROLLING BAR — lives OUTSIDE .hero in JSX
    so overflow:hidden on .hero won't clip it
 ══════════════════════════════════════════════ */
-.sb-bar {
+/* .sb-bar {
   width: 100%;
-  position: relative; /* normal flow, not absolute */
+  position: relative; 
   z-index: 2;
   display: flex;
   align-items: center;
@@ -772,14 +772,6 @@ h4 {
   height: 80px;
   overflow: hidden;
   padding: 60px 48px;
-  /* backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  background: rgba(255, 255, 255, 0.25);
-  border-top: 0.5px solid rgba(255, 255, 255, 0.6);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 -1px 0 0 rgba(255, 255, 255, 0.5) inset,
-    0 4px 24px rgba(100, 140, 200, 0.1); */
   backdrop-filter: blur(12px) saturate(160%);
   -webkit-backdrop-filter: blur(12px) saturate(160%);
   background: rgba(255, 255, 255, 0.25);
@@ -855,7 +847,7 @@ h4 {
   100% {
     transform: translateX(-50%);
   }
-}
+} */
 
 /* ==================== Hero Section End ============= */
 
